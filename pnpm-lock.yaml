@@ -10,7 +10,7 @@ importers:
     dependencies:
       '@livekit/components-react':
         specifier: ^2.9.9
-        version: 2.9.10(@livekit/krisp-noise-filter@0.2.16(livekit-client@2.13.8(@types/dom-mediacapture-record@1.0.22)))(livekit-client@2.13.8(@types/dom-mediacapture-record@1.0.22))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(tslib@2.8.1)
+        version: 2.9.11(@livekit/krisp-noise-filter@0.2.16(livekit-client@2.13.8(@types/dom-mediacapture-record@1.0.22)))(livekit-client@2.13.8(@types/dom-mediacapture-record@1.0.22))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(tslib@2.8.1)
       '@phosphor-icons/react':
         specifier: ^2.1.8
         version: 2.1.10(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -395,8 +395,8 @@ packages:
       livekit-client: ^2.13.1
       tslib: ^2.6.2
 
-  '@livekit/components-react@2.9.10':
-    resolution: {integrity: sha512-itkMCP+KrG9KuidO+7A4W/9LaGweKxA35EyejCV49N1/gOelj4wi4Mmrf2ZIXAG8A+Xk5GXAxoCbEAh0mtMf9Q==}
+  '@livekit/components-react@2.9.11':
+    resolution: {integrity: sha512-iTYhNQfJAv9ShBrgYiIoVhy3V9zWDEFvjcqU6cVC1oZaqKZRa3XkHTD2iOpnFg5fVXC2ilE3SKlw1YJZ6KqQpg==}
     engines: {node: '>=18'}
     peerDependencies:
       '@livekit/krisp-noise-filter': ^0.2.12
@@ -2905,7 +2905,7 @@ snapshots:
       rxjs: 7.8.2
       tslib: 2.8.1
 
-  '@livekit/components-react@2.9.10(@livekit/krisp-noise-filter@0.2.16(livekit-client@2.13.8(@types/dom-mediacapture-record@1.0.22)))(livekit-client@2.13.8(@types/dom-mediacapture-record@1.0.22))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(tslib@2.8.1)':
+  '@livekit/components-react@2.9.11(@livekit/krisp-noise-filter@0.2.16(livekit-client@2.13.8(@types/dom-mediacapture-record@1.0.22)))(livekit-client@2.13.8(@types/dom-mediacapture-record@1.0.22))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(tslib@2.8.1)':
     dependencies:
       '@livekit/components-core': 0.12.7(livekit-client@2.13.8(@types/dom-mediacapture-record@1.0.22))(tslib@2.8.1)
       clsx: 2.1.1
