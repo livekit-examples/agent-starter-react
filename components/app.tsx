@@ -28,13 +28,14 @@ export function App({ appConfig }: AppProps) {
     suportsScreenShare,
   };
 
-  const connectionDetails = useConnectionDetails();
+  const { connectionDetails, refreshConnectionDetails } = useConnectionDetails();
 
   const room = React.useMemo(() => new Room(), []);
 
   React.useEffect(() => {
     const onDisconnected = () => {
       setSessionStarted(false);
+      refreshConnectionDetails();
     };
     const onMediaDevicesError = (error: Error) => {
       toastAlert({
@@ -48,7 +49,7 @@ export function App({ appConfig }: AppProps) {
       room.off(RoomEvent.Disconnected, onDisconnected);
       room.off(RoomEvent.MediaDevicesError, onMediaDevicesError);
     };
-  }, [room]);
+  }, [room, refreshConnectionDetails]);
 
   React.useEffect(() => {
     if (sessionStarted && room.state === 'disconnected' && connectionDetails) {

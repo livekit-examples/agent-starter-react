@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ConnectionDetails } from '@/app/api/connection-details/route';
 
-export default function useConnectionDetails(autoRefresh = false) {
+export default function useConnectionDetails() {
   // Generate room connection details, including:
   //   - A random Room name
   //   - A random Participant name
@@ -13,7 +13,8 @@ export default function useConnectionDetails(autoRefresh = false) {
 
   const [connectionDetails, setConnectionDetails] = useState<ConnectionDetails | null>(null);
 
-  const fetchConnectionDetails = () => {
+  const fetchConnectionDetails = useCallback(() => {
+    setConnectionDetails(null);
     const url = new URL(
       process.env.NEXT_PUBLIC_CONN_DETAILS_ENDPOINT ?? '/api/connection-details',
       window.location.origin
@@ -27,17 +28,11 @@ export default function useConnectionDetails(autoRefresh = false) {
         console.error('Error fetching connection details:', error);
         alert(error.message);
       });
-  };
+  }, []);
 
   useEffect(() => {
-    if (autoRefresh) {
-      const interval = setInterval(() => {
-        fetchConnectionDetails();
-      }, 10000);
-      return () => clearInterval(interval);
-    }
     fetchConnectionDetails();
-  }, [autoRefresh]);
+  }, [fetchConnectionDetails]);
 
-  return connectionDetails;
+  return { connectionDetails, refreshConnectionDetails: fetchConnectionDetails };
 }
