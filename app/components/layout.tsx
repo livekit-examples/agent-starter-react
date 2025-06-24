@@ -10,7 +10,7 @@ import useConnectionDetails from '@/hooks/useConnectionDetails';
 import { cn } from '@/lib/utils';
 
 export default function ComponentsLayout({ children }: { children: React.ReactNode }) {
-  const connectionDetails = useConnectionDetails();
+  const { connectionDetails } = useConnectionDetails();
 
   const pathname = usePathname();
   const room = React.useMemo(() => new Room(), []);
