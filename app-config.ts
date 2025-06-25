@@ -5,9 +5,9 @@ export const APP_CONFIG_DEFAULTS: AppConfig = {
   pageTitle: 'Voice Assistant',
   pageDescription: 'A voice assistant built with LiveKit',
 
-  suportsChatInput: true,
-  suportsVideoInput: true,
-  suportsScreenShare: true,
+  supportsChatInput: true,
+  supportsVideoInput: true,
+  supportsScreenShare: true,
 
   logo: '/lk-logo.svg',
   accent: '#002cf2',

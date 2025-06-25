@@ -54,9 +54,9 @@ export default function LiveKit() {
           <AgentControlBar
             className="w-full"
             capabilities={{
-              suportsChatInput: true,
-              suportsVideoInput: true,
-              suportsScreenShare: true,
+              supportsChatInput: true,
+              supportsVideoInput: true,
+              supportsScreenShare: true,
             }}
           />
         </div>

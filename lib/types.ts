@@ -12,9 +12,9 @@ export interface AppConfig {
   pageDescription: string;
   companyName: string;
 
-  suportsChatInput: boolean;
-  suportsVideoInput: boolean;
-  suportsScreenShare: boolean;
+  supportsChatInput: boolean;
+  supportsVideoInput: boolean;
+  supportsScreenShare: boolean;
 
   logo: string;
   startButtonText: string;

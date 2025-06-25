@@ -14,9 +14,9 @@ import { cn } from '@/lib/utils';
 interface SessionViewProps {
   disabled: boolean;
   capabilities: {
-    suportsChatInput: boolean;
-    suportsVideoInput: boolean;
-    suportsScreenShare: boolean;
+    supportsChatInput: boolean;
+    supportsVideoInput: boolean;
+    supportsScreenShare: boolean;
   };
   sessionStarted: boolean;
 }
