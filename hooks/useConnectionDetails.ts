@@ -26,7 +26,6 @@ export default function useConnectionDetails() {
       })
       .catch((error) => {
         console.error('Error fetching connection details:', error);
-        alert(error.message);
       });
   }, []);
 
