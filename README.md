@@ -1,6 +1,6 @@
 <img src="./.github/assets/app-icon.png" alt="Voice Assistant App Icon" width="100" height="100">
 
-# Web Voice Assistant
+# Agent Starter React
 
 This is a starter template for [LiveKit Agents](https://docs.livekit.io/agents) that provides a simple voice interface using the [LiveKit JavaScript SDK](https://github.com/livekit/client-sdk-js). It supports [voice](https://docs.livekit.io/agents/start/voice-ai), [transcriptions](https://docs.livekit.io/agents/build/text/), and [virtual avatars](https://docs.livekit.io/agents/integrations/avatar).
 
@@ -11,12 +11,12 @@ s
 ## Getting started
 
 > [!TIP]
-> If you'd like to try this application without modification, you can deploy an instance in just a few clicks with [LiveKit Cloud Sandbox](https://cloud.livekit.io/projects/p_/sandbox/templates/voice-assistant-frontend).
+> If you'd like to try this application without modification, you can deploy an instance in just a few clicks with [LiveKit Cloud Sandbox](https://cloud.livekit.io/projects/p_/sandbox/templates/agent-starter-react).
 
 Run the following command to automatically clone this template.
 
 ```bash
-lk app create --template voice-assistant-frontend
+lk app create --template agent-starter-react
 ```
 
 Then run the app with:
