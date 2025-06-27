@@ -95,7 +95,6 @@ export function MediaTiles({ chatOpen }: MediaTilesProps) {
     state: agentState,
     audioTrack: agentAudioTrack,
     videoTrack: agentVideoTrack,
-    agent: { isActive: isAgentActive = false } = {},
   } = useVoiceAssistant();
   const [screenShareTrack] = useTracks([Track.Source.ScreenShare]);
   const cameraTrack: TrackReference | undefined = useLocalTrackRef(Track.Source.Camera);
@@ -127,47 +126,45 @@ export function MediaTiles({ chatOpen }: MediaTilesProps) {
       <div className="relative mx-auto h-full max-w-2xl px-4 md:px-0">
         <div className={cn(classNames.grid)}>
           {/* agent */}
-          {isAgentActive && (
-            <div
-              className={cn([
-                'grid',
-                // 'bg-[hotpink]', // for debugging
-                !chatOpen && classNames.agentChatClosed,
-                chatOpen && hasSecondTile && classNames.agentChatOpenWithSecondTile,
-                chatOpen && !hasSecondTile && classNames.agentChatOpenWithoutSecondTile,
-              ])}
-            >
-              <AnimatePresence mode="popLayout">
-                {!isAvatar && (
-                  // audio-only agent
-                  <MotionAgentTile
-                    key="agent"
-                    layoutId="agent"
-                    {...animationProps}
-                    animate={agentAnimate}
-                    transition={agentLayoutTransition}
-                    state={agentState}
-                    audioTrack={agentAudioTrack}
-                    className={cn(chatOpen ? 'h-[90px]' : 'h-auto w-full')}
-                  />
-                )}
-                {isAvatar && (
-                  // avatar agent
-                  <MotionAvatarTile
-                    key="avatar"
-                    layoutId="avatar"
-                    {...animationProps}
-                    animate={avatarAnimate}
-                    transition={avatarLayoutTransition}
-                    videoTrack={agentVideoTrack}
-                    className={cn(
-                      chatOpen ? 'h-[90px] [&>video]:h-[90px] [&>video]:w-auto' : 'h-auto w-full'
-                    )}
-                  />
-                )}
-              </AnimatePresence>
-            </div>
-          )}
+          <div
+            className={cn([
+              'grid',
+              // 'bg-[hotpink]', // for debugging
+              !chatOpen && classNames.agentChatClosed,
+              chatOpen && hasSecondTile && classNames.agentChatOpenWithSecondTile,
+              chatOpen && !hasSecondTile && classNames.agentChatOpenWithoutSecondTile,
+            ])}
+          >
+            <AnimatePresence mode="popLayout">
+              {!isAvatar && (
+                // audio-only agent
+                <MotionAgentTile
+                  key="agent"
+                  layoutId="agent"
+                  {...animationProps}
+                  animate={agentAnimate}
+                  transition={agentLayoutTransition}
+                  state={agentState}
+                  audioTrack={agentAudioTrack}
+                  className={cn(chatOpen ? 'h-[90px]' : 'h-auto w-full')}
+                />
+              )}
+              {isAvatar && (
+                // avatar agent
+                <MotionAvatarTile
+                  key="avatar"
+                  layoutId="avatar"
+                  {...animationProps}
+                  animate={avatarAnimate}
+                  transition={avatarLayoutTransition}
+                  videoTrack={agentVideoTrack}
+                  className={cn(
+                    chatOpen ? 'h-[90px] [&>video]:h-[90px] [&>video]:w-auto' : 'h-auto w-full'
+                  )}
+                />
+              )}
+            </AnimatePresence>
+          </div>
 
           <div
             className={cn([
