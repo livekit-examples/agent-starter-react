@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { Track } from 'livekit-client';
-import { BarVisualizer } from '@livekit/components-react';
+import { BarVisualizer, useVoiceAssistant } from '@livekit/components-react';
 import { ChatTextIcon, PhoneDisconnectIcon } from '@phosphor-icons/react/dist/ssr';
 import { ChatInput } from '@/components/livekit/chat/chat-input';
 import { Button } from '@/components/ui/button';
@@ -39,6 +39,12 @@ export function AgentControlBar({
 }: AgentControlBarProps) {
   const [chatOpen, setChatOpen] = React.useState(false);
   const [isSendingMessage, setIsSendingMessage] = React.useState(false);
+  const { state: agentState } = useVoiceAssistant();
+
+  const agentIsAvailable =
+    agentState == 'listening' || agentState == 'thinking' || agentState == 'speaking';
+
+  const isInputDisabled = !chatOpen || !agentIsAvailable || isSendingMessage;
 
   const {
     micTrackRef,
@@ -90,7 +96,7 @@ export function AgentControlBar({
           )}
         >
           <div className="flex h-8 w-full">
-            <ChatInput onSend={handleSendMessage} disabled={isSendingMessage} className="w-full" />
+            <ChatInput onSend={handleSendMessage} disabled={isInputDisabled} className="w-full" />
           </div>
           <hr className="border-bg2 my-3" />
         </div>
@@ -151,7 +157,7 @@ export function AgentControlBar({
                 pending={cameraToggle.pending}
                 disabled={cameraToggle.pending}
                 onPressedChange={cameraToggle.toggle}
-                className="peer/track relative w-auto pr-3 pl-3 disabled:opacity-100 md:rounded-r-none md:border-r-0 md:pr-2"
+                className="peer/track relative w-auto rounded-r-none pr-3 pl-3 disabled:opacity-100 md:border-r-0 md:pr-2"
               />
               <hr className="bg-separator1 peer-data-[state=off]/track:bg-separatorSerious relative z-10 -mr-px hidden h-4 w-px md:block" />
               <DeviceSelect
@@ -166,7 +172,7 @@ export function AgentControlBar({
                   'peer-data-[state=off]/track:text-destructive-foreground',
                   'hover:text-fg1 focus:text-fg1',
                   'hover:peer-data-[state=off]/track:text-destructive-foreground focus:peer-data-[state=off]/track:text-destructive-foreground',
-                  'hidden rounded-l-none md:block',
+                  'rounded-l-none',
                 ])}
               />
             </div>
@@ -191,6 +197,7 @@ export function AgentControlBar({
               aria-label="Toggle chat"
               pressed={chatOpen}
               onPressedChange={setChatOpen}
+              disabled={!agentIsAvailable}
               className="aspect-square h-full"
             >
               <ChatTextIcon weight="bold" />
