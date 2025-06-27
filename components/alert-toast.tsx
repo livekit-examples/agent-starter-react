@@ -1,13 +1,14 @@
 'use client';
 
+import { ReactNode } from 'react';
 import { toast as sonnerToast } from 'sonner';
 import { WarningIcon } from '@phosphor-icons/react/dist/ssr';
-import { Alert, AlertTitle } from './ui/alert';
+import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
 interface ToastProps {
   id: string | number;
-  title: string;
-  description: string;
+  title: ReactNode;
+  description: ReactNode;
 }
 
 export function toastAlert(toast: Omit<ToastProps, 'id'>) {
@@ -18,13 +19,13 @@ export function toastAlert(toast: Omit<ToastProps, 'id'>) {
 }
 
 function AlertToast(props: ToastProps) {
-  const { title, id } = props;
+  const { title, description, id } = props;
 
   return (
     <Alert onClick={() => sonnerToast.dismiss(id)} className="bg-accent">
       <WarningIcon weight="bold" />
       <AlertTitle>{title}</AlertTitle>
-      {/* <AlertDescription>{description}</AlertDescription> */}
+      {description && <AlertDescription>{description}</AlertDescription>}
     </Alert>
   );
 }

@@ -8,7 +8,7 @@ import { ChatInput } from '@/components/livekit/chat/chat-input';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
 import { AppConfig } from '@/lib/types';
-import { cn } from '@/lib/utils';
+import { cn, isAgentAvailable } from '@/lib/utils';
 import { DeviceSelect } from '../device-select';
 import { TrackToggle } from '../track-toggle';
 import { UseAgentControlBarProps, useAgentControlBar } from './hooks/use-agent-control-bar';
@@ -40,9 +40,7 @@ export function AgentControlBar({
   const [chatOpen, setChatOpen] = React.useState(false);
   const [isSendingMessage, setIsSendingMessage] = React.useState(false);
   const { state: agentState } = useVoiceAssistant();
-
-  const agentIsAvailable =
-    agentState == 'listening' || agentState == 'thinking' || agentState == 'speaking';
+  const agentIsAvailable = isAgentAvailable(agentState);
 
   const isInputDisabled = !chatOpen || !agentIsAvailable || isSendingMessage;
 

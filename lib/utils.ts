@@ -2,7 +2,7 @@ import { cache } from 'react';
 import { type ClassValue, clsx } from 'clsx';
 import { Room } from 'livekit-client';
 import { twMerge } from 'tailwind-merge';
-import type { ReceivedChatMessage, TextStreamData } from '@livekit/components-react';
+import type { AgentState, ReceivedChatMessage, TextStreamData } from '@livekit/components-react';
 import { APP_CONFIG_DEFAULTS } from '@/app-config';
 import type { AppConfig, SandboxConfig } from './types';
 
@@ -74,3 +74,7 @@ export const getAppConfig = cache(async (origin: string): Promise<AppConfig> => 
 
   return APP_CONFIG_DEFAULTS;
 });
+
+export function isAgentAvailable(agentState: AgentState) {
+  return agentState == 'listening' || agentState == 'thinking' || agentState == 'speaking';
+}

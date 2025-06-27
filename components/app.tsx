@@ -1,6 +1,6 @@
 'use client';
 
-import * as React from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Room, RoomEvent } from 'livekit-client';
 import { motion } from 'motion/react';
 import { RoomAudioRenderer, RoomContext, StartAudio } from '@livekit/components-react';
@@ -11,15 +11,15 @@ import { Welcome } from '@/components/welcome';
 import useConnectionDetails from '@/hooks/useConnectionDetails';
 import type { AppConfig } from '@/lib/types';
 
-const MotionSessionView = motion.create(SessionView);
 const MotionWelcome = motion.create(Welcome);
+const MotionSessionView = motion.create(SessionView);
 
 interface AppProps {
   appConfig: AppConfig;
 }
 
 export function App({ appConfig }: AppProps) {
-  const [sessionStarted, setSessionStarted] = React.useState(false);
+  const [sessionStarted, setSessionStarted] = useState(false);
   const { supportsChatInput, supportsVideoInput, supportsScreenShare, startButtonText } = appConfig;
 
   const capabilities = {
@@ -30,9 +30,13 @@ export function App({ appConfig }: AppProps) {
 
   const { connectionDetails, refreshConnectionDetails } = useConnectionDetails();
 
-  const room = React.useMemo(() => new Room(), []);
+  const room = useMemo(() => new Room(), []);
+  const closeSession = useCallback(() => {
+    setSessionStarted(false);
+    refreshConnectionDetails();
+  }, [refreshConnectionDetails]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const onDisconnected = () => {
       setSessionStarted(false);
       refreshConnectionDetails();
@@ -51,7 +55,7 @@ export function App({ appConfig }: AppProps) {
     };
   }, [room, refreshConnectionDetails]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (sessionStarted && room.state === 'disconnected' && connectionDetails) {
       Promise.all([
         room.localParticipant.setMicrophoneEnabled(true, undefined, {
@@ -88,9 +92,10 @@ export function App({ appConfig }: AppProps) {
         {/* --- */}
         <MotionSessionView
           key="session-view"
+          disabled={!sessionStarted}
           capabilities={capabilities}
           sessionStarted={sessionStarted}
-          disabled={!sessionStarted}
+          closeSession={closeSession}
           initial={{ opacity: 0 }}
           animate={{ opacity: sessionStarted ? 1 : 0 }}
           transition={{
