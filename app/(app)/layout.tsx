@@ -31,7 +31,7 @@ export default async function AppLayout({ children }: AppLayoutProps) {
           <a
             target="_blank"
             rel="noopener noreferrer"
-            href="https://github.com/livekit/agents"
+            href="https://docs.livekit.io/agents"
             className="underline underline-offset-4"
           >
             LiveKit Agents

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -16,10 +16,15 @@ export function ChatInput({ onSend, className, disabled, ...props }: ChatInputPr
     props.onSubmit?.(e);
     onSend?.(message);
     setMessage('');
-    inputRef.current?.focus();
   };
 
   const isDisabled = disabled || message.trim().length === 0;
+
+  useEffect(() => {
+    if (disabled) return;
+    // when not disabled refocus on input
+    inputRef.current?.focus();
+  }, [disabled]);
 
   return (
     <form
@@ -28,13 +33,14 @@ export function ChatInput({ onSend, className, disabled, ...props }: ChatInputPr
       className={cn('flex items-center gap-2 rounded-md pl-1 text-sm', className)}
     >
       <input
+        autoFocus
         ref={inputRef}
         type="text"
-        className="flex-1 focus:outline-none"
-        placeholder="Type something..."
         value={message}
-        onChange={(e) => setMessage(e.target.value)}
         disabled={disabled}
+        placeholder="Type something..."
+        onChange={(e) => setMessage(e.target.value)}
+        className="flex-1 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
       />
       <Button
         size="sm"
