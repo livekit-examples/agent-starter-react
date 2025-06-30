@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import {
+  type AgentState,
   type ReceivedChatMessage,
   useRoomContext,
   useVoiceAssistant,
@@ -14,7 +15,11 @@ import { ChatMessageView } from '@/components/livekit/chat/chat-message-view';
 import { MediaTiles } from '@/components/livekit/media-tiles';
 import useChatAndTranscription from '@/hooks/useChatAndTranscription';
 import { useDebugMode } from '@/hooks/useDebug';
-import { cn, isAgentAvailable } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+
+function isAgentAvailable(agentState: AgentState) {
+  return agentState == 'listening' || agentState == 'thinking' || agentState == 'speaking';
+}
 
 interface SessionViewProps {
   disabled: boolean;

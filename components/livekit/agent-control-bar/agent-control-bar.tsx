@@ -2,13 +2,13 @@
 
 import * as React from 'react';
 import { Track } from 'livekit-client';
-import { BarVisualizer, useVoiceAssistant } from '@livekit/components-react';
+import { BarVisualizer, useRemoteParticipants } from '@livekit/components-react';
 import { ChatTextIcon, PhoneDisconnectIcon } from '@phosphor-icons/react/dist/ssr';
 import { ChatInput } from '@/components/livekit/chat/chat-input';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
 import { AppConfig } from '@/lib/types';
-import { cn, isAgentAvailable } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { DeviceSelect } from '../device-select';
 import { TrackToggle } from '../track-toggle';
 import { UseAgentControlBarProps, useAgentControlBar } from './hooks/use-agent-control-bar';
@@ -37,12 +37,12 @@ export function AgentControlBar({
   onDeviceError,
   ...props
 }: AgentControlBarProps) {
+  const participants = useRemoteParticipants();
   const [chatOpen, setChatOpen] = React.useState(false);
   const [isSendingMessage, setIsSendingMessage] = React.useState(false);
-  const { state: agentState } = useVoiceAssistant();
-  const agentIsAvailable = isAgentAvailable(agentState);
 
-  const isInputDisabled = !chatOpen || !agentIsAvailable || isSendingMessage;
+  const isAgentAvailable = participants.some((p) => p.isAgent);
+  const isInputDisabled = !chatOpen || !isAgentAvailable || isSendingMessage;
 
   const {
     micTrackRef,
@@ -195,7 +195,7 @@ export function AgentControlBar({
               aria-label="Toggle chat"
               pressed={chatOpen}
               onPressedChange={setChatOpen}
-              disabled={!agentIsAvailable}
+              disabled={!isAgentAvailable}
               className="aspect-square h-full"
             >
               <ChatTextIcon weight="bold" />
