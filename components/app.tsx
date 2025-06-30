@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Room, RoomEvent } from 'livekit-client';
 import { motion } from 'motion/react';
 import { RoomAudioRenderer, RoomContext, StartAudio } from '@livekit/components-react';
@@ -31,10 +31,6 @@ export function App({ appConfig }: AppProps) {
   const { connectionDetails, refreshConnectionDetails } = useConnectionDetails();
 
   const room = useMemo(() => new Room(), []);
-  const closeSession = useCallback(() => {
-    setSessionStarted(false);
-    refreshConnectionDetails();
-  }, [refreshConnectionDetails]);
 
   useEffect(() => {
     const onDisconnected = () => {
@@ -95,7 +91,6 @@ export function App({ appConfig }: AppProps) {
           disabled={!sessionStarted}
           capabilities={capabilities}
           sessionStarted={sessionStarted}
-          closeSession={closeSession}
           initial={{ opacity: 0 }}
           animate={{ opacity: sessionStarted ? 1 : 0 }}
           transition={{

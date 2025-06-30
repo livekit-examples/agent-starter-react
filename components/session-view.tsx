@@ -2,7 +2,11 @@
 
 import React, { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { type ReceivedChatMessage, useVoiceAssistant } from '@livekit/components-react';
+import {
+  type ReceivedChatMessage,
+  useRoomContext,
+  useVoiceAssistant,
+} from '@livekit/components-react';
 import { toastAlert } from '@/components/alert-toast';
 import { AgentControlBar } from '@/components/livekit/agent-control-bar/agent-control-bar';
 import { ChatEntry } from '@/components/livekit/chat/chat-entry';
@@ -20,19 +24,18 @@ interface SessionViewProps {
     supportsScreenShare: boolean;
   };
   sessionStarted: boolean;
-  closeSession: () => void;
 }
 
 export const SessionView = ({
   disabled,
   capabilities,
   sessionStarted,
-  closeSession,
   ref,
 }: React.ComponentProps<'div'> & SessionViewProps) => {
   const { state: agentState } = useVoiceAssistant();
   const [chatOpen, setChatOpen] = useState(false);
   const { messages, send } = useChatAndTranscription();
+  const room = useRoomContext();
 
   useDebugMode();
 
@@ -66,13 +69,13 @@ export const SessionView = ({
               </p>
             ),
           });
-          closeSession();
+          room.disconnect();
         }
       }, 10_000);
 
       return () => clearTimeout(timeout);
     }
-  }, [agentState, sessionStarted, closeSession]);
+  }, [agentState, sessionStarted, room]);
 
   return (
     <main
