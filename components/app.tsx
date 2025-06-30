@@ -55,7 +55,7 @@ export function App({ appConfig }: AppProps) {
     if (sessionStarted && room.state === 'disconnected' && connectionDetails) {
       Promise.all([
         room.localParticipant.setMicrophoneEnabled(true, undefined, {
-          preConnectBuffer: true,
+          preConnectBuffer: appConfig.isPreConnectBufferEnabled,
         }),
         room.connect(connectionDetails.serverUrl, connectionDetails.participantToken),
       ]).catch((error) => {
@@ -68,7 +68,7 @@ export function App({ appConfig }: AppProps) {
     return () => {
       room.disconnect();
     };
-  }, [room, sessionStarted, connectionDetails]);
+  }, [room, sessionStarted, connectionDetails, appConfig.isPreConnectBufferEnabled]);
 
   return (
     <>

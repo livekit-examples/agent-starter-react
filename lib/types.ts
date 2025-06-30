@@ -15,6 +15,7 @@ export interface AppConfig {
   supportsChatInput: boolean;
   supportsVideoInput: boolean;
   supportsScreenShare: boolean;
+  isPreConnectBufferEnabled: boolean;
 
   logo: string;
   startButtonText: string;
