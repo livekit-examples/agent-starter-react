@@ -19,18 +19,9 @@ interface AppProps {
 }
 
 export function App({ appConfig }: AppProps) {
-  const [sessionStarted, setSessionStarted] = useState(false);
-  const { supportsChatInput, supportsVideoInput, supportsScreenShare, startButtonText } = appConfig;
-
-  const capabilities = {
-    supportsChatInput,
-    supportsVideoInput,
-    supportsScreenShare,
-  };
-
-  const { connectionDetails, refreshConnectionDetails } = useConnectionDetails();
-
   const room = useMemo(() => new Room(), []);
+  const [sessionStarted, setSessionStarted] = useState(false);
+  const { connectionDetails, refreshConnectionDetails } = useConnectionDetails();
 
   useEffect(() => {
     const onDisconnected = () => {
@@ -70,6 +61,8 @@ export function App({ appConfig }: AppProps) {
     };
   }, [room, sessionStarted, connectionDetails, appConfig.isPreConnectBufferEnabled]);
 
+  const { startButtonText } = appConfig;
+
   return (
     <>
       <MotionWelcome
@@ -88,8 +81,8 @@ export function App({ appConfig }: AppProps) {
         {/* --- */}
         <MotionSessionView
           key="session-view"
+          appConfig={appConfig}
           disabled={!sessionStarted}
-          capabilities={capabilities}
           sessionStarted={sessionStarted}
           initial={{ opacity: 0 }}
           animate={{ opacity: sessionStarted ? 1 : 0 }}

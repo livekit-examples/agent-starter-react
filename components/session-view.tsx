@@ -15,6 +15,7 @@ import { ChatMessageView } from '@/components/livekit/chat/chat-message-view';
 import { MediaTiles } from '@/components/livekit/media-tiles';
 import useChatAndTranscription from '@/hooks/useChatAndTranscription';
 import { useDebugMode } from '@/hooks/useDebug';
+import type { AppConfig } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 function isAgentAvailable(agentState: AgentState) {
@@ -22,18 +23,14 @@ function isAgentAvailable(agentState: AgentState) {
 }
 
 interface SessionViewProps {
+  appConfig: AppConfig;
   disabled: boolean;
-  capabilities: {
-    supportsChatInput: boolean;
-    supportsVideoInput: boolean;
-    supportsScreenShare: boolean;
-  };
   sessionStarted: boolean;
 }
 
 export const SessionView = ({
+  appConfig,
   disabled,
-  capabilities,
   sessionStarted,
   ref,
 }: React.ComponentProps<'div'> & SessionViewProps) => {
@@ -81,6 +78,13 @@ export const SessionView = ({
       return () => clearTimeout(timeout);
     }
   }, [agentState, sessionStarted, room]);
+
+  const { supportsChatInput, supportsVideoInput, supportsScreenShare } = appConfig;
+  const capabilities = {
+    supportsChatInput,
+    supportsVideoInput,
+    supportsScreenShare,
+  };
 
   return (
     <main
@@ -133,26 +137,28 @@ export const SessionView = ({
           transition={{ duration: 0.3, delay: sessionStarted ? 0.5 : 0, ease: 'easeOut' }}
         >
           <div className="relative z-10 mx-auto w-full max-w-2xl">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{
-                opacity: sessionStarted && messages.length === 0 ? 1 : 0,
-                transition: {
-                  ease: 'easeIn',
-                  delay: messages.length > 0 ? 0 : 0.8,
-                  duration: messages.length > 0 ? 0.2 : 0.5,
-                },
-              }}
-              aria-hidden={messages.length > 0}
-              className={cn(
-                'absolute inset-x-0 -top-12 text-center',
-                sessionStarted && messages.length === 0 && 'pointer-events-none'
-              )}
-            >
-              <p className="animate-text-shimmer inline-block !bg-clip-text text-sm font-semibold text-transparent">
-                Agent is listening, ask it a question
-              </p>
-            </motion.div>
+            {appConfig.isPreConnectBufferEnabled && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{
+                  opacity: sessionStarted && messages.length === 0 ? 1 : 0,
+                  transition: {
+                    ease: 'easeIn',
+                    delay: messages.length > 0 ? 0 : 0.8,
+                    duration: messages.length > 0 ? 0.2 : 0.5,
+                  },
+                }}
+                aria-hidden={messages.length > 0}
+                className={cn(
+                  'absolute inset-x-0 -top-12 text-center',
+                  sessionStarted && messages.length === 0 && 'pointer-events-none'
+                )}
+              >
+                <p className="animate-text-shimmer inline-block !bg-clip-text text-sm font-semibold text-transparent">
+                  Agent is listening, ask it a question
+                </p>
+              </motion.div>
+            )}
 
             <AgentControlBar
               capabilities={capabilities}
