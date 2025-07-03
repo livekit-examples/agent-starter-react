@@ -11,7 +11,7 @@ When deployed in a sandbox, LiveKit will host an instance of this application fo
 To run this application locally, clone the repo or use the [LiveKit CLI](https://docs.livekit.io/home/cli/cli-setup/):
 
 ```console
-lk app create --template voice-assistant-frontend
+lk app create --template agent-starter-react
 ```
 
 For more information on prototyping using LiveKit Sandbox, see the [documentation](https://docs.livekit.io/home/cloud/sandbox/).
