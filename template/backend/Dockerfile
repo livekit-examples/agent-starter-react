@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy your agent code and assets
-COPY test/ /app/
+COPY realtime-avatar/ /app/
 COPY assets/ /app/assets/
 COPY requirements.txt /app/
 
