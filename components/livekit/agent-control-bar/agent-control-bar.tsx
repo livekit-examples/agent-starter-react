@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useCallback } from 'react';
 import { Track } from 'livekit-client';
 import { BarVisualizer, useRemoteParticipants } from '@livekit/components-react';
 import { ChatTextIcon, PhoneDisconnectIcon } from '@phosphor-icons/react/dist/ssr';
@@ -76,6 +77,19 @@ export function AgentControlBar({
     onChatOpenChange?.(chatOpen);
   }, [chatOpen, onChatOpenChange]);
 
+  const onMicrophoneDeviceSelectError = useCallback(
+    (error: Error) => {
+      onDeviceError?.({ source: Track.Source.Microphone, error });
+    },
+    [onDeviceError]
+  );
+  const onCameraDeviceSelectError = useCallback(
+    (error: Error) => {
+      onDeviceError?.({ source: Track.Source.Camera, error });
+    },
+    [onDeviceError]
+  );
+
   return (
     <div
       aria-label="Voice assistant controls"
@@ -131,9 +145,7 @@ export function AgentControlBar({
               <DeviceSelect
                 size="sm"
                 kind="audioinput"
-                onMediaDeviceError={(error) =>
-                  onDeviceError?.({ source: Track.Source.Microphone, error: error as Error })
-                }
+                onMediaDeviceError={onMicrophoneDeviceSelectError}
                 onActiveDeviceChange={handleAudioDeviceChange}
                 className={cn([
                   'pl-2',
@@ -161,9 +173,7 @@ export function AgentControlBar({
               <DeviceSelect
                 size="sm"
                 kind="videoinput"
-                onMediaDeviceError={(error) =>
-                  onDeviceError?.({ source: Track.Source.Camera, error: error as Error })
-                }
+                onMediaDeviceError={onCameraDeviceSelectError}
                 onActiveDeviceChange={handleVideoDeviceChange}
                 className={cn([
                   'pl-2',
