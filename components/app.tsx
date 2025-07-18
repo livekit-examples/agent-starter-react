@@ -42,24 +42,80 @@ export function App({ appConfig }: AppProps) {
     };
   }, [room, refreshConnectionDetails]);
 
+  // 1. Connect to the room
+  const [connected, setConnected] = useState(false);
   useEffect(() => {
-    if (sessionStarted && room.state === 'disconnected' && connectionDetails) {
-      Promise.all([
-        room.localParticipant.setMicrophoneEnabled(true, undefined, {
-          preConnectBuffer: appConfig.isPreConnectBufferEnabled,
-        }),
-        room.connect(connectionDetails.serverUrl, connectionDetails.participantToken),
-      ]).catch((error) => {
+    if (!sessionStarted) {
+      return;
+    }
+    if (room.state !== 'disconnected') {
+      return;
+    }
+    if (!connectionDetails) {
+      return;
+    }
+
+    let aborted = false;
+    const connect = async () => {
+      try {
+        await room.connect(connectionDetails.serverUrl, connectionDetails.participantToken);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (error: any) {
+        if (aborted) {
+          // Once the effect has cleaned up after itself, drop any errors
+          console.error('Aborted connect error:', error);
+          return;
+        }
+        console.error('Error connecting to room:', error);
         toastAlert({
           title: 'There was an error connecting to the agent',
           description: `${error.name}: ${error.message}`,
         });
-      });
-    }
+        return;
+      }
+      setConnected(true);
+    };
+    connect();
+
     return () => {
+      aborted = true;
+      setConnected(false);
       room.disconnect();
     };
   }, [room, sessionStarted, connectionDetails, appConfig.isPreConnectBufferEnabled]);
+
+  // 2. Configure the room so it can be used to talk to the agent
+  useEffect(() => {
+    if (!connected) {
+      return;
+    }
+
+    let aborted = false;
+    const configure = async () => {
+      try {
+        await room.localParticipant.setMicrophoneEnabled(true, undefined, {
+          preConnectBuffer: appConfig.isPreConnectBufferEnabled,
+        });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (error: any) {
+        if (aborted) {
+          // Once the effect has cleaned up after itself, drop any errors
+          console.error('Aborted config error:', error);
+          return;
+        }
+        console.error('Error configuring room:', error);
+        toastAlert({
+          title: 'There was an error connecting to the agent',
+          description: `${error.name}: ${error.message}`,
+        });
+      }
+    };
+    configure();
+
+    return () => {
+      aborted = true;
+    };
+  }, [room, connected]);
 
   const { startButtonText } = appConfig;
 
