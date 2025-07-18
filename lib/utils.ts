@@ -43,7 +43,7 @@ export function getOrigin(headers: Headers): string {
 // > React will invalidate the cache for all memoized functions for each server request.
 export const getAppConfig = cache(async (origin: string): Promise<AppConfig> => {
   if (CONFIG_ENDPOINT) {
-    const sandboxId = SANDBOX_ID ?? origin.split('.')[0];
+    const sandboxId = SANDBOX_ID ?? new URL(origin).hostname.split('.')[0];
 
     try {
       const response = await fetch(CONFIG_ENDPOINT, {
