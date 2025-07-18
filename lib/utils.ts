@@ -45,6 +45,8 @@ export const getAppConfig = cache(async (origin: string): Promise<AppConfig> => 
   if (CONFIG_ENDPOINT) {
     const sandboxId = SANDBOX_ID ?? new URL(origin).hostname.split('.')[0];
 
+    console.log('sandboxId', sandboxId);
+
     try {
       const response = await fetch(CONFIG_ENDPOINT, {
         cache: 'no-store',
