@@ -1,6 +1,22 @@
+import { headers } from 'next/headers';
 import { ImageResponse } from 'next/og';
+import getImageSize from 'buffer-image-size';
+import mime from 'mime';
+import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { APP_CONFIG_DEFAULTS } from '@/app-config';
+import { getAppConfig } from '@/lib/utils';
+
+type Dimensions = {
+  width: number;
+  height: number;
+};
+
+type ImageData = {
+  base64: string;
+  dimensions: Dimensions;
+};
 
 // Image metadata
 export const alt = 'About Acme';
@@ -9,27 +25,95 @@ export const size = {
   height: 628,
 };
 
+function isUriLocalFile(uri: string) {
+  return uri.startsWith('public/');
+}
+
+function isUriRemoteFile(uri: string) {
+  return uri.startsWith('http');
+}
+
+function doesLocalFileExist(uri: string) {
+  return isUriLocalFile(uri) && existsSync(join(process.cwd(), uri));
+}
+
+async function getImageData(uri: string, fallbackUri?: string): Promise<ImageData> {
+  try {
+    if (doesLocalFileExist(uri)) {
+      const buffer = await readFile(join(process.cwd(), uri));
+      const mimeType = mime.getType(uri);
+      return {
+        base64: `data:${mimeType};base64,${buffer.toString('base64')}`,
+        dimensions: getImageSize(buffer),
+      };
+    }
+    if (isUriRemoteFile(uri)) {
+      const response = await fetch(uri);
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      const mimeType = mime.getType(uri);
+      return {
+        base64: `data:${mimeType};base64,${buffer.toString('base64')}`,
+        dimensions: getImageSize(buffer),
+      };
+    }
+    throw new Error(`Cannot load image: ${uri}`);
+  } catch (e) {
+    if (fallbackUri) {
+      return getImageData(fallbackUri, fallbackUri);
+    }
+    throw e;
+  }
+}
+
+function scaleImageSize(size: { width: number; height: number }, desiredHeight: number) {
+  const scale = desiredHeight / size.height;
+  return {
+    width: size.width * scale,
+    height: desiredHeight,
+  };
+}
+
+function cleanAppName(appName: string) {
+  return appName
+    .split(' ')
+    .filter((word) => word.toLocaleLowerCase() !== 'livekit')
+    .join(' ');
+}
+
 export const contentType = 'image/png';
 
 // Image generation
 export default async function Image() {
+  const hdrs = await headers();
+  const appConfig = await getAppConfig(hdrs);
+
+  const appName = cleanAppName(appConfig.pageTitle);
+  const logoUri = appConfig.logoDark || appConfig.logo;
+  const isLogoUriLocal = logoUri.includes('lk-logo');
+  const wordmarkUri = logoUri === APP_CONFIG_DEFAULTS.logoDark ? 'public/lk-wordmark.svg' : logoUri;
+
   // Font loading, process.cwd() is Next.js project directory
-  // const interSemiBold = await readFile(join(process.cwd(), 'assets/Inter-SemiBold.ttf'));
+  const commitMono = await readFile(
+    join(process.cwd(), './app/fonts/commit-mono-400-regular.woff')
+  );
+  const everettLight = await readFile(join(process.cwd(), './app/fonts/everett-light.woff'));
 
   // bg
-  const bgData = await readFile(join(process.cwd(), 'public/opengraph-image-bg.png'));
-  const bgSrc = Uint8Array.from(bgData).buffer;
-  const bgSrcBase64 = `data:image/png;base64,${Buffer.from(bgSrc).toString('base64')}`;
+  const { base64: bgSrcBase64 } = await getImageData('public/opengraph-image-bg.png');
 
   // wordmark
-  const wordmarkData = await readFile(join(process.cwd(), 'public/lk-wordmark.png'));
-  const wordmarkSrc = Uint8Array.from(wordmarkData).buffer;
-  const wordmarkSrcBase64 = `data:image/png;base64,${Buffer.from(wordmarkSrc).toString('base64')}`;
+  const { base64: wordmarkSrcBase64, dimensions: wordmarkDimensions } = isLogoUriLocal
+    ? await getImageData(wordmarkUri)
+    : await getImageData(logoUri);
+  const wordmarkSize = scaleImageSize(wordmarkDimensions, isLogoUriLocal ? 32 : 64);
 
   // logo
-  const logoData = await readFile(join(process.cwd(), 'public/lk-logo-dark.svg'));
-  const logoSrc = Uint8Array.from(logoData).buffer;
-  const logoSrcBase64 = `data:image/svg+xml;base64,${Buffer.from(logoSrc).toString('base64')}`;
+  const { base64: logoSrcBase64, dimensions: logoDimensions } = await getImageData(
+    logoUri,
+    'public/lk-logo-dark.svg'
+  );
+  const logoSize = scaleImageSize(logoDimensions, 24);
 
   return new ImageResponse(
     (
@@ -58,7 +142,7 @@ export default async function Image() {
             gap: 10,
           }}
         >
-          <img src={wordmarkSrcBase64} width="143px" height="32px" />
+          <img src={wordmarkSrcBase64} width={wordmarkSize.width} height={wordmarkSize.height} />
         </div>
         {/* logo */}
         <div
@@ -71,7 +155,7 @@ export default async function Image() {
             gap: 10,
           }}
         >
-          <img src={logoSrcBase64} width="24px" height="24px" />
+          <img src={logoSrcBase64} width={logoSize.width} height={logoSize.height} />
         </div>
         {/* title */}
         <div
@@ -87,12 +171,15 @@ export default async function Image() {
         >
           <div
             style={{
-              fontSize: 12,
               backgroundColor: '#1F1F1F',
-              color: '#999999',
               padding: '2px 8px',
               borderRadius: 4,
               width: 72,
+              fontSize: 12,
+              fontFamily: 'CommitMono',
+              fontWeight: 600,
+              color: '#999999',
+              letterSpacing: 0.8,
             }}
           >
             SANDBOX
@@ -100,11 +187,16 @@ export default async function Image() {
           <div
             style={{
               fontSize: 48,
-              fontWeight: 600,
+              fontWeight: 300,
+              fontFamily: 'Everett',
               color: 'white',
+              lineHeight: 1,
             }}
           >
-            Voice agent
+            {appName
+              .split(' ')
+              .filter((word) => word.toLocaleLowerCase() !== 'livekit')
+              .join(' ')}
           </div>
         </div>
       </div>
@@ -114,14 +206,20 @@ export default async function Image() {
       // For convenience, we can re-use the exported opengraph-image
       // size config to also set the ImageResponse's width and height.
       ...size,
-      // fonts: [
-      //   {
-      //     name: 'Inter',
-      //     data: interSemiBold,
-      //     style: 'normal',
-      //     weight: 400,
-      //   },
-      // ],
+      fonts: [
+        {
+          name: 'CommitMono',
+          data: commitMono,
+          style: 'normal',
+          weight: 400,
+        },
+        {
+          name: 'Everett',
+          data: everettLight,
+          style: 'normal',
+          weight: 300,
+        },
+      ],
     }
   );
 }
