@@ -79,9 +79,9 @@ export function useAgentControlBar(props: UseAgentControlBarProps = {}): UseAgen
     preventSave: !saveUserChoices,
   });
 
-  const handleDisconnect = React.useCallback(() => {
+  const handleDisconnect = React.useCallback(async () => {
     if (room) {
-      room.disconnect();
+      await room.disconnect();
     }
   }, [room]);
 
