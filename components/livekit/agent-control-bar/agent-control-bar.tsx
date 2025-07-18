@@ -131,7 +131,7 @@ export function AgentControlBar({
               <DeviceSelect
                 size="sm"
                 kind="audioinput"
-                onError={(error) =>
+                onMediaDeviceError={(error) =>
                   onDeviceError?.({ source: Track.Source.Microphone, error: error as Error })
                 }
                 onActiveDeviceChange={handleAudioDeviceChange}
@@ -161,7 +161,7 @@ export function AgentControlBar({
               <DeviceSelect
                 size="sm"
                 kind="videoinput"
-                onError={(error) =>
+                onMediaDeviceError={(error) =>
                   onDeviceError?.({ source: Track.Source.Camera, error: error as Error })
                 }
                 onActiveDeviceChange={handleVideoDeviceChange}
