@@ -1,5 +1,5 @@
 import { headers } from 'next/headers';
-import { getAppConfig, getOrigin } from '@/lib/utils';
+import { getAppConfig } from '@/lib/utils';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -7,8 +7,7 @@ interface AppLayoutProps {
 
 export default async function AppLayout({ children }: AppLayoutProps) {
   const hdrs = await headers();
-  const origin = getOrigin(hdrs);
-  const { companyName, logo, logoDark } = await getAppConfig(origin);
+  const { companyName, logo, logoDark } = await getAppConfig(hdrs);
 
   return (
     <>

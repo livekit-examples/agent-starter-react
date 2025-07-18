@@ -2,7 +2,7 @@ import { Public_Sans } from 'next/font/google';
 import localFont from 'next/font/local';
 import { headers } from 'next/headers';
 import { ApplyThemeScript, ThemeToggle } from '@/components/theme-toggle';
-import { getAppConfig, getOrigin } from '@/lib/utils';
+import { getAppConfig } from '@/lib/utils';
 import './globals.css';
 
 const publicSans = Public_Sans({
@@ -42,8 +42,7 @@ interface RootLayoutProps {
 
 export default async function RootLayout({ children }: RootLayoutProps) {
   const hdrs = await headers();
-  const origin = getOrigin(hdrs);
-  const { accent, accentDark, pageTitle, pageDescription } = await getAppConfig(origin);
+  const { accent, accentDark, pageTitle, pageDescription } = await getAppConfig(hdrs);
 
   const styles = [
     accent ? `:root { --primary: ${accent}; }` : '',

@@ -33,19 +33,15 @@ export function transcriptionToChatMessage(
   };
 }
 
-export function getOrigin(headers: Headers): string {
-  const host = headers.get('host');
-  const proto = headers.get('x-forwarded-proto') || 'https';
-  return `${proto}://${host}`;
-}
-
 // https://react.dev/reference/react/cache#caveats
 // > React will invalidate the cache for all memoized functions for each server request.
-export const getAppConfig = cache(async (origin: string): Promise<AppConfig> => {
+export const getAppConfig = cache(async (headers: Headers): Promise<AppConfig> => {
   if (CONFIG_ENDPOINT) {
-    const sandboxId = SANDBOX_ID ?? new URL(origin).hostname.split('.')[0];
+    const sandboxId = SANDBOX_ID ?? headers.get('x-sandbox-id') ?? '';
 
-    console.log('sandboxId', sandboxId);
+    if (!sandboxId) {
+      throw new Error('Sandbox ID is required');
+    }
 
     try {
       const response = await fetch(CONFIG_ENDPOINT, {
