@@ -1,6 +1,22 @@
+import { headers } from 'next/headers';
 import { ImageResponse } from 'next/og';
+import getImageSize from 'buffer-image-size';
+import mime from 'mime';
+import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { APP_CONFIG_DEFAULTS } from '@/app-config';
+import { getAppConfig, getOrigin } from '@/lib/utils';
+
+type Dimensions = {
+  width: number;
+  height: number;
+};
+
+type ImageData = {
+  base64: string;
+  dimensions: Dimensions;
+};
 
 // Image metadata
 export const alt = 'About Acme';
@@ -9,27 +25,93 @@ export const size = {
   height: 628,
 };
 
+function isUriLocalFile(uri: string) {
+  return uri.startsWith('public/');
+}
+
+function isUriRemoteFile(uri: string) {
+  return uri.startsWith('http');
+}
+
+function doesLocalFileExist(uri: string) {
+  return isUriLocalFile(uri) && existsSync(join(process.cwd(), uri));
+}
+
+async function getImageData(uri: string, fallbackUri?: string): Promise<ImageData> {
+  try {
+    if (doesLocalFileExist(uri)) {
+      const buffer = await readFile(join(process.cwd(), uri));
+      const mimeType = mime.getType(uri);
+      return {
+        base64: `data:${mimeType};base64,${buffer.toString('base64')}`,
+        dimensions: getImageSize(buffer),
+      };
+    }
+    if (isUriRemoteFile(uri)) {
+      const response = await fetch(uri);
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      const mimeType = mime.getType(uri);
+      return {
+        base64: `data:${mimeType};base64,${buffer.toString('base64')}`,
+        dimensions: getImageSize(buffer),
+      };
+    }
+    throw new Error(`Cannot load image: ${uri}`);
+  } catch (e) {
+    if (fallbackUri) {
+      return getImageData(fallbackUri, fallbackUri);
+    }
+    throw e;
+  }
+}
+
+function scaleImageSize(size: { width: number; height: number }, desiredHeight: number) {
+  const scale = desiredHeight / size.height;
+  return {
+    width: size.width * scale,
+    height: desiredHeight,
+  };
+}
+
+function cleanAppName(appName: string) {
+  return appName
+    .split(' ')
+    .filter((word) => word.toLocaleLowerCase() !== 'livekit')
+    .join(' ');
+}
+
 export const contentType = 'image/png';
 
 // Image generation
 export default async function Image() {
+  const hdrs = await headers();
+  const origin = getOrigin(hdrs);
+  const appConfig = await getAppConfig(origin);
+
+  const appName = cleanAppName(appConfig.pageTitle);
+  const logoUri = appConfig.logoDark || appConfig.logo;
+  const wordmarkUri = logoUri === APP_CONFIG_DEFAULTS.logoDark ? 'public/lk-wordmark.svg' : logoUri;
+
+  console.log('wordmarkUri', logoUri, APP_CONFIG_DEFAULTS.logoDark);
+
   // Font loading, process.cwd() is Next.js project directory
   // const interSemiBold = await readFile(join(process.cwd(), 'assets/Inter-SemiBold.ttf'));
 
   // bg
-  const bgData = await readFile(join(process.cwd(), 'public/opengraph-image-bg.png'));
-  const bgSrc = Uint8Array.from(bgData).buffer;
-  const bgSrcBase64 = `data:image/png;base64,${Buffer.from(bgSrc).toString('base64')}`;
+  const { base64: bgSrcBase64 } = await getImageData('public/opengraph-image-bg.png');
 
   // wordmark
-  const wordmarkData = await readFile(join(process.cwd(), 'public/lk-wordmark.png'));
-  const wordmarkSrc = Uint8Array.from(wordmarkData).buffer;
-  const wordmarkSrcBase64 = `data:image/png;base64,${Buffer.from(wordmarkSrc).toString('base64')}`;
+  const { base64: wordmarkSrcBase64, dimensions: wordmarkDimensions } =
+    await getImageData(wordmarkUri);
+  const wordmarkSize = scaleImageSize(wordmarkDimensions, 32);
 
   // logo
-  const logoData = await readFile(join(process.cwd(), 'public/lk-logo-dark.svg'));
-  const logoSrc = Uint8Array.from(logoData).buffer;
-  const logoSrcBase64 = `data:image/svg+xml;base64,${Buffer.from(logoSrc).toString('base64')}`;
+  const { base64: logoSrcBase64, dimensions: logoDimensions } = await getImageData(
+    logoUri,
+    'public/lk-logo-dark.svg'
+  );
+  const logoSize = scaleImageSize(logoDimensions, 24);
 
   return new ImageResponse(
     (
@@ -58,7 +140,7 @@ export default async function Image() {
             gap: 10,
           }}
         >
-          <img src={wordmarkSrcBase64} width="143px" height="32px" />
+          <img src={wordmarkSrcBase64} width={wordmarkSize.width} height={wordmarkSize.height} />
         </div>
         {/* logo */}
         <div
@@ -71,7 +153,7 @@ export default async function Image() {
             gap: 10,
           }}
         >
-          <img src={logoSrcBase64} width="24px" height="24px" />
+          <img src={logoSrcBase64} width={logoSize.width} height={logoSize.height} />
         </div>
         {/* title */}
         <div
@@ -102,9 +184,13 @@ export default async function Image() {
               fontSize: 48,
               fontWeight: 600,
               color: 'white',
+              lineHeight: 1,
             }}
           >
-            Voice agent
+            {appName
+              .split(' ')
+              .filter((word) => word.toLocaleLowerCase() !== 'livekit')
+              .join(' ')}
           </div>
         </div>
       </div>
