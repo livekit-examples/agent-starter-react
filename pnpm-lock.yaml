@@ -3698,7 +3698,7 @@ snapshots:
 
   buffer-image-size@0.6.4:
     dependencies:
-      '@types/node': 22.16.4
+      '@types/node': 22.16.5
 
   call-bind-apply-helpers@1.0.2:
     dependencies:
