@@ -39,11 +39,11 @@ export const getAppConfig = cache(async (headers: Headers): Promise<AppConfig> =
   if (CONFIG_ENDPOINT) {
     const sandboxId = SANDBOX_ID ?? headers.get('x-sandbox-id') ?? '';
 
-    if (!sandboxId) {
-      throw new Error('Sandbox ID is required');
-    }
-
     try {
+      if (!sandboxId) {
+        throw new Error('Sandbox ID is required');
+      }
+
       const response = await fetch(CONFIG_ENDPOINT, {
         cache: 'no-store',
         headers: { 'X-Sandbox-ID': sandboxId },
@@ -66,7 +66,7 @@ export const getAppConfig = cache(async (headers: Headers): Promise<AppConfig> =
 
       return config;
     } catch (error) {
-      console.error('!!!', error);
+      console.error('ERROR: getAppConfig() - lib/utils.ts', error);
     }
   }
 
