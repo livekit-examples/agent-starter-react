@@ -25,39 +25,55 @@ export const size = {
   height: 628,
 };
 
-function isUriLocalFile(uri: string) {
-  return uri.startsWith('public/');
-}
-
-function isUriRemoteFile(uri: string) {
+function isRemoteFile(uri: string) {
   return uri.startsWith('http');
 }
 
 function doesLocalFileExist(uri: string) {
-  return isUriLocalFile(uri) && existsSync(join(process.cwd(), uri));
+  return existsSync(join(process.cwd(), uri));
+}
+
+// LOCAL FILES MUST BE IN PUBLIC FOLDER
+async function loadFileData(filePath: string): Promise<ArrayBuffer> {
+  if (isRemoteFile(filePath)) {
+    const response = await fetch(filePath);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${filePath} - ${response.status} ${response.statusText}`);
+    }
+    return await response.arrayBuffer();
+  }
+
+  // Try file system first (works in local development)
+  if (doesLocalFileExist(filePath)) {
+    const buffer = await readFile(join(process.cwd(), filePath));
+    return buffer.buffer.slice(
+      buffer.byteOffset,
+      buffer.byteOffset + buffer.byteLength
+    ) as ArrayBuffer;
+  }
+
+  // Fallback to fetching from public URL (works in production)
+  const publicFilePath = filePath.replace('public/', '');
+  const fontUrl = `https://${process.env.VERCEL_URL}/${publicFilePath}`;
+
+  const response = await fetch(fontUrl);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ${fontUrl} - ${response.status} ${response.statusText}`);
+  }
+
+  return await response.arrayBuffer();
 }
 
 async function getImageData(uri: string, fallbackUri?: string): Promise<ImageData> {
   try {
-    if (doesLocalFileExist(uri)) {
-      const buffer = await readFile(join(process.cwd(), uri));
-      const mimeType = mime.getType(uri);
-      return {
-        base64: `data:${mimeType};base64,${buffer.toString('base64')}`,
-        dimensions: getImageSize(buffer),
-      };
-    }
-    if (isUriRemoteFile(uri)) {
-      const response = await fetch(uri);
-      const arrayBuffer = await response.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-      const mimeType = mime.getType(uri);
-      return {
-        base64: `data:${mimeType};base64,${buffer.toString('base64')}`,
-        dimensions: getImageSize(buffer),
-      };
-    }
-    throw new Error(`Cannot load image: ${uri}`);
+    const fileData = await loadFileData(uri);
+    const buffer = Buffer.from(fileData);
+    const mimeType = mime.getType(uri);
+
+    return {
+      base64: `data:${mimeType};base64,${buffer.toString('base64')}`,
+      dimensions: getImageSize(buffer),
+    };
   } catch (e) {
     if (fallbackUri) {
       return getImageData(fallbackUri, fallbackUri);
@@ -93,11 +109,17 @@ export default async function Image() {
   const isLogoUriLocal = logoUri.includes('lk-logo');
   const wordmarkUri = logoUri === APP_CONFIG_DEFAULTS.logoDark ? 'public/lk-wordmark.svg' : logoUri;
 
-  // Font loading, process.cwd() is Next.js project directory
-  const commitMono = await readFile(
-    join(process.cwd(), './app/fonts/commit-mono-400-regular.woff')
-  );
-  const everettLight = await readFile(join(process.cwd(), './app/fonts/everett-light.woff'));
+  // Load fonts - use file system in dev, fetch in production
+  let commitMonoData: ArrayBuffer | undefined;
+  let everettLightData: ArrayBuffer | undefined;
+
+  try {
+    commitMonoData = await loadFileData('public/commit-mono-400-regular.woff');
+    everettLightData = await loadFileData('public/everett-light.woff');
+  } catch (e) {
+    console.error('Failed to load fonts:', e);
+    // Continue without custom fonts - will fall back to system fonts
+  }
 
   // bg
   const { base64: bgSrcBase64 } = await getImageData('public/opengraph-image-bg.png');
@@ -207,18 +229,26 @@ export default async function Image() {
       // size config to also set the ImageResponse's width and height.
       ...size,
       fonts: [
-        {
-          name: 'CommitMono',
-          data: commitMono,
-          style: 'normal',
-          weight: 400,
-        },
-        {
-          name: 'Everett',
-          data: everettLight,
-          style: 'normal',
-          weight: 300,
-        },
+        ...(commitMonoData
+          ? [
+              {
+                name: 'CommitMono',
+                data: commitMonoData,
+                style: 'normal' as const,
+                weight: 400 as const,
+              },
+            ]
+          : []),
+        ...(everettLightData
+          ? [
+              {
+                name: 'Everett',
+                data: everettLightData,
+                style: 'normal' as const,
+                weight: 300 as const,
+              },
+            ]
+          : []),
       ],
     }
   );
