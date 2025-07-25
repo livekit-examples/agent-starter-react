@@ -90,11 +90,12 @@ function scaleImageSize(size: { width: number; height: number }, desiredHeight: 
   };
 }
 
-function cleanAppName(appName: string) {
-  return appName
-    .split(' ')
-    .filter((word) => word.toLocaleLowerCase() !== 'livekit')
-    .join(' ');
+function cleanPageTitle(appName: string) {
+  if (appName === APP_CONFIG_DEFAULTS.pageTitle) {
+    return 'Voice agent';
+  }
+
+  return appName;
 }
 
 export const contentType = 'image/png';
@@ -104,7 +105,7 @@ export default async function Image() {
   const hdrs = await headers();
   const appConfig = await getAppConfig(hdrs);
 
-  const appName = cleanAppName(appConfig.pageTitle);
+  const pageTitle = cleanPageTitle(appConfig.pageTitle);
   const logoUri = appConfig.logoDark || appConfig.logo;
   const isLogoUriLocal = logoUri.includes('lk-logo');
   const wordmarkUri = logoUri === APP_CONFIG_DEFAULTS.logoDark ? 'public/lk-wordmark.svg' : logoUri;
@@ -215,10 +216,7 @@ export default async function Image() {
               lineHeight: 1,
             }}
           >
-            {appName
-              .split(' ')
-              .filter((word) => word.toLocaleLowerCase() !== 'livekit')
-              .join(' ')}
+            {pageTitle}
           </div>
         </div>
       </div>
