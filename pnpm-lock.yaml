@@ -104,7 +104,7 @@ importers:
         version: 2.32.0(@typescript-eslint/parser@8.32.1(eslint@9.32.0(jiti@2.4.2))(typescript@5.9.2))(eslint-import-resolver-typescript@3.10.1)(eslint@9.32.0(jiti@2.4.2))
       eslint-plugin-prettier:
         specifier: ^5.5.0
-        version: 5.5.3(eslint-config-prettier@10.1.8(eslint@9.32.0(jiti@2.4.2)))(eslint@9.32.0(jiti@2.4.2))(prettier@3.6.2)
+        version: 5.5.4(eslint-config-prettier@10.1.8(eslint@9.32.0(jiti@2.4.2)))(eslint@9.32.0(jiti@2.4.2))(prettier@3.6.2)
       prettier:
         specifier: ^3.4.2
         version: 3.6.2
@@ -510,9 +510,9 @@ packages:
       react: '>= 16.8'
       react-dom: '>= 16.8'
 
-  '@pkgr/core@0.3.4':
-    resolution: {integrity: sha512-MrfbnMgfKexic6mxC4xrSBVQHSvmvhz7qtSDG5cHg4xn8kHXkPltUY44R5u4ghYf+1rXpOvC2drbMcE1rZ3a2A==}
-    engines: {node: ^14.18.0 || >=16.0.0}
+  '@pkgr/core@0.2.9':
+    resolution: {integrity: sha512-QNqXyfVS2wm9hweSYD2O7F0G06uurj9kZ96TRQE5Y9hU7+tgdZwIkbAKc5Ocy1HxEY2kuDQa6cQ1WRs/O5LFKA==}
+    engines: {node: ^12.20.0 || ^14.18.0 || >=16.0.0}
 
   '@radix-ui/number@1.1.1':
     resolution: {integrity: sha512-MkKCwxlXTgz6CFoJx3pCwn07GKp36+aZyu/u2Ln2VrA5DcdyCZkASEDBTd8x5whTQQL5CiYf4prXKLcgQdv29g==}
@@ -1480,8 +1480,8 @@ packages:
     peerDependencies:
       eslint: ^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9
 
-  eslint-plugin-prettier@5.5.3:
-    resolution: {integrity: sha512-NAdMYww51ehKfDyDhv59/eIItUVzU0Io9H2E8nHNGKEeeqlnci+1gCvrHib6EmZdf6GxF+LCV5K7UC65Ezvw7w==}
+  eslint-plugin-prettier@5.5.4:
+    resolution: {integrity: sha512-swNtI95SToIz05YINMA6Ox5R057IMAmWZ26GqPxusAp1TZzj+IdY9tXNWWD3vkF/wEqydCONcwjTFpxybBqZsg==}
     engines: {node: ^14.18.0 || >=16.0.0}
     peerDependencies:
       '@types/eslint': '>=8.0.0'
@@ -2500,8 +2500,8 @@ packages:
     resolution: {integrity: sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w==}
     engines: {node: '>= 0.4'}
 
-  synckit@0.11.10:
-    resolution: {integrity: sha512-n6Ze5AGOURWdQ9Kg/wqI1//4OBw9V1zuOTj7uQlpAjtpe2bhgPBpmSFXvapbP3KxcRoqo996J28kdT2ly4w9UA==}
+  synckit@0.11.11:
+    resolution: {integrity: sha512-MeQTA1r0litLUf0Rp/iisCaL8761lKAZHaimlbGK4j0HysC4PLfqygQj9srcs0m2RdtDYnF8UuYyKpbjHYp7Jw==}
     engines: {node: ^14.18.0 || >=16.0.0}
 
   tailwind-merge@3.3.1:
@@ -3001,7 +3001,7 @@ snapshots:
       react: 19.1.1
       react-dom: 19.1.1(react@19.1.1)
 
-  '@pkgr/core@0.3.4': {}
+  '@pkgr/core@0.2.9': {}
 
   '@radix-ui/number@1.1.1': {}
 
@@ -4045,12 +4045,12 @@ snapshots:
       safe-regex-test: 1.1.0
       string.prototype.includes: 2.0.1
 
-  eslint-plugin-prettier@5.5.3(eslint-config-prettier@10.1.8(eslint@9.32.0(jiti@2.4.2)))(eslint@9.32.0(jiti@2.4.2))(prettier@3.6.2):
+  eslint-plugin-prettier@5.5.4(eslint-config-prettier@10.1.8(eslint@9.32.0(jiti@2.4.2)))(eslint@9.32.0(jiti@2.4.2))(prettier@3.6.2):
     dependencies:
       eslint: 9.32.0(jiti@2.4.2)
       prettier: 3.6.2
       prettier-linter-helpers: 1.0.0
-      synckit: 0.11.10
+      synckit: 0.11.11
     optionalDependencies:
       eslint-config-prettier: 10.1.8(eslint@9.32.0(jiti@2.4.2))
 
@@ -5070,9 +5070,9 @@ snapshots:
 
   supports-preserve-symlinks-flag@1.0.0: {}
 
-  synckit@0.11.10:
+  synckit@0.11.11:
     dependencies:
-      '@pkgr/core': 0.3.4
+      '@pkgr/core': 0.2.9
 
   tailwind-merge@3.3.1: {}
 
