@@ -10,6 +10,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { Welcome } from '@/components/welcome';
 import useConnectionDetails from '@/hooks/useConnectionDetails';
 import type { AppConfig } from '@/lib/types';
+import { AgentSessionProvider } from '@/agent-sdk';
 
 const MotionWelcome = motion.create(Welcome);
 const MotionSessionView = motion.create(SessionView);
@@ -19,7 +20,7 @@ interface AppProps {
 }
 
 export function App({ appConfig }: AppProps) {
-  const room = useMemo(() => new Room(), []);
+  const agentSession = useMemo(() => new AgentSession(), []);
   const [sessionStarted, setSessionStarted] = useState(false);
   const { connectionDetails, refreshConnectionDetails } = useConnectionDetails();
 
@@ -34,23 +35,21 @@ export function App({ appConfig }: AppProps) {
         description: `${error.name}: ${error.message}`,
       });
     };
-    room.on(RoomEvent.MediaDevicesError, onMediaDevicesError);
-    room.on(RoomEvent.Disconnected, onDisconnected);
+    agentSession.room.on(RoomEvent.MediaDevicesError, onMediaDevicesError);
+    agentSession.room.on(RoomEvent.Disconnected, onDisconnected);
     return () => {
-      room.off(RoomEvent.Disconnected, onDisconnected);
-      room.off(RoomEvent.MediaDevicesError, onMediaDevicesError);
+      agentSession.room.off(RoomEvent.Disconnected, onDisconnected);
+      agentSession.room.off(RoomEvent.MediaDevicesError, onMediaDevicesError);
     };
-  }, [room, refreshConnectionDetails]);
+  }, [agentSession, refreshConnectionDetails]);
 
   useEffect(() => {
     let aborted = false;
-    if (sessionStarted && room.state === 'disconnected' && connectionDetails) {
-      Promise.all([
-        room.localParticipant.setMicrophoneEnabled(true, undefined, {
-          preConnectBuffer: appConfig.isPreConnectBufferEnabled,
-        }),
-        room.connect(connectionDetails.serverUrl, connectionDetails.participantToken),
-      ]).catch((error) => {
+    if (sessionStarted && agentSession.state === 'disconnected' && connectionDetails) {
+      agentSession.connect(
+        connectionDetails.serverUrl,
+        connectionDetails.participantToken,
+      ).catch((error) => {
         if (aborted) {
           // Once the effect has cleaned up after itself, drop any errors
           //
@@ -68,9 +67,9 @@ export function App({ appConfig }: AppProps) {
     }
     return () => {
       aborted = true;
-      room.disconnect();
+      agentSession.disconnect();
     };
-  }, [room, sessionStarted, connectionDetails, appConfig.isPreConnectBufferEnabled]);
+  }, [agentSession, sessionStarted, connectionDetails /* , appConfig.isPreConnectBufferEnabled */]);
 
   const { startButtonText } = appConfig;
 
@@ -86,7 +85,7 @@ export function App({ appConfig }: AppProps) {
         transition={{ duration: 0.5, ease: 'linear', delay: sessionStarted ? 0 : 0.5 }}
       />
 
-      <RoomContext.Provider value={room}>
+      <AgentSessionProvider agentSession={agentSession}>
         <RoomAudioRenderer />
         <StartAudio label="Start Audio" />
         {/* --- */}
@@ -103,7 +102,7 @@ export function App({ appConfig }: AppProps) {
             delay: sessionStarted ? 0.5 : 0,
           }}
         />
-      </RoomContext.Provider>
+      </AgentSessionProvider>
 
       <Toaster />
     </>

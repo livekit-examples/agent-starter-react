@@ -17,6 +17,7 @@ import useChatAndTranscription from '@/hooks/useChatAndTranscription';
 import { useDebugMode } from '@/hooks/useDebug';
 import type { AppConfig } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { AgentSessionEvent, OutboundMessage, TextContent, useAgentMessages, useAgentSession, useAgentSessionEvent } from '@/agent-sdk';
 
 function isAgentAvailable(agentState: AgentState) {
   return agentState == 'listening' || agentState == 'thinking' || agentState == 'speaking';
@@ -34,50 +35,36 @@ export const SessionView = ({
   sessionStarted,
   ref,
 }: React.ComponentProps<'div'> & SessionViewProps) => {
-  const { state: agentState } = useVoiceAssistant();
+  const agentSession = useAgentSession();
   const [chatOpen, setChatOpen] = useState(false);
-  const { messages, send } = useChatAndTranscription();
-  const room = useRoomContext();
+
+  const { messages, send } = useAgentMessages();
 
   useDebugMode();
 
   async function handleSendMessage(message: string) {
-    await send(message);
+    await send(new OutboundMessage([new TextContent(message)], `${Math.random()}` /* FIXME: fix id generation */));
   }
 
-  useEffect(() => {
-    if (sessionStarted) {
-      const timeout = setTimeout(() => {
-        if (!isAgentAvailable(agentState)) {
-          const reason =
-            agentState === 'connecting'
-              ? 'Agent did not join the room. '
-              : 'Agent connected but did not complete initializing. ';
-
-          toastAlert({
-            title: 'Session ended',
-            description: (
-              <p className="w-full">
-                {reason}
-                <a
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  href="https://docs.livekit.io/agents/start/voice-ai/"
-                  className="whitespace-nowrap underline"
-                >
-                  See quickstart guide
-                </a>
-                .
-              </p>
-            ),
-          });
-          room.disconnect();
-        }
-      }, 10_000);
-
-      return () => clearTimeout(timeout);
-    }
-  }, [agentState, sessionStarted, room]);
+  useAgentSessionEvent(AgentSessionEvent.AgentConnectionFailure, (reason: string) => {
+    toastAlert({
+      title: 'Session ended',
+      description: (
+        <p className="w-full">
+          {reason}
+          <a
+            target="_blank"
+            rel="noopener noreferrer"
+            href="https://docs.livekit.io/agents/start/voice-ai/"
+            className="whitespace-nowrap underline"
+          >
+            See quickstart guide
+          </a>
+          .
+        </p>
+      ),
+    });
+  }, []);
 
   const { supportsChatInput, supportsVideoInput, supportsScreenShare } = appConfig;
   const capabilities = {
@@ -104,7 +91,7 @@ export const SessionView = ({
       >
         <div className="space-y-3 whitespace-pre-wrap">
           <AnimatePresence>
-            {messages.map((message: ReceivedChatMessage) => (
+            {messages.map((message) => (
               <motion.div
                 key={message.id}
                 initial={{ opacity: 0, height: 0 }}
@@ -124,7 +111,8 @@ export const SessionView = ({
         <div className="from-background absolute bottom-0 left-0 h-12 w-full translate-y-full bg-gradient-to-b to-transparent" />
       </div>
 
-      <MediaTiles chatOpen={chatOpen} />
+      {/* FIXME: add video back in! */}
+      {/* <MediaTiles chatOpen={chatOpen} /> */}
 
       <div className="bg-background fixed right-0 bottom-0 left-0 z-50 px-3 pt-2 pb-3 md:px-12 md:pb-12">
         <motion.div
