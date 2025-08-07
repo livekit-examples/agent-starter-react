@@ -1,13 +1,148 @@
 import * as React from "react";
 import { useContext, useEffect, useState, useCallback } from "react";
 import { parallelMerge } from 'streaming-iterables';
-import { ConnectionState, LocalParticipant, Participant, ParticipantEvent, RemoteParticipant, Room, RoomEvent, Track, TrackEvent, TrackPublication, TranscriptionSegment } from "livekit-client";
-import { EventEmitter } from "stream";
-import { addMediaTimestampToTranscription, dedupeSegments, participantTrackEvents, TrackReference } from '@livekit/components-core';
-import { getParticipantTrackRefs } from '@livekit/components/src/observables/track';
-import { ParticipantEventCallbacks, ParticipantKind } from "../node_modules/livekit-client/src/room/participant/Participant";
+import {
+  ConnectionState,
+  LocalParticipant,
+  Participant,
+  ParticipantEvent,
+  RemoteParticipant,
+  Room,
+  RoomEvent,
+  Track,
+  TrackEvent,
+  TrackPublication,
+  TranscriptionSegment,
+  ParticipantKind,
+} from "livekit-client";
+import { EventEmitter } from "events";
+// import { addMediaTimestampToTranscription, dedupeSegments, ReceivedTranscriptionSegment } from '@livekit/components-core';
+// import { getParticipantTrackRefs } from '@livekit/components/src/observables/track';
+import { ParticipantEventCallbacks } from "../node_modules/livekit-client/src/room/participant/Participant";
+import { ParticipantTrackIdentifier } from "@livekit/components-core";
 // import { TRACK_TRANSCRIPTION_DEFAULTS } from "../hooks";
-import { Future } from "../node_modules/livekit-client/src/room/utils";
+// import { Future } from "../node_modules/livekit-client/src/room/utils";
+
+/* FROM LIVEKIT-CLIENT */
+class Future<T> {
+  promise: Promise<T>;
+
+  resolve?: (arg: T) => void;
+
+  reject?: (e: any) => void;
+
+  onFinally?: () => void;
+
+  get isResolved(): boolean {
+    return this._isResolved;
+  }
+
+  private _isResolved: boolean = false;
+
+  constructor(
+    futureBase?: (resolve: (arg: T) => void, reject: (e: any) => void) => void,
+    onFinally?: () => void,
+  ) {
+    this.onFinally = onFinally;
+    this.promise = new Promise<T>(async (resolve, reject) => {
+      this.resolve = resolve;
+      this.reject = reject;
+      if (futureBase) {
+        await futureBase(resolve, reject);
+      }
+    }).finally(() => {
+      this._isResolved = true;
+      this.onFinally?.();
+    });
+  }
+}
+/* END FROM LIVEKIT CLIENT */
+
+/* FROM COMPONENTS JS: */
+/** @public */
+type TrackReference = {
+  participant: Participant;
+  publication: TrackPublication;
+  source: Track.Source;
+};
+
+const participantTrackEvents = [
+  ParticipantEvent.TrackPublished,
+  ParticipantEvent.TrackUnpublished,
+  ParticipantEvent.TrackMuted,
+  ParticipantEvent.TrackUnmuted,
+  ParticipantEvent.TrackStreamStateChanged,
+  ParticipantEvent.TrackSubscribed,
+  ParticipantEvent.TrackUnsubscribed,
+  ParticipantEvent.TrackSubscriptionPermissionChanged,
+  ParticipantEvent.TrackSubscriptionFailed,
+  ParticipantEvent.LocalTrackPublished,
+  ParticipantEvent.LocalTrackUnpublished,
+];
+
+type ReceivedTranscriptionSegment = TranscriptionSegment & {
+  receivedAtMediaTimestamp: number;
+  receivedAt: number;
+};
+
+function addMediaTimestampToTranscription(
+  segment: TranscriptionSegment,
+  timestamps: { timestamp: number; rtpTimestamp?: number },
+): ReceivedTranscriptionSegment {
+  return {
+    ...segment,
+    receivedAtMediaTimestamp: timestamps.rtpTimestamp ?? 0,
+    receivedAt: timestamps.timestamp,
+  };
+}
+
+/**
+ * @returns An array of unique (by id) `TranscriptionSegment`s. Latest wins. If the resulting array would be longer than `windowSize`, the array will be reduced to `windowSize` length
+ */
+function dedupeSegments<T extends TranscriptionSegment>(
+  prevSegments: T[],
+  newSegments: T[],
+  windowSize: number,
+) {
+  return [...prevSegments, ...newSegments]
+    .reduceRight((acc, segment) => {
+      if (!acc.find((val) => val.id === segment.id)) {
+        acc.unshift(segment);
+      }
+      return acc;
+    }, [] as Array<T>)
+    .slice(0 - windowSize);
+}
+
+/**
+ * Create `TrackReferences` for all tracks that are included in the sources property.
+ *  */
+function getParticipantTrackRefs(
+  participant: Participant,
+  identifier: ParticipantTrackIdentifier,
+  onlySubscribedTracks = false,
+): TrackReference[] {
+  const { sources, kind, name } = identifier;
+  const sourceReferences = Array.from(participant.trackPublications.values())
+    .filter(
+      (pub) =>
+        (!sources || sources.includes(pub.source)) &&
+        (!kind || pub.kind === kind) &&
+        (!name || pub.trackName === name) &&
+        // either return all or only the ones that are subscribed
+        (!onlySubscribedTracks || pub.track),
+    )
+    .map((track): TrackReference => {
+      return {
+        participant: participant,
+        publication: track,
+        source: track.source,
+      };
+    });
+
+  return sourceReferences;
+}
+/* END FROM COMPONENTS JS: */
 
 // ---------------------
 // REACT
@@ -87,11 +222,11 @@ function useParticipantEvents<P extends Participant>(
 
   useEffect(() => {
     for (const eventName of eventNames) {
-      participant.on(eventName, memoizedCallback);
+      participant.on(eventName as keyof ParticipantEventCallbacks, memoizedCallback);
     }
     return () => {
       for (const eventName of eventNames) {
-        participant.off(eventName, memoizedCallback);
+        participant.off(eventName as keyof ParticipantEventCallbacks, memoizedCallback);
       }
     };
   }, [participant, eventNames, memoizedCallback]);
@@ -103,7 +238,7 @@ export function useAgentLocalParticipant() {
   const [localParticipant, setLocalParticipant] = React.useState(agentSession.localParticipant);
   const [microphoneTrack, setMicrophoneTrack] = React.useState<TrackPublication | null>(null);
 
-  const participantObserver = useParticipantEvents(agentSession.localParticipant, [
+  useParticipantEvents(agentSession.localParticipant, [
     ParticipantEvent.TrackMuted,
     ParticipantEvent.TrackUnmuted,
     ParticipantEvent.ParticipantPermissionsChanged,
@@ -250,8 +385,9 @@ class AgentParticipant extends EventEmitter {
       this.workerTracks.find((t) => t.source === Track.Source.Microphone) ?? null
     );
     if (this.audioTrack !== newAudioTrack) {
+      this.audioTrack?.publication.off(TrackEvent.TranscriptionReceived, this.handleTranscriptionReceived);
       this.audioTrack = newAudioTrack;
-      this.audioTrack?.on(TrackEvent.TranscriptionReceived, this.handleTranscriptionReceived);
+      this.audioTrack?.publication.on(TrackEvent.TranscriptionReceived, this.handleTranscriptionReceived);
 
       this.audioTrackSyncTime = {
         timestamp: Date.now(),
@@ -268,11 +404,7 @@ class AgentParticipant extends EventEmitter {
     this.emit(AgentParticipantEvent.AgentAttributesChanged, attributes);
   };
 
-  private handleTranscriptionReceived = (event: Array<Array<TranscriptionSegment>>) => {
-    const segments = event[0];
-    if (!segments) {
-      return;
-    }
+  private handleTranscriptionReceived = (segments: Array<TranscriptionSegment>) => {
     if (!this.audioTrackSyncTime) {
       throw new Error('AgentParticipant - audioTrackSyncTime missing');
     }
@@ -526,7 +658,7 @@ export class AgentSession extends EventEmitter {
   agentParticipant: AgentParticipant | null = null;
   messageReceiver: MessageReceiver | null = null;
   messages: Array<InboundMessage | OutboundMessage> = [];
-  // private transcriptionMessageReceiver: TranscriptionMessageReceiver;
+  private transcriptionMessageReceiver: TranscriptionMessageReceiver;
     // this.transcriptionMessageReceiver = new TranscriptionMessageReceiver(agentParticipant);
       // this.transcriptionMessageReceiver.messages(),
       // /* more `MessageReceiver`s here later */
@@ -565,6 +697,7 @@ export class AgentSession extends EventEmitter {
   }
 
   private handleRoomDisconnected = () => {
+    this.agentParticipant?.off(AgentParticipantEvent.AgentAttributesChanged, this.handleAgentAttributesChanged);
     this.agentParticipant?.teardown();
     this.agentParticipant = null;
 
