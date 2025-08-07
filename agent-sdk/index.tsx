@@ -58,6 +58,21 @@ class Future<T> {
     });
   }
 }
+
+interface BaseStreamInfo {
+  id: string;
+  mimeType: string;
+  topic: string;
+  timestamp: number;
+  /** total size in bytes for finite streams and undefined for streams of unknown size */
+  size?: number;
+  attributes?: Record<string, string>;
+}
+interface ByteStreamInfo extends BaseStreamInfo {
+  name: string;
+}
+
+interface TextStreamInfo extends BaseStreamInfo {}
 /* END FROM LIVEKIT CLIENT */
 
 /* FROM COMPONENTS JS: */
@@ -180,13 +195,16 @@ export function useAgentMessages() {
   const agentSession = useAgentSession();
 
   const [messages, setMessages] = useState<
-    Array<InboundMessage | OutboundMessage>
+    Array<ReceivedMessage | SentMessage>
   >(agentSession.messages);
   useEffect(() => {
     agentSession.on(AgentSessionEvent.MessagesChanged, setMessages);
+    return () => {
+      agentSession.off(AgentSessionEvent.MessagesChanged, setMessages);
+    };
   }, [agentSession]);
 
-  const send = useCallback(async (message: OutboundMessage) => {
+  const send = useCallback(async (message: SentMessage) => {
     return agentSession.sendMessage(message);
   }, [agentSession]);
 
@@ -474,82 +492,32 @@ class AgentParticipant extends EventEmitter {
   }
 }
 
-abstract class BaseContent {
-  complete: boolean = false;
-}
-
-export class TextContent extends BaseContent {
-  // TODO: some sort of id / `key`able field?
-  data: string;
-
-  constructor(data: string) {
-    super();
-    this.data = data;
-    this.complete = true;
-  }
-}
-
-class TranscriptionContent extends BaseContent {
-  // TODO: some sort of id / `key`able field? How does this get generated / where does this come
-  // from?
-  data: string;
-  segmentId: TranscriptionSegment['id'];
-
-  constructor(segment: TranscriptionSegment) {
-    super();
-    this.segmentId = segment.id;
-    this.data = segment.text;
-  }
-}
 
 
 
-
-
-abstract class BaseMessage {
-  id: string;
+type BaseMessageId = string;
+type BaseMessage<Direction extends 'inbound' | 'outbound', Content> = {
+  id: BaseMessageId;
+  direction: Direction;
   timestamp: Date;
-  metadata: Record<string, string> = {};
+  content: Content;
+};
 
-  constructor(id: string, timestamp: Date) {
-    this.id = id;
-    this.timestamp = timestamp;
-  }
-}
+type TranscriptionReceivedMessage = BaseMessage<'inbound', {
+  type: 'transcription';
+  text: string;
+  participantInfo: { identity: string };
+  streamInfo: TextStreamInfo;
+}>;
 
-// TODO: images? attachments? rpc?
-type InboundMessageContent = TranscriptionContent;
+export type ReceivedMessage =
+  | TranscriptionReceivedMessage;
+  // TODO: images? attachments? rpc?
 
-export class InboundMessage extends BaseMessage {
-  contents: Array<InboundMessageContent> = [];
-
-  constructor(
-    contents: Array<InboundMessageContent>,
-    id: string,
-    timestamp: Date = new Date(),
-  ) {
-    super(id, timestamp);
-    this.contents = contents;
-  }
-
-  get complete() {
-    return this.contents.every(c => c.complete);
-  }
-}
-
-type OutboundMessageContent = TextContent;
-export class OutboundMessage extends BaseMessage {
-  contents: Array<OutboundMessageContent> = [];
-
-  constructor(
-    contents: Array<OutboundMessageContent>,
-    id: string,
-    timestamp: Date = new Date()
-  ) {
-    super(id, timestamp);
-    this.contents = contents;
-  }
-}
+export type SentMessage = BaseMessage<
+  'outbound',
+  | { type: 'text', text: string }
+>;
 
 
 
@@ -557,13 +525,13 @@ class MessageReceiverTerminationError extends Error {}
 
 abstract class MessageReceiver {
   private signallingFuture = new Future<null>();
-  private queue: Array<InboundMessage> = [];
+  private queue: Array<ReceivedMessage> = [];
 
   // This returns cleanup function like useEffect maybe? That could be a good pattern?
   abstract start(): Promise<undefined | (() => void)>;
 
   /** Submit new IncomingMessages to be received by anybody reading from messages() */
-  protected enqueue(...messages: Array<InboundMessage>) {
+  protected enqueue(...messages: Array<ReceivedMessage>) {
     for (const message of messages) {
       this.queue.push(message);
     }
@@ -581,7 +549,7 @@ abstract class MessageReceiver {
   }
 
   /** A stream of newly generated `IncomingMessage`s */
-  async *messages(): AsyncGenerator<InboundMessage> {
+  async *messages(): AsyncGenerator<ReceivedMessage> {
     const cleanup = await this.start();
     try {
       while (true) {
@@ -601,12 +569,17 @@ abstract class MessageReceiver {
 }
 
 abstract class MessageSender {
-  abstract send(message: OutboundMessage): Promise<void>;
+  abstract send(message: SentMessage): Promise<void>;
 }
 
-const segmentAttribute = 'lk.segment_id';
+enum TranscriptionAttributes {
+  Final = "lk.transcription_final",
+  Segment = "lk.segment_id",
+  TrackId = "lk.transcribed_track_id",
+};
 class TranscriptionMessageReceiver extends MessageReceiver {
   room: Room;
+  inFlightMessages: Array<TranscriptionReceivedMessage> = [];
 
   constructor(room: Room) {
     super();
@@ -614,48 +587,54 @@ class TranscriptionMessageReceiver extends MessageReceiver {
   }
 
   async start() {
-    console.log('!! START!');
     const textStreamHandler = async (reader: TextStreamReader, participantInfo: { identity: string }) => {
-      const id = `${Math.random()}`; // FIXME: somehow generate an id?
+      const transcriptionSegmentId = reader.info.attributes?.[TranscriptionAttributes.Segment];
+      const isTranscription = Boolean(transcriptionSegmentId);
+      const isFinal = reader.info.attributes?.[TranscriptionAttributes.Final];
 
-      const isTranscription = Boolean(reader.info.attributes?.[segmentAttribute]);
-      let textStreams: Array<TextStreamData> = [];
+      // Find and update the stream in our array
+      const messageIndex = this.inFlightMessages.findIndex((message) => {
+        if (message.content.streamInfo.id === reader.info.id) {
+          return true;
+        }
+        if (isTranscription && transcriptionSegmentId === reader.info.attributes?.[TranscriptionAttributes.Segment]) {
+          return true;
+        }
+        return false;
+      });
 
-      let accumulatedText: string = '';
+      let accumulatedText: string = this.inFlightMessages[messageIndex]?.content.text ?? '';
       for await (const chunk of reader) {
         accumulatedText += chunk;
 
-        // Find and update the stream in our array
-        const index = textStreams.findIndex((stream) => {
-          if (stream.streamInfo.id === reader.info.id) {
-            return true;
-          }
-          if (isTranscription &&
-              stream.streamInfo.attributes?.[segmentAttribute] ===
-                reader.info.attributes?.[segmentAttribute]) {
-            return true;
-          }
-          return false;
-        });
-
-        if (index >= 0) {
-          textStreams[index] = {
-            ...textStreams[index],
-            text: accumulatedText,
+        if (messageIndex >= 0) {
+          this.inFlightMessages[messageIndex] = {
+            ...this.inFlightMessages[messageIndex],
+            content: {
+              ...this.inFlightMessages[messageIndex].content,
+              text: accumulatedText,
+            },
           };
+          this.enqueue(this.inFlightMessages[messageIndex]);
         } else {
-          // Handle case where stream ID wasn't found (new stream)
-          textStreams.push({
-            text: accumulatedText,
-            participantInfo,
-            streamInfo: reader.info,
-          });
+          // Handle case where stream ID wasn't found (new message)
+          const message: ReceivedMessage = {
+            id: reader.info.id,
+            timestamp: new Date(reader.info.timestamp),
+            content: {
+              type: 'transcription',
+              text: accumulatedText,
+              participantInfo,
+              streamInfo: reader.info,
+            },
+          };
+          this.inFlightMessages.push(message);
+          this.enqueue(message);
         }
+      }
 
-        console.log('!! TEXT STREAMS:', textStreams);
-        // this.enqueue(new InboundMessage([
-        //   new TranscriptionContent(chunk),
-        // ], id));
+      if (isFinal) {
+        this.inFlightMessages.splice(messageIndex, 1);
       }
     };
     this.room.registerTextStreamHandler(DataTopic.TRANSCRIPTION, textStreamHandler);
@@ -694,7 +673,6 @@ class CombinedMessageReceiver extends MessageReceiver {
   }
 }
 
-
 export enum AgentSessionEvent {
   AgentStateChanged = 'agentStateChanged',
   AudioTrackChanged = 'audioTrackChanged',
@@ -710,8 +688,10 @@ export class AgentSession extends EventEmitter {
 
   agentParticipant: AgentParticipant | null = null;
   messageReceiver: MessageReceiver | null = null;
-  messageReceiverCleanup: (() => void) | undefined = undefined;
-  messages: Array<InboundMessage | OutboundMessage> = [];
+
+  // FIXME: maybe make an OrderedMessageList with these two fields in it?
+  messageById: Map<BaseMessageId, SentMessage | ReceivedMessage> = new Map();
+  messageIds: Array<BaseMessageId> = [];
 
   constructor() {
     super();
@@ -792,9 +772,13 @@ export class AgentSession extends EventEmitter {
     this.updateAgentState();
   }
 
-  private handleIncomingMessage = (incomingMessage: InboundMessage) => {
-    // FIXME: Do message accumulation here? Or maybe add some other entity to handle it?
-    this.messages.push(incomingMessage);
+  private handleIncomingMessage = (incomingMessage: ReceivedMessage) => {
+      // Upsert the message into the list
+    this.messageById.set(incomingMessage.id, incomingMessage);
+    if (!this.messageIds.includes(incomingMessage.id)) {
+      this.messageIds.push(incomingMessage.id);
+    }
+
     this.emit(AgentSessionEvent.MessagesChanged, this.messages);
   }
 
@@ -835,10 +819,19 @@ export class AgentSession extends EventEmitter {
     return this.room?.localParticipant ?? null;
   }
 
+  get messages() {
+    return (
+      this.messageIds
+        .map(id => this.messageById.get(id))
+        // FIXME: can I get rid of the filter somehow?
+        .filter((message): message is SentMessage | ReceivedMessage => typeof message !== 'undefined')
+    );
+  }
+
   // Mesasges:
   // - transcriptions are probably how agent generated messages come into being?
   // - lk.chat data channel messages also exist
-  async sendMessage(message: OutboundMessage) {
+  async sendMessage(message: SentMessage) {
     /* TODO */
   }
 

@@ -17,7 +17,7 @@ import useChatAndTranscription from '@/hooks/useChatAndTranscription';
 import { useDebugMode } from '@/hooks/useDebug';
 import type { AppConfig } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { AgentSessionEvent, OutboundMessage, TextContent, useAgentMessages, useAgentSession, useAgentSessionEvent, useAgentState } from '@/agent-sdk';
+import { AgentSessionEvent, useAgentMessages, useAgentSession, useAgentSessionEvent, useAgentState } from '@/agent-sdk';
 
 function isAgentAvailable(agentState: AgentState) {
   return agentState == 'listening' || agentState == 'thinking' || agentState == 'speaking';
@@ -47,10 +47,12 @@ export const SessionView = ({
   useDebugMode();
 
   async function handleSendMessage(message: string) {
-    await send(new OutboundMessage(
-      [new TextContent(message)],
-      `${Math.random()}` /* FIXME: fix id generation */
-    ));
+    // FIXME: add some sort of builder for SentMessage here so it's not just a raw object?
+    await send({
+      id: `${Math.random()}`, /* FIXME: fix id generation */
+      timestamp: new Date(),
+      content: { type: 'text', text: message },
+    });
     // await send(message);
   }
 
