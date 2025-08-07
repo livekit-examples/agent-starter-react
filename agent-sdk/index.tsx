@@ -21,6 +21,7 @@ import { EventEmitter } from "events";
 // import { addMediaTimestampToTranscription, dedupeSegments, ReceivedTranscriptionSegment } from '@livekit/components-core';
 // import { getParticipantTrackRefs } from '@livekit/components/src/observables/track';
 import { ParticipantEventCallbacks } from "../node_modules/livekit-client/src/room/participant/Participant";
+// import { LegacyChatMessage } from "@livekit/components-core";
 // import { DataTopic /* , ParticipantTrackIdentifier */ } from "@livekit/components-core";
 // import { TRACK_TRANSCRIPTION_DEFAULTS } from "../hooks";
 // import { Future } from "../node_modules/livekit-client/src/room/utils";
@@ -897,6 +898,7 @@ export class AgentSession extends EventEmitter {
     );
     (async () => {
       // FIXME: is this sort of pattern a better idea than just making MessageReceiver an EventEmitter?
+      // FIXME: this probably doesn't handle errors properly right now
       for await (const message of this.messageReceiver!.messages()) {
         this.handleIncomingMessage(message);
       }
