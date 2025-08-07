@@ -4,10 +4,10 @@ import { parallelMerge } from 'streaming-iterables';
 import { ConnectionState, LocalParticipant, Participant, ParticipantEvent, RemoteParticipant, Room, RoomEvent, Track, TrackEvent, TrackPublication, TranscriptionSegment } from "livekit-client";
 import { EventEmitter } from "stream";
 import { addMediaTimestampToTranscription, dedupeSegments, participantTrackEvents, TrackReference } from '@livekit/components-core';
-import { getParticipantTrackRefs } from '@livekit/components-core/src/observables/track';
-import { ParticipantEventCallbacks, ParticipantKind } from "livekit-client/dist/src/room/participant/Participant";
-import { TRACK_TRANSCRIPTION_DEFAULTS } from "../hooks";
-import { Future } from "livekit-client/dist/src/room/utils";
+import { getParticipantTrackRefs } from '@livekit/components/src/observables/track';
+import { ParticipantEventCallbacks, ParticipantKind } from "../node_modules/livekit-client/src/room/participant/Participant";
+// import { TRACK_TRANSCRIPTION_DEFAULTS } from "../hooks";
+import { Future } from "../node_modules/livekit-client/src/room/utils";
 
 // ---------------------
 // REACT
@@ -178,7 +178,7 @@ class AgentParticipant extends EventEmitter {
   attributes: Record<string, string> = {};
 
   transcriptions: Array<TranscriptionSegment> = [];
-  transcriptionBufferSize: number = TRACK_TRANSCRIPTION_DEFAULTS.bufferSize;
+  transcriptionBufferSize: number = 100//TRACK_TRANSCRIPTION_DEFAULTS.bufferSize;
 
   constructor(room: Room) {
     super();
@@ -520,7 +520,7 @@ export enum AgentSessionEvent {
 }
 
 export class AgentSession extends EventEmitter {
-  private room: Room;
+  room: Room; // FIXME: should this be private?
   state: AgentState = 'disconnected';
 
   agentParticipant: AgentParticipant | null = null;

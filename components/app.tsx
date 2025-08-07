@@ -10,7 +10,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { Welcome } from '@/components/welcome';
 import useConnectionDetails from '@/hooks/useConnectionDetails';
 import type { AppConfig } from '@/lib/types';
-import { AgentSessionProvider } from '@/agent-sdk';
+import { AgentSession, AgentSessionProvider } from '@/agent-sdk';
 
 const MotionWelcome = motion.create(Welcome);
 const MotionSessionView = motion.create(SessionView);
