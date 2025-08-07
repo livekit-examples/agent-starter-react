@@ -50,8 +50,9 @@ export const SessionView = ({
     // FIXME: add some sort of builder for SentMessage here so it's not just a raw object?
     await send({
       id: `${Math.random()}`, /* FIXME: fix id generation */
+      direction: 'outbound',
       timestamp: new Date(),
-      content: { type: 'text', text: message },
+      content: { type: 'chat', text: message },
     });
     // await send(message);
   }
@@ -101,7 +102,7 @@ export const SessionView = ({
       >
         <div className="space-y-3 whitespace-pre-wrap">
           <AnimatePresence>
-            {messages.map((message: ReceivedChatMessage) => (
+            {messages.map((message) => (
               <motion.div
                 key={message.id}
                 initial={{ opacity: 0, height: 0 }}

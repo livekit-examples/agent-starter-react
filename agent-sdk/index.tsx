@@ -510,8 +510,11 @@ type ReceivedTranscriptionMessage = BaseMessage<'inbound', {
   streamInfo: TextStreamInfo;
 }>;
 
+type ReceivedChatLoopbackMessage = BaseMessage<'inbound', { type: 'chat'; text: string }>;
+
 export type ReceivedMessage =
-  | ReceivedTranscriptionMessage;
+  | ReceivedTranscriptionMessage
+  | ReceivedChatLoopbackMessage;
   // TODO: images? attachments? rpc?
 
 type SentChatMessage = BaseMessage<'outbound', | { type: 'chat', text: string }>;
@@ -579,6 +582,7 @@ abstract class MessageSender<Message extends SentMessage = SentMessage> {
 
 class ChatMessageSender extends MessageSender<SentChatMessage> {
   private localParticipant: LocalParticipant;
+  private loopbackReceiverCallbacks: Set<(incomingMessage: SentChatMessage) => void> = new Set();
 
   constructor(localParticipant: LocalParticipant) {
     super();
@@ -590,7 +594,52 @@ class ChatMessageSender extends MessageSender<SentChatMessage> {
   }
 
   async send(message: SentChatMessage) {
+    for (const callback of this.loopbackReceiverCallbacks) {
+      callback(message);
+    }
+
     await this.localParticipant.sendText(message.content.text, /* FIXME: options here? */);
+
+    // const legacyChatMsg: LegacyChatMessage = {
+    //   id: message.id,
+    //   timestamp: message.timestamp.getTime(),
+    //   message: message.content.text,
+    // };
+    // const encodeLegacyMsg = (message: LegacyChatMessage) => new TextEncoder().encode(JSON.stringify(message));
+    // await this.localParticipant.publishData(encodeLegacyMsg(legacyChatMsg), {
+    //   topic: "lk-chat-topic",//LegacyDataTopic.CHAT,
+    //   reliable: true,
+    // });
+  }
+
+  /**
+    * Generates a corresponding MessageReceiver which will emit "received" versions of each chat
+    * message, that can be correspondingly merged into the message list.
+    *
+    * FIXME: should this be on the MessageSender instead, so this can be done for any sender?
+    */
+  generateLoopbackMessageReceiver() {
+    const chatMessageSender = this;
+    class ChatMessageLoopbackReceiver extends MessageReceiver<ReceivedChatLoopbackMessage> {
+      async start() {
+        const callback = (incomingMessage: SentChatMessage) => {
+          const outgoingMessage: ReceivedChatLoopbackMessage = {
+            id: incomingMessage.id,
+            direction: 'inbound',
+            timestamp: incomingMessage.timestamp,
+            content: { type: 'chat', text: incomingMessage.content.text },
+          };
+          this.enqueue(outgoingMessage);
+        };
+
+        chatMessageSender.loopbackReceiverCallbacks.add(callback);
+        return () => {
+          chatMessageSender.loopbackReceiverCallbacks.delete(callback);
+        };
+      }
+    }
+
+    return new ChatMessageLoopbackReceiver();
   }
 }
 
@@ -609,14 +658,15 @@ class CombinedMessageSender extends MessageSender {
   async send(message: SentMessage) {
     for (const sender of this.messageSenders) {
       // FIXME: an open question - should this only ever send with one MessageSender or potentially
-      // multiple? It doesn't matter with only ChatMessageSender but I'm not sure the right long term call.
+      // multiple? It doesn't matter now given there is only one MessageSender (ChatMessageSender)
+      // but I'm not sure the right long term call.
       if (sender.canSend(message)) {
         await sender.send(message);
         return;
       }
     }
 
-    throw new Error(`CombinedMessageSender - cannot find a MessageSender to send message ${message}`);
+    throw new Error(`CombinedMessageSender - cannot find a MessageSender to send message ${JSON.stringify(message)}`);
   }
 }
 
@@ -834,13 +884,15 @@ export class AgentSession extends EventEmitter {
     this.agentParticipant.on(AgentParticipantEvent.AgentAttributesChanged, this.handleAgentAttributesChanged);
     this.updateAgentState();
 
+    const chatMessageSender = new ChatMessageSender(this.localParticipant);
     this.messageSender = new CombinedMessageSender(
-      new ChatMessageSender(this.localParticipant),
+      chatMessageSender,
       // TODO: other types of messages that can be sent
     );
 
     this.messageReceiver = new CombinedMessageReceiver(
       new TranscriptionMessageReceiver(this.room),
+      chatMessageSender.generateLoopbackMessageReceiver(),
       // TODO: images? attachments? rpc?
     );
     (async () => {
