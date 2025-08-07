@@ -548,6 +548,10 @@ abstract class MessageReceiver {
     );
   }
 
+  closeWithError(error: Error) {
+    this.signallingFuture.reject?.(error);
+  }
+
   /** A stream of newly generated `IncomingMessage`s */
   async *messages(): AsyncGenerator<ReceivedMessage> {
     const cleanup = await this.start();
@@ -576,7 +580,7 @@ enum TranscriptionAttributes {
   Final = "lk.transcription_final",
   Segment = "lk.segment_id",
   TrackId = "lk.transcribed_track_id",
-};
+}
 class TranscriptionMessageReceiver extends MessageReceiver {
   room: Room;
   inFlightMessages: Array<TranscriptionReceivedMessage> = [];
@@ -604,6 +608,8 @@ class TranscriptionMessageReceiver extends MessageReceiver {
       });
 
       let accumulatedText: string = this.inFlightMessages[messageIndex]?.content.text ?? '';
+      // FIXME: I think there may need to be some error handling logic to ensure the below for await
+      // properly exposes errors via `this.closeWithError`
       for await (const chunk of reader) {
         accumulatedText += chunk;
 
@@ -620,6 +626,7 @@ class TranscriptionMessageReceiver extends MessageReceiver {
           // Handle case where stream ID wasn't found (new message)
           const message: ReceivedMessage = {
             id: reader.info.id,
+            direction: 'inbound',
             timestamp: new Date(reader.info.timestamp),
             content: {
               type: 'transcription',
@@ -650,7 +657,7 @@ class TranscriptionMessageReceiver extends MessageReceiver {
 
 /**
   * A `MessageReceiver` which takes a list of other `MessageReceiver`s and forwards along their `InboundMessage`s
-  * Conceptually, think `Promise.race` being run across each async iterator iteration.
+  * Conceptually, think `Promise.race` being run across all passed `MessageReceiver`s on each async iterator iteration.
   */
 class CombinedMessageReceiver extends MessageReceiver {
   private messageReceivers: Array<MessageReceiver>;
@@ -661,9 +668,14 @@ class CombinedMessageReceiver extends MessageReceiver {
   }
 
   async start() {
-    for await (const inboundMessage of parallelMerge(...this.messageReceivers.map(mr => mr.messages()))) {
-      this.enqueue(inboundMessage);
-    }
+    const messagesAsyncIterators = this.messageReceivers.map(mr => mr.messages());
+    (async () => {
+      for await (const inboundMessage of parallelMerge(...messagesAsyncIterators)) {
+        this.enqueue(inboundMessage);
+      }
+    })().catch(err => {
+      this.closeWithError(err);
+    });
 
     return () => {
       for (const messageReceiver of this.messageReceivers) {
@@ -720,8 +732,10 @@ export class AgentSession extends EventEmitter {
     this.agentParticipant.on(AgentParticipantEvent.AgentAttributesChanged, this.handleAgentAttributesChanged);
     this.updateAgentState();
 
-    // this.messageReceiver = new CombinedMessageReceiver(
-    this.messageReceiver = new TranscriptionMessageReceiver(this.room);
+    this.messageReceiver = new CombinedMessageReceiver(
+      new TranscriptionMessageReceiver(this.room),
+      // TODO: images? attachments? rpc?
+    );
     (async () => {
       // FIXME: is this sort of pattern a better idea than just making MessageReceiver an EventEmitter?
       for await (const message of this.messageReceiver!.messages()) {
