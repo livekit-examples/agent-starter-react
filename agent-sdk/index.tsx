@@ -503,7 +503,7 @@ type BaseMessage<Direction extends 'inbound' | 'outbound', Content> = {
   content: Content;
 };
 
-type TranscriptionReceivedMessage = BaseMessage<'inbound', {
+type ReceivedTranscriptionMessage = BaseMessage<'inbound', {
   type: 'transcription';
   text: string;
   participantInfo: { identity: string };
@@ -511,27 +511,26 @@ type TranscriptionReceivedMessage = BaseMessage<'inbound', {
 }>;
 
 export type ReceivedMessage =
-  | TranscriptionReceivedMessage;
+  | ReceivedTranscriptionMessage;
   // TODO: images? attachments? rpc?
 
-export type SentMessage = BaseMessage<
-  'outbound',
-  | { type: 'text', text: string }
->;
+type SentChatMessage = BaseMessage<'outbound', | { type: 'chat', text: string }>;
+export type SentMessage =
+  | SentChatMessage;
 
 
 
 class MessageReceiverTerminationError extends Error {}
 
-abstract class MessageReceiver {
+abstract class MessageReceiver<Message extends ReceivedMessage = ReceivedMessage> {
   private signallingFuture = new Future<null>();
-  private queue: Array<ReceivedMessage> = [];
+  private queue: Array<Message> = [];
 
   // This returns cleanup function like useEffect maybe? That could be a good pattern?
   abstract start(): Promise<undefined | (() => void)>;
 
   /** Submit new IncomingMessages to be received by anybody reading from messages() */
-  protected enqueue(...messages: Array<ReceivedMessage>) {
+  protected enqueue(...messages: Array<Message>) {
     for (const message of messages) {
       this.queue.push(message);
     }
@@ -553,7 +552,7 @@ abstract class MessageReceiver {
   }
 
   /** A stream of newly generated `IncomingMessage`s */
-  async *messages(): AsyncGenerator<ReceivedMessage> {
+  async *messages(): AsyncGenerator<Message> {
     const cleanup = await this.start();
     try {
       while (true) {
@@ -572,8 +571,53 @@ abstract class MessageReceiver {
   }
 }
 
-abstract class MessageSender {
-  abstract send(message: SentMessage): Promise<void>;
+abstract class MessageSender<Message extends SentMessage = SentMessage> {
+  /** Can this MessageSender handle sending the given message? */
+  abstract canSend(message: SentMessage): message is Message
+  abstract send(message: Message): Promise<void>;
+}
+
+class ChatMessageSender extends MessageSender<SentChatMessage> {
+  private localParticipant: LocalParticipant;
+
+  constructor(localParticipant: LocalParticipant) {
+    super();
+    this.localParticipant = localParticipant;
+  }
+
+  canSend(message: SentMessage): message is SentChatMessage {
+    return message.content.type === 'chat';
+  }
+
+  async send(message: SentChatMessage) {
+    await this.localParticipant.sendText(message.content.text, /* FIXME: options here? */);
+  }
+}
+
+class CombinedMessageSender extends MessageSender {
+  private messageSenders: Array<MessageSender>;
+
+  constructor(...messageSenders: Array<MessageSender>) {
+    super();
+    this.messageSenders = messageSenders;
+  }
+
+  canSend(message: SentMessage): message is SentMessage {
+    return true;
+  }
+
+  async send(message: SentMessage) {
+    for (const sender of this.messageSenders) {
+      // FIXME: an open question - should this only ever send with one MessageSender or potentially
+      // multiple? It doesn't matter with only ChatMessageSender but I'm not sure the right long term call.
+      if (sender.canSend(message)) {
+        await sender.send(message);
+        return;
+      }
+    }
+
+    throw new Error(`CombinedMessageSender - cannot find a MessageSender to send message ${message}`);
+  }
 }
 
 enum TranscriptionAttributes {
@@ -613,7 +657,7 @@ enum TranscriptionAttributes {
   */
 class TranscriptionMessageReceiver extends MessageReceiver {
   room: Room;
-  inFlightMessages: Array<TranscriptionReceivedMessage> = [];
+  inFlightMessages: Array<ReceivedTranscriptionMessage> = [];
 
   constructor(room: Room) {
     super();
@@ -756,6 +800,7 @@ export class AgentSession extends EventEmitter {
   state: AgentState = 'disconnected';
 
   agentParticipant: AgentParticipant | null = null;
+  messageSender: MessageSender | null = null;
   messageReceiver: MessageReceiver | null = null;
 
   // FIXME: maybe make an OrderedMessageList with these two fields in it?
@@ -788,6 +833,11 @@ export class AgentSession extends EventEmitter {
     this.agentParticipant = new AgentParticipant(this.room);
     this.agentParticipant.on(AgentParticipantEvent.AgentAttributesChanged, this.handleAgentAttributesChanged);
     this.updateAgentState();
+
+    this.messageSender = new CombinedMessageSender(
+      new ChatMessageSender(this.localParticipant),
+      // TODO: other types of messages that can be sent
+    );
 
     this.messageReceiver = new CombinedMessageReceiver(
       new TranscriptionMessageReceiver(this.room),
@@ -899,14 +949,14 @@ export class AgentSession extends EventEmitter {
     );
   }
 
-  // Mesasges:
-  // - transcriptions are probably how agent generated messages come into being?
-  // - lk.chat data channel messages also exist
+  // FIXME: maybe there should be a special case where if message is `string` it is converted into
+  // a `SentChatMessage`?
   async sendMessage(message: SentMessage) {
-    /* TODO */
+    if (!this.messageSender) {
+      throw new Error('AgentSession.sendMessage - cannot send message until room is connected and MessageSender initialized!');
+    }
+    await this.messageSender.send(message);
   }
-
-  generateReply() {}
 }
 
 
