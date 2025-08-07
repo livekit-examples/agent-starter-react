@@ -408,16 +408,16 @@ class AgentParticipant extends EventEmitter {
       this.workerTracks.find((t) => t.source === Track.Source.Microphone) ?? null
     );
     if (this.audioTrack !== newAudioTrack) {
-      console.log('!! audio track changed', this.audioTrack?.publication);
-      this.audioTrack?.publication.off(TrackEvent.TranscriptionReceived, this.handleTranscriptionReceived);
+      // console.log('!! audio track changed', this.audioTrack?.publication);
+      // this.audioTrack?.publication.off(TrackEvent.TranscriptionReceived, this.handleTranscriptionReceived);
       this.audioTrack = newAudioTrack;
-      this.audioTrack?.publication.on(TrackEvent.TranscriptionReceived, this.handleTranscriptionReceived);
+      // this.audioTrack?.publication.on(TrackEvent.TranscriptionReceived, this.handleTranscriptionReceived);
 
-      this.audioTrackSyncTime = {
-        timestamp: Date.now(),
-        rtpTimestamp: this.audioTrack?.publication.track?.rtpTimestamp,
-      };
-      this.audioTrack?.publication.track?.on(TrackEvent.TimeSyncUpdate, this.handleTimeSyncUpdate);
+      // this.audioTrackSyncTime = {
+      //   timestamp: Date.now(),
+      //   rtpTimestamp: this.audioTrack?.publication.track?.rtpTimestamp,
+      // };
+      // this.audioTrack?.publication.track?.on(TrackEvent.TimeSyncUpdate, this.handleTimeSyncUpdate);
 
       this.emit(AgentParticipantEvent.AudioTrackChanged, newAudioTrack);
     }
@@ -428,26 +428,26 @@ class AgentParticipant extends EventEmitter {
     this.emit(AgentParticipantEvent.AgentAttributesChanged, attributes);
   };
 
-  private handleTranscriptionReceived = (segments: Array<TranscriptionSegment>) => {
-    console.log('!! TRANSCRIPTION', segments, this.audioTrackSyncTime);
-    if (!this.audioTrackSyncTime) {
-      throw new Error('AgentParticipant - audioTrackSyncTime missing');
-    }
-    const audioTrackSyncTime = this.audioTrackSyncTime;
+  // private handleTranscriptionReceived = (segments: Array<TranscriptionSegment>) => {
+  //   console.log('!! TRANSCRIPTION', segments, this.audioTrackSyncTime);
+  //   if (!this.audioTrackSyncTime) {
+  //     throw new Error('AgentParticipant - audioTrackSyncTime missing');
+  //   }
+  //   const audioTrackSyncTime = this.audioTrackSyncTime;
 
-    this.transcriptions = dedupeSegments(
-      this.transcriptions,
-      // when first receiving a segment, add the current media timestamp to it
-      segments.map((s) => addMediaTimestampToTranscription(s, audioTrackSyncTime)),
-      this.transcriptionBufferSize,
-    );
-    this.emit(AgentParticipantEvent.AgentTranscriptionsChanged, this.transcriptions);
-  }
+  //   this.transcriptions = dedupeSegments(
+  //     this.transcriptions,
+  //     // when first receiving a segment, add the current media timestamp to it
+  //     segments.map((s) => addMediaTimestampToTranscription(s, audioTrackSyncTime)),
+  //     this.transcriptionBufferSize,
+  //   );
+  //   this.emit(AgentParticipantEvent.AgentTranscriptionsChanged, this.transcriptions);
+  // }
 
-  private handleTimeSyncUpdate = (update: { timestamp: number; rtpTimestamp: number }) => {
-    console.log('!! TIME SYNC UPDATE', update);
-    this.audioTrackSyncTime = update;
-  };
+  // private handleTimeSyncUpdate = (update: { timestamp: number; rtpTimestamp: number }) => {
+  //   console.log('!! TIME SYNC UPDATE', update);
+  //   this.audioTrackSyncTime = update;
+  // };
 
   private get roomRemoteParticipants() {
     return Array.from(this.room.remoteParticipants.values());
