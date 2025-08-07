@@ -17,7 +17,7 @@ import useChatAndTranscription from '@/hooks/useChatAndTranscription';
 import { useDebugMode } from '@/hooks/useDebug';
 import type { AppConfig } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { AgentSessionEvent, OutboundMessage, TextContent, useAgentMessages, useAgentSession, useAgentSessionEvent } from '@/agent-sdk';
+import { AgentSessionEvent, OutboundMessage, TextContent, useAgentMessages, useAgentSession, useAgentSessionEvent, useAgentState } from '@/agent-sdk';
 
 function isAgentAvailable(agentState: AgentState) {
   return agentState == 'listening' || agentState == 'thinking' || agentState == 'speaking';
@@ -36,14 +36,22 @@ export const SessionView = ({
   ref,
 }: React.ComponentProps<'div'> & SessionViewProps) => {
   const agentSession = useAgentSession();
-  const [chatOpen, setChatOpen] = useState(false);
-
+  const { state: agentState } = useAgentState();
   const { messages, send } = useAgentMessages();
+
+  // const { state: agentState } = useVoiceAssistant();
+  const [chatOpen, setChatOpen] = useState(false);
+  // const { messages, send } = useChatAndTranscription();
+  const room = useRoomContext();
 
   useDebugMode();
 
   async function handleSendMessage(message: string) {
-    await send(new OutboundMessage([new TextContent(message)], `${Math.random()}` /* FIXME: fix id generation */));
+    await send(new OutboundMessage(
+      [new TextContent(message)],
+      `${Math.random()}` /* FIXME: fix id generation */
+    ));
+    // await send(message);
   }
 
   useAgentSessionEvent(AgentSessionEvent.AgentConnectionFailure, (reason: string) => {
@@ -91,7 +99,7 @@ export const SessionView = ({
       >
         <div className="space-y-3 whitespace-pre-wrap">
           <AnimatePresence>
-            {messages.map((message) => (
+            {messages.map((message: ReceivedChatMessage) => (
               <motion.div
                 key={message.id}
                 initial={{ opacity: 0, height: 0 }}
@@ -111,8 +119,7 @@ export const SessionView = ({
         <div className="from-background absolute bottom-0 left-0 h-12 w-full translate-y-full bg-gradient-to-b to-transparent" />
       </div>
 
-      {/* FIXME: add video back in! */}
-      {/* <MediaTiles chatOpen={chatOpen} /> */}
+      <MediaTiles chatOpen={chatOpen} />
 
       <div className="bg-background fixed right-0 bottom-0 left-0 z-50 px-3 pt-2 pb-3 md:px-12 md:pb-12">
         <motion.div

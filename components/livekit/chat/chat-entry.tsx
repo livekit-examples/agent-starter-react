@@ -2,11 +2,10 @@ import * as React from 'react';
 import type { MessageFormatter, ReceivedChatMessage } from '@livekit/components-react';
 import { cn } from '@/lib/utils';
 import { useChatMessage } from './hooks/utils';
-import { InboundMessage, OutboundMessage } from '@/agent-sdk';
 
 export interface ChatEntryProps extends React.HTMLAttributes<HTMLLIElement> {
   /** The chat massage object to display. */
-  entry: InboundMessage | OutboundMessage;
+  entry: ReceivedChatMessage;
   /** Hide sender name. Useful when displaying multiple consecutive chat messages from the same person. */
   hideName?: boolean;
   /** Hide message timestamp. */
@@ -23,15 +22,9 @@ export const ChatEntry = ({
   className,
   ...props
 }: ChatEntryProps) => {
-  // FIXME: Where would this kind of metadata come from for real?
-  // const { message, hasBeenEdited, time, locale, name } = useChatMessage(entry, messageFormatter);
-  const message = entry.contents.map(c => c.data).join('');
-  const hasBeenEdited = false;
-  const time = entry.timestamp;
-  const locale = typeof navigator !== 'undefined' ? navigator.language : 'en-US';
-  const name = entry instanceof OutboundMessage ? 'User' : 'Agent';
+  const { message, hasBeenEdited, time, locale, name } = useChatMessage(entry, messageFormatter);
 
-  const isUser = entry instanceof OutboundMessage;//entry.from?.isLocal ?? false;
+  const isUser = entry.from?.isLocal ?? false;
   const messageOrigin = isUser ? 'remote' : 'local';
 
   return (

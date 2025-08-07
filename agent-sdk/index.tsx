@@ -14,12 +14,14 @@ import {
   TrackPublication,
   TranscriptionSegment,
   ParticipantKind,
+  TextStreamReader,
+  // TextStreamInfo,
 } from "livekit-client";
 import { EventEmitter } from "events";
 // import { addMediaTimestampToTranscription, dedupeSegments, ReceivedTranscriptionSegment } from '@livekit/components-core';
 // import { getParticipantTrackRefs } from '@livekit/components/src/observables/track';
 import { ParticipantEventCallbacks } from "../node_modules/livekit-client/src/room/participant/Participant";
-import { ParticipantTrackIdentifier } from "@livekit/components-core";
+// import { DataTopic /* , ParticipantTrackIdentifier */ } from "@livekit/components-core";
 // import { TRACK_TRANSCRIPTION_DEFAULTS } from "../hooks";
 // import { Future } from "../node_modules/livekit-client/src/room/utils";
 
@@ -119,7 +121,7 @@ function dedupeSegments<T extends TranscriptionSegment>(
  *  */
 function getParticipantTrackRefs(
   participant: Participant,
-  identifier: ParticipantTrackIdentifier,
+  identifier: any/* ParticipantTrackIdentifier */,
   onlySubscribedTracks = false,
 ): TrackReference[] {
   const { sources, kind, name } = identifier;
@@ -142,6 +144,17 @@ function getParticipantTrackRefs(
 
   return sourceReferences;
 }
+
+interface TextStreamData {
+  text: string;
+  participantInfo: { identity: string }; // Replace with the correct type from livekit-client
+  streamInfo: any /* TextStreamInfo */;
+}
+
+const DataTopic = {
+  CHAT: 'lk.chat',
+  TRANSCRIPTION: 'lk.transcription',
+} as const;
 /* END FROM COMPONENTS JS: */
 
 // ---------------------
@@ -346,27 +359,37 @@ class AgentParticipant extends EventEmitter {
       ) ?? null
     ) : null;
 
-    // Keep this.agentParticipant / this.workerParticipant up to date
-    for (const event of participantTrackEvents) {
-      if (this.agentParticipant !== newAgentParticipant) {
-        this.agentParticipant?.off(event as keyof ParticipantEventCallbacks, this.handleUpdateTracks);
-        // FIXME: emit AgentParticipantChanged?
-        newAgentParticipant?.on(event as keyof ParticipantEventCallbacks, this.handleUpdateTracks);
-        this.agentParticipant = newAgentParticipant;
-      }
-      if (this.workerParticipant !== newWorkerParticipant) {
-        this.workerParticipant?.off(event as keyof ParticipantEventCallbacks, this.handleUpdateTracks);
-        // FIXME: emit WorkerParticipantChanged?
-        newWorkerParticipant?.on(event as keyof ParticipantEventCallbacks, this.handleUpdateTracks);
-        this.workerParticipant = newWorkerParticipant;
+    const oldAgentParticipant = this.agentParticipant;
+    const oldWorkerParticipant = this.workerParticipant;
+    this.agentParticipant = newAgentParticipant;
+    this.workerParticipant = newWorkerParticipant;
+
+    // 1. Listen for attribute changes
+    if (oldAgentParticipant !== this.agentParticipant) {
+      oldAgentParticipant?.off(ParticipantEvent.AttributesChanged, this.handleAttributesChanged);
+
+      if (this.agentParticipant) {
+        this.agentParticipant.on(ParticipantEvent.AttributesChanged, this.handleAttributesChanged);
+        this.handleAttributesChanged(this.agentParticipant.attributes);
       }
     }
 
-    if (this.agentParticipant !== newAgentParticipant) {
-      this.agentParticipant?.off(ParticipantEvent.AttributesChanged, this.handleAttributesChanged);
-      // FIXME: emit AgentAttributesChanged?
-      newAgentParticipant?.on(ParticipantEvent.AttributesChanged, this.handleAttributesChanged);
-      this.agentParticipant = newAgentParticipant;
+    // 2. Listen for track updates
+    for (const event of participantTrackEvents) {
+      if (oldAgentParticipant !== this.agentParticipant) {
+        oldAgentParticipant?.off(event as keyof ParticipantEventCallbacks, this.handleUpdateTracks);
+        if (this.agentParticipant) {
+          this.agentParticipant.on(event as keyof ParticipantEventCallbacks, this.handleUpdateTracks);
+          this.handleUpdateTracks();
+        }
+      }
+      if (oldWorkerParticipant !== this.workerParticipant) {
+        oldWorkerParticipant?.off(event as keyof ParticipantEventCallbacks, this.handleUpdateTracks);
+        if (this.workerParticipant) {
+          this.workerParticipant.on(event as keyof ParticipantEventCallbacks, this.handleUpdateTracks);
+          this.handleUpdateTracks();
+        }
+      }
     }
   }
 
@@ -385,6 +408,7 @@ class AgentParticipant extends EventEmitter {
       this.workerTracks.find((t) => t.source === Track.Source.Microphone) ?? null
     );
     if (this.audioTrack !== newAudioTrack) {
+      console.log('!! audio track changed', this.audioTrack?.publication);
       this.audioTrack?.publication.off(TrackEvent.TranscriptionReceived, this.handleTranscriptionReceived);
       this.audioTrack = newAudioTrack;
       this.audioTrack?.publication.on(TrackEvent.TranscriptionReceived, this.handleTranscriptionReceived);
@@ -405,6 +429,7 @@ class AgentParticipant extends EventEmitter {
   };
 
   private handleTranscriptionReceived = (segments: Array<TranscriptionSegment>) => {
+    console.log('!! TRANSCRIPTION', segments, this.audioTrackSyncTime);
     if (!this.audioTrackSyncTime) {
       throw new Error('AgentParticipant - audioTrackSyncTime missing');
     }
@@ -420,6 +445,7 @@ class AgentParticipant extends EventEmitter {
   }
 
   private handleTimeSyncUpdate = (update: { timestamp: number; rtpTimestamp: number }) => {
+    console.log('!! TIME SYNC UPDATE', update);
     this.audioTrackSyncTime = update;
   };
 
@@ -527,13 +553,9 @@ export class OutboundMessage extends BaseMessage {
 
 
 
-enum MessageReceiverEvents {
-  NewIncomingMessage = 'newIncomingMessage'
-}
-
 class MessageReceiverTerminationError extends Error {}
 
-abstract class MessageReceiver extends EventEmitter {
+abstract class MessageReceiver {
   private signallingFuture = new Future<null>();
   private queue: Array<InboundMessage> = [];
 
@@ -544,7 +566,6 @@ abstract class MessageReceiver extends EventEmitter {
   protected enqueue(...messages: Array<InboundMessage>) {
     for (const message of messages) {
       this.queue.push(message);
-      this.emit(MessageReceiverEvents.NewIncomingMessage, message);
     }
     const oldSignallingFuture = this.signallingFuture;
     this.signallingFuture = new Future<null>();
@@ -583,32 +604,64 @@ abstract class MessageSender {
   abstract send(message: OutboundMessage): Promise<void>;
 }
 
+const segmentAttribute = 'lk.segment_id';
 class TranscriptionMessageReceiver extends MessageReceiver {
-  agentParticipant: AgentParticipant;
+  room: Room;
 
-  constructor(agentParticipant: AgentParticipant) {
+  constructor(room: Room) {
     super();
-    this.agentParticipant = agentParticipant;
+    this.room = room;
   }
 
   async start() {
-    const handleAgentTranscriptionsChanged = (newTranscriptionSegments: Array<TranscriptionSegment>) => {
-      for (const segment of newTranscriptionSegments) {
-        this.enqueue(new InboundMessage([
-          new TranscriptionContent(segment),
-        ], new Date(segment.startTime)));
+    console.log('!! START!');
+    const textStreamHandler = async (reader: TextStreamReader, participantInfo: { identity: string }) => {
+      const id = `${Math.random()}`; // FIXME: somehow generate an id?
+
+      const isTranscription = Boolean(reader.info.attributes?.[segmentAttribute]);
+      let textStreams: Array<TextStreamData> = [];
+
+      let accumulatedText: string = '';
+      for await (const chunk of reader) {
+        accumulatedText += chunk;
+
+        // Find and update the stream in our array
+        const index = textStreams.findIndex((stream) => {
+          if (stream.streamInfo.id === reader.info.id) {
+            return true;
+          }
+          if (isTranscription &&
+              stream.streamInfo.attributes?.[segmentAttribute] ===
+                reader.info.attributes?.[segmentAttribute]) {
+            return true;
+          }
+          return false;
+        });
+
+        if (index >= 0) {
+          textStreams[index] = {
+            ...textStreams[index],
+            text: accumulatedText,
+          };
+        } else {
+          // Handle case where stream ID wasn't found (new stream)
+          textStreams.push({
+            text: accumulatedText,
+            participantInfo,
+            streamInfo: reader.info,
+          });
+        }
+
+        console.log('!! TEXT STREAMS:', textStreams);
+        // this.enqueue(new InboundMessage([
+        //   new TranscriptionContent(chunk),
+        // ], id));
       }
     };
+    this.room.registerTextStreamHandler(DataTopic.TRANSCRIPTION, textStreamHandler);
 
-    this.agentParticipant.on(
-      AgentParticipantEvent.AgentTranscriptionsChanged,
-      handleAgentTranscriptionsChanged,
-    );
     return () => {
-      this.agentParticipant.off(
-        AgentParticipantEvent.AgentTranscriptionsChanged,
-        handleAgentTranscriptionsChanged,
-      );
+      this.room.unregisterTextStreamHandler(DataTopic.TRANSCRIPTION);
     };
   }
 }
@@ -657,11 +710,8 @@ export class AgentSession extends EventEmitter {
 
   agentParticipant: AgentParticipant | null = null;
   messageReceiver: MessageReceiver | null = null;
+  messageReceiverCleanup: (() => void) | undefined = undefined;
   messages: Array<InboundMessage | OutboundMessage> = [];
-  private transcriptionMessageReceiver: TranscriptionMessageReceiver;
-    // this.transcriptionMessageReceiver = new TranscriptionMessageReceiver(agentParticipant);
-      // this.transcriptionMessageReceiver.messages(),
-      // /* more `MessageReceiver`s here later */
 
   constructor() {
     super();
@@ -685,23 +735,30 @@ export class AgentSession extends EventEmitter {
   }
 
   private handleRoomConnected = () => {
+    console.log('!! CONNECTED');
     this.agentParticipant = new AgentParticipant(this.room);
     this.agentParticipant.on(AgentParticipantEvent.AgentAttributesChanged, this.handleAgentAttributesChanged);
+    this.updateAgentState();
 
-    this.messageReceiver = new CombinedMessageReceiver(
-      new TranscriptionMessageReceiver(this.agentParticipant),
-    );
-    this.messageReceiver.on(MessageReceiverEvents.NewIncomingMessage, this.handleIncomingMessage);
+    // this.messageReceiver = new CombinedMessageReceiver(
+    this.messageReceiver = new TranscriptionMessageReceiver(this.room);
+    (async () => {
+      // FIXME: is this sort of pattern a better idea than just making MessageReceiver an EventEmitter?
+      for await (const message of this.messageReceiver!.messages()) {
+        this.handleIncomingMessage(message);
+      }
+    })();
 
     this.startAgentConnectedTimeout();
   }
 
   private handleRoomDisconnected = () => {
+    console.log('!! DISCONNECTED');
     this.agentParticipant?.off(AgentParticipantEvent.AgentAttributesChanged, this.handleAgentAttributesChanged);
     this.agentParticipant?.teardown();
     this.agentParticipant = null;
+    this.updateAgentState();
 
-    this.messageReceiver?.off(MessageReceiverEvents.NewIncomingMessage, this.handleIncomingMessage);
     this.messageReceiver?.close();
     this.messageReceiver = null;
 
@@ -731,6 +788,7 @@ export class AgentSession extends EventEmitter {
   }
 
   private handleAgentAttributesChanged = () => {
+    console.log('!! ATTRIB CHANGED:', this.agentParticipant?.attributes)
     this.updateAgentState();
   }
 
@@ -741,24 +799,27 @@ export class AgentSession extends EventEmitter {
   }
 
   private updateAgentState = () => {
-    if (!this.agentParticipant) {
-      throw new Error('AgentSession.agentParticipant is unset');
-    }
-    const agentParticipantAttributes = this.agentParticipant.attributes;
-    const connectionState = this.room.state;
-
     let newAgentState: AgentState | null = null;
-    if (connectionState === ConnectionState.Disconnected) {
+    if (!this.agentParticipant) {
+      // throw new Error('AgentSession.agentParticipant is unset');
       newAgentState = 'disconnected';
-    } else if (
-      connectionState === ConnectionState.Connecting ||
-      !this.agentParticipant ||
-      !agentParticipantAttributes?.[stateAttribute]
-    ) {
-      newAgentState = 'connecting';
     } else {
-      newAgentState = agentParticipantAttributes[stateAttribute] as AgentState;
+      const agentParticipantAttributes = this.agentParticipant.attributes;
+      const connectionState = this.room.state;
+
+      if (connectionState === ConnectionState.Disconnected) {
+        newAgentState = 'disconnected';
+      } else if (
+        connectionState === ConnectionState.Connecting ||
+        !this.agentParticipant ||
+        !agentParticipantAttributes?.[stateAttribute]
+      ) {
+        newAgentState = 'connecting';
+      } else {
+        newAgentState = agentParticipantAttributes[stateAttribute] as AgentState;
+      }
     }
+    console.log('!! STATE:', newAgentState, this.agentParticipant?.attributes);
 
     if (this.state !== newAgentState) {
       this.state = newAgentState;

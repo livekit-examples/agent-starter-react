@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Room, RoomEvent } from 'livekit-client';
+import { RoomEvent } from 'livekit-client';
 import { motion } from 'motion/react';
 import { RoomAudioRenderer, RoomContext, StartAudio } from '@livekit/components-react';
 import { toastAlert } from '@/components/alert-toast';
@@ -86,22 +86,24 @@ export function App({ appConfig }: AppProps) {
       />
 
       <AgentSessionProvider agentSession={agentSession}>
-        <RoomAudioRenderer />
-        <StartAudio label="Start Audio" />
-        {/* --- */}
-        <MotionSessionView
-          key="session-view"
-          appConfig={appConfig}
-          disabled={!sessionStarted}
-          sessionStarted={sessionStarted}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: sessionStarted ? 1 : 0 }}
-          transition={{
-            duration: 0.5,
-            ease: 'linear',
-            delay: sessionStarted ? 0.5 : 0,
-          }}
-        />
+        <RoomContext.Provider value={agentSession.room}>
+          <RoomAudioRenderer />
+          <StartAudio label="Start Audio" />
+          {/* --- */}
+          <MotionSessionView
+            key="session-view"
+            appConfig={appConfig}
+            disabled={!sessionStarted}
+            sessionStarted={sessionStarted}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: sessionStarted ? 1 : 0 }}
+            transition={{
+              duration: 0.5,
+              ease: 'linear',
+              delay: sessionStarted ? 0.5 : 0,
+            }}
+          />
+        </RoomContext.Provider>
       </AgentSessionProvider>
 
       <Toaster />
