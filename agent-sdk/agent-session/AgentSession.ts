@@ -20,13 +20,15 @@ export enum AgentSessionEvent {
   AgentStateChanged = 'agentStateChanged',
   AgentAttributesChanged = 'agentAttributesChanged',
   MessagesChanged = 'messagesChanged',
-  AgentConnectionFailure = 'AgentConnectionFailure',
+  AgentConnectionFailure = 'agentConnectionFailure',
+  AudioPlaybackStatusChanged = 'AudioPlaybackStatusChanged',
 }
 
 export type AgentSessionCallbacks = {
   [AgentSessionEvent.AgentStateChanged]: (newAgentState: AgentState) => void;
   [AgentSessionEvent.MessagesChanged]: (newMessages: Array<SentMessage | ReceivedMessage>) => void;
   [AgentSessionEvent.AgentConnectionFailure]: (reason: string) => void;
+  [AgentSessionEvent.AudioPlaybackStatusChanged]: (audioPlaybackPermitted: boolean) => void;
 };
 
 const stateAttribute = 'lk.agent.state';
@@ -59,6 +61,7 @@ export class AgentSession extends (EventEmitter as new () => TypedEventEmitter<A
     this.room.on(RoomEvent.Connected, this.handleRoomConnected);
     this.room.on(RoomEvent.Disconnected, this.handleRoomDisconnected);
     this.room.on(RoomEvent.ConnectionStateChanged, this.handleConnectionStateChanged);
+    this.room.on(RoomEvent.AudioPlaybackStatusChanged, this.handleAudioPlaybackStatusChanged);
   }
 
   async connect(url: string, token: string) {
@@ -140,6 +143,10 @@ export class AgentSession extends (EventEmitter as new () => TypedEventEmitter<A
     this.updateAgentState();
   }
 
+  private handleAudioPlaybackStatusChanged = async () => {
+    this.emit(AgentSessionEvent.AudioPlaybackStatusChanged, this.room.canPlaybackAudio);
+  };
+
   private handleAgentAttributesChanged = () => {
     console.log('!! ATTRIB CHANGED:', this.agentParticipant?.attributes)
     this.updateAgentState();
@@ -202,5 +209,29 @@ export class AgentSession extends (EventEmitter as new () => TypedEventEmitter<A
       throw new Error('AgentSession.sendMessage - cannot send message until room is connected and MessageSender initialized!');
     }
     await this.messageSender.send(message);
+  }
+  // onMessage?: (callback: (reader: TextStreamReader) => void) => void | undefined;
+
+  // TODO: RPC stuff
+  // registerRpcHandler: (
+  //   method: string,
+  //   handler: (data: RpcInvocationData) => Promise<string>,
+  // ) => void;
+  // performRpc: (method: string, payload: string) => Promise<string>;
+
+  // TODO: Client media controls
+  // setCameraEnabled: (enabled: boolean) => Promise<LocalTrackPublication | undefined>;
+  // setMicrophoneEnabled: (enabled: boolean) => Promise<LocalTrackPublication | undefined>;
+  // setScreenShareEnabled: (enabled: boolean) => Promise<LocalTrackPublication | undefined>;
+  // setCameraInput: (deviceId: string) => Promise<boolean>;
+  // setMicrophoneInput: (deviceId: string) => Promise<boolean>;
+
+  // Media Playback
+  async startAudioPlayback() {
+    await this.room.startAudio();
+
+    // FIXME: add audio track to audio element / etc
+    // This probably needs to contain much of the logic in RoomAudioRenderer?
+    // And then make a similar type of component that then uses this function internally?
   }
 }
