@@ -1,16 +1,18 @@
 import * as React from "react";
-import { useContext, useEffect, useState, useCallback } from "react";
+import { useContext, useEffect, useState, useCallback, useMemo } from "react";
 import {
+    LocalParticipant,
   Participant,
   ParticipantEvent,
   Track,
   // TextStreamInfo,
 } from "livekit-client";
-import { TrackReference } from "@/agent-sdk/external-deps/components-js";
+import { TrackReference, trackSourceToProtocol } from "@/agent-sdk/external-deps/components-js";
 import { ParticipantEventCallbacks } from "../node_modules/livekit-client/src/room/participant/Participant";
 import { AgentSession, AgentSessionCallbacks, AgentSessionEvent } from "./agent-session/AgentSession";
 import { ReceivedMessage, SentMessage } from "./agent-session/message";
 import { AgentParticipantCallbacks, AgentParticipantEvent } from "./agent-session/AgentParticipant";
+import { ParticipantPermission } from "livekit-server-sdk";
 
 // ---------------------
 // REACT
@@ -116,10 +118,10 @@ export function useAgentTracks() {
   return { audioTrack, videoTrack };
 }
 
-function useParticipantEvents<P extends Participant>(
+function useParticipantEvents<P extends Participant, EventName extends keyof ParticipantEventCallbacks>(
   participant: P,
-  eventNames: Array<ParticipantEvent>,
-  callback: (data: any /* FIXME: types */) => void,
+  eventNames: Array<EventName>,
+  callback: ParticipantEventCallbacks[EventName],
   dependencies: React.DependencyList,
 ) {
   // FIXME: is doing this memoiztion here a good idea? Maybe useAgentSessionEvent(..., useCallback(...)) is preferrable?
@@ -127,11 +129,11 @@ function useParticipantEvents<P extends Participant>(
 
   useEffect(() => {
     for (const eventName of eventNames) {
-      participant.on(eventName as keyof ParticipantEventCallbacks, memoizedCallback);
+      participant.on(eventName, memoizedCallback);
     }
     return () => {
       for (const eventName of eventNames) {
-        participant.off(eventName as keyof ParticipantEventCallbacks, memoizedCallback);
+        participant.off(eventName, memoizedCallback);
       }
     };
   }, [participant, eventNames, memoizedCallback]);
@@ -143,6 +145,7 @@ export function useAgentLocalParticipant() {
   const [localParticipant, setLocalParticipant] = React.useState(agentSession.localParticipant);
   const [microphoneTrack, setMicrophoneTrack] = React.useState<TrackReference | null>(null);
   const [cameraTrack, setCameraTrack] = React.useState<TrackReference | null>(null);
+  const [permissions, setPermissions] = React.useState<ParticipantPermission | null>(null);
 
   useParticipantEvents(agentSession.localParticipant, [
     ParticipantEvent.TrackMuted,
@@ -158,6 +161,8 @@ export function useAgentLocalParticipant() {
     // ParticipantEvent.ConnectionQualityChanged,
   ], () => {
     setLocalParticipant(agentSession.localParticipant);
+    setPermissions(agentSession.localParticipant.permissions ?? null);
+
     // FIXME: is the rest of this stuff needed?
     // const { isMicrophoneEnabled, isCameraEnabled, isScreenShareEnabled } = p;
     const microphoneTrack = agentSession.localParticipant.getTrackPublication(Track.Source.Microphone);
@@ -183,7 +188,29 @@ export function useAgentLocalParticipant() {
     // return participantMedia;
   }, []);
 
-  return { localParticipant, microphoneTrack, cameraTrack };
+  const publishPermissions = useMemo(() => {
+    const canPublishSource = (source: Track.Source) => {
+      return (
+        permissions?.canPublish &&
+        (permissions.canPublishSources.length === 0 ||
+          permissions.canPublishSources.includes(trackSourceToProtocol(source)))
+      );
+    };
+
+    return {
+      camera: canPublishSource(Track.Source.Camera),
+      microphone: canPublishSource(Track.Source.Microphone),
+      screenShare: canPublishSource(Track.Source.ScreenShare),
+      data: permissions?.canPublishData ?? false,
+    };
+  }, [permissions]);
+
+  return {
+    localParticipant,
+    microphoneTrack,
+    cameraTrack,
+    publishPermissions,
+  };
 }
 
 // hook ideas:

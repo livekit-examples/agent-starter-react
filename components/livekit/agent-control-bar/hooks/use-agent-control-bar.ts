@@ -8,6 +8,7 @@ import {
   useTrackToggle,
 } from '@livekit/components-react';
 import { usePublishPermissions } from './use-publish-permissions';
+import { useAgentLocalParticipant } from '@/agent-sdk';
 
 export interface ControlBarControls {
   microphone?: boolean;
@@ -40,19 +41,24 @@ export function useAgentControlBar(props: UseAgentControlBarProps = {}): UseAgen
     leave: true,
     ...controls,
   };
-  const { microphoneTrack, localParticipant } = useLocalParticipant();
-  const publishPermissions = usePublishPermissions();
+  // const { microphoneTrack, localParticipant } = useLocalParticipant(); // FIXME: replace with agent alternative
+  const {
+    microphoneTrack,
+    localParticipant,
+    publishPermissions,
+  } = useAgentLocalParticipant();
+  // const publishPermissions = usePublishPermissions(); // FIXME: replace with agent alternative
   const room = useRoomContext();
 
-  const microphoneToggle = useTrackToggle({
+  const microphoneToggle = useTrackToggle({ // FIXME: replace with agent alternative
     source: Track.Source.Microphone,
     onDeviceError: (error) => props.onDeviceError?.({ source: Track.Source.Microphone, error }),
   });
-  const cameraToggle = useTrackToggle({
+  const cameraToggle = useTrackToggle({ // FIXME: replace with agent alternative
     source: Track.Source.Camera,
     onDeviceError: (error) => props.onDeviceError?.({ source: Track.Source.Camera, error }),
   });
-  const screenShareToggle = useTrackToggle({
+  const screenShareToggle = useTrackToggle({ // FIXME: replace with agent alternative
     source: Track.Source.ScreenShare,
     onDeviceError: (error) => props.onDeviceError?.({ source: Track.Source.ScreenShare, error }),
   });
@@ -75,7 +81,7 @@ export function useAgentControlBar(props: UseAgentControlBarProps = {}): UseAgen
     saveAudioInputDeviceId,
     saveVideoInputEnabled,
     saveVideoInputDeviceId,
-  } = usePersistentUserChoices({
+  } = usePersistentUserChoices({ // FIXME: replace with agent alternative
     preventSave: !saveUserChoices,
   });
 

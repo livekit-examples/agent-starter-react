@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { DeviceSelect } from '../device-select';
 import { TrackToggle } from '../track-toggle';
 import { UseAgentControlBarProps, useAgentControlBar } from './hooks/use-agent-control-bar';
+import { useAgentState } from '@/agent-sdk';
 
 export interface AgentControlBarProps
   extends React.HTMLAttributes<HTMLDivElement>,
@@ -38,11 +39,12 @@ export function AgentControlBar({
   onDeviceError,
   ...props
 }: AgentControlBarProps) {
-  const participants = useRemoteParticipants(); // FIXME: replace with agent alternative
   const [chatOpen, setChatOpen] = React.useState(false);
   const [isSendingMessage, setIsSendingMessage] = React.useState(false);
 
-  const isAgentAvailable = participants.some((p) => p.isAgent);
+  // const participants = useRemoteParticipants();
+  // const isAgentAvailable = participants.some((p) => p.isAgent);
+  const { isAvailable: isAgentAvailable } = useAgentState();
   const isInputDisabled = !chatOpen || !isAgentAvailable || isSendingMessage;
 
   const [isDisconnecting, setIsDisconnecting] = React.useState(false);

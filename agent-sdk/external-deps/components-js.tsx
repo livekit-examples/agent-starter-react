@@ -100,3 +100,17 @@ export const DataTopic = {
   CHAT: 'lk.chat',
   TRANSCRIPTION: 'lk.transcription',
 } as const;
+
+export const trackSourceToProtocol = (source: Track.Source) => {
+  // NOTE: this mapping avoids importing the protocol package as that leads to a significant bundle size increase
+  switch (source) {
+    case Track.Source.Camera:
+      return 1;
+    case Track.Source.Microphone:
+      return 2;
+    case Track.Source.ScreenShare:
+      return 3;
+    default:
+      return 0;
+  }
+};
