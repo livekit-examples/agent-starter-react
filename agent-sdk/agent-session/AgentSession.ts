@@ -39,6 +39,10 @@ export type AgentState =
   | 'thinking'
   | 'speaking';
 
+/**
+  * AgentSession represents a connection to a LiveKit Agent, providing abstractions to make 1:1
+  * agent/participant rooms easier to work with.
+  */
 export class AgentSession extends (EventEmitter as new () => TypedEventEmitter<AgentSessionCallbacks>) {
   room: Room; // FIXME: should this be private?
   state: AgentState = 'disconnected';
