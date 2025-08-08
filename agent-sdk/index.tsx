@@ -10,7 +10,7 @@ import {
 import { TrackReference, trackSourceToProtocol } from "@/agent-sdk/external-deps/components-js";
 import { ParticipantEventCallbacks } from "../node_modules/livekit-client/src/room/participant/Participant";
 import { AgentSession, AgentSessionCallbacks, AgentSessionEvent } from "./agent-session/AgentSession";
-import { ReceivedMessage, SentMessage } from "./agent-session/message";
+import { ReceivedMessage, ReceivedMessageAggregator, ReceivedMessageAggregatorEvent, SentMessage } from "./agent-session/message";
 import { AgentParticipantCallbacks, AgentParticipantEvent } from "./agent-session/AgentParticipant";
 import { ParticipantPermission } from "livekit-server-sdk";
 
@@ -40,9 +40,25 @@ export function useAgentMessages() {
     Array<ReceivedMessage | SentMessage>
   >(agentSession.messages);
   useEffect(() => {
-    agentSession.on(AgentSessionEvent.MessagesChanged, setMessages);
+    let aggregator: ReceivedMessageAggregator | null = null;
+
+    const handleUpdated = () => {
+      if (!aggregator) {
+        return;
+      }
+      setMessages(aggregator.toArray())
+    };
+
+    agentSession.createMessageAggregator({ startsAt: 'beginning' }).then(agg => {
+      aggregator = agg;
+      aggregator.on(ReceivedMessageAggregatorEvent.Updated, handleUpdated);
+    }).catch(err => {
+      // FIXME: how should this error be handled?
+      console.error('Error creating message aggregator:', err);
+    });
+
     return () => {
-      agentSession.off(AgentSessionEvent.MessagesChanged, setMessages);
+      aggregator?.off(ReceivedMessageAggregatorEvent.Updated, handleUpdated);
     };
   }, [agentSession]);
 

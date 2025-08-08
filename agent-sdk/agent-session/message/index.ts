@@ -34,3 +34,8 @@ export { default as CombinedMessageSender } from './send/CombinedMessageSender';
 export { default as MessageReceiver } from './receive/MessageReceiver';
 export { default as CombinedMessageReceiver } from './receive/CombinedMessageReceiver';
 export { default as TranscriptionMessageReceiver } from './receive/TranscriptionMessageReceiver';
+export {
+  default as ReceivedMessageAggregator,
+  type ReceivedMessageAggregatorOptions,
+  ReceivedMessageAggregatorEvent,
+} from './ReceivedMessageAggregator';

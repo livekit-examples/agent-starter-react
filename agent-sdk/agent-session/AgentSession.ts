@@ -11,9 +11,11 @@ import {
   CombinedMessageSender,
   CombinedMessageReceiver,
   TranscriptionMessageReceiver,
+  ReceivedMessageAggregator,
+  type ReceivedMessageAggregatorOptions,
+  ReceivedMessageAggregatorEvent,
 } from "./message";
 import AgentParticipant, { AgentParticipantEvent } from './AgentParticipant';
-import OrderedMessageList from '@/agent-sdk/lib/ordered-message-list';
 
 
 export enum AgentSessionEvent {
@@ -52,7 +54,8 @@ export class AgentSession extends (EventEmitter as new () => TypedEventEmitter<A
   agentParticipant: AgentParticipant | null = null;
   messageSender: MessageSender | null = null;
   messageReceiver: MessageReceiver | null = null;
-  messageList: OrderedMessageList<SentMessage | ReceivedMessage> | null = null;
+  defaultAggregator: ReceivedMessageAggregator<ReceivedMessage> | null = null;
+  aggregators: Array<ReceivedMessageAggregator<ReceivedMessage>> | null = null;
 
   constructor() {
     super();
@@ -103,7 +106,8 @@ export class AgentSession extends (EventEmitter as new () => TypedEventEmitter<A
       }
     })();
 
-    this.messageList = new OrderedMessageList();
+    this.defaultAggregator = new ReceivedMessageAggregator();
+    this.aggregators = [];
 
     this.startAgentConnectedTimeout();
   }
@@ -118,7 +122,12 @@ export class AgentSession extends (EventEmitter as new () => TypedEventEmitter<A
     this.messageReceiver?.close();
     this.messageReceiver = null;
 
-    this.messageList = null;
+    this.defaultAggregator?.close();
+    this.defaultAggregator = null;
+    for (const aggregator of this.aggregators ?? []) {
+      aggregator.close();
+    }
+    this.aggregators = null;
 
     if (this.agentConnectedTimeout) {
       clearTimeout(this.agentConnectedTimeout);
@@ -155,10 +164,17 @@ export class AgentSession extends (EventEmitter as new () => TypedEventEmitter<A
   }
 
   private handleIncomingMessage = (incomingMessage: ReceivedMessage) => {
-    if (!this.messageList) {
-      throw new Error('AgentSession.messageList is unset');
+    if (!this.defaultAggregator) {
+      throw new Error('AgentSession.defaultAggregator is unset');
     }
-    this.messageList.upsert(incomingMessage);
+    if (!this.aggregators) {
+      throw new Error('AgentSession.aggregators is unset');
+    }
+
+    this.defaultAggregator.upsert(incomingMessage);
+    for (const aggregator of this.aggregators) {
+      aggregator.upsert(incomingMessage);
+    }
 
     this.emit(AgentSessionEvent.MessagesChanged, this.messages);
   }
@@ -221,12 +237,76 @@ export class AgentSession extends (EventEmitter as new () => TypedEventEmitter<A
     });
   }
 
+  private async waitUntilRoomConnected(signal?: AbortSignal) {
+    if (this.room.state === ConnectionState.Connected /* FIXME: should I check for other states too? */) {
+      return;
+    }
+
+    return new Promise<void>((resolve, reject) => {
+      const onceRoomConnected = () => {
+        cleanup();
+        resolve();
+      };
+      const abortHandler = () => {
+        cleanup();
+        reject(new Error('AgentSession.waitUntilRoomConnected - signal aborted'));
+      };
+
+      const cleanup = () => {
+        this.room.off(RoomEvent.Connected, onceRoomConnected);
+        signal?.removeEventListener('abort', abortHandler);
+      };
+
+      this.room.on(RoomEvent.Connected, onceRoomConnected);
+      signal?.addEventListener('abort', abortHandler);
+    });
+  }
+
   get localParticipant() {
     return this.room?.localParticipant ?? null;
   }
 
   get messages() {
-    return this.messageList?.toArray() ?? [];
+    // return this.messageReceiver.messages();
+    return this.defaultAggregator?.toArray() ?? [];
+  }
+
+  async createMessageAggregator(options: { startsAt?: 'beginning' | 'now' } & ReceivedMessageAggregatorOptions = {}) {
+    await this.waitUntilRoomConnected();
+    if (!this.aggregators) {
+      throw new Error('AgentSession.aggregators is unset');
+    }
+    const aggregators = this.aggregators; // FIXME: this caching could lead to issues if this.aggregators changed reference?
+
+    const { startsAt, ...aggregatorOptions } = {
+      startsAt: 'beginning' as const,
+      ...options,
+    };
+
+    let aggregator;
+    switch (startsAt) {
+      case 'now':
+        aggregator = new ReceivedMessageAggregator(aggregatorOptions);
+        break;
+
+      case 'beginning':
+        aggregator = ReceivedMessageAggregator.fromIterator(this.defaultAggregator ?? [], aggregatorOptions);
+        break;
+    }
+
+    aggregators.push(aggregator);
+    const closeHandler = () => {
+      const aggregatorIndex = aggregators.indexOf(aggregator);
+      if (aggregatorIndex < 0) {
+        throw new Error(`Index of aggregator was non integer (found ${aggregatorIndex}), has this aggregator already been closed previously?`);
+      }
+      aggregators.splice(aggregatorIndex, 1);
+
+      aggregator.off(ReceivedMessageAggregatorEvent.Close, closeHandler);
+    };
+    aggregator.on(ReceivedMessageAggregatorEvent.Close, closeHandler);
+
+    return aggregator;
   }
 
   // FIXME: maybe there should be a special case where if message is `string` it is converted into
