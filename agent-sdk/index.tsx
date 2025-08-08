@@ -78,7 +78,7 @@ interface TextStreamInfo extends BaseStreamInfo {}
 
 /* FROM COMPONENTS JS: */
 /** @public */
-type TrackReference = {
+export type TrackReference = {
   participant: Participant;
   publication: TrackPublication;
   source: Track.Source;
@@ -243,6 +243,17 @@ export function useAgentState() {
   return { state: agentState, isAvailable };
 }
 
+export function useAgentTracks() {
+  const agentSession = useAgentSession();
+
+  const [audioTrack, setAudioTrack] = useState(agentSession.agentParticipant?.audioTrack ?? null);
+  useAgentSessionEvent(AgentSessionEvent.AudioTrackChanged, setAudioTrack, []);
+  const [videoTrack, setVideoTrack] = useState(agentSession.agentParticipant?.videoTrack ?? null);
+  useAgentSessionEvent(AgentSessionEvent.VideoTrackChanged, setVideoTrack, []);
+
+  return { audioTrack, videoTrack };
+}
+
 function useParticipantEvents<P extends Participant>(
   participant: P,
   eventNames: Array<ParticipantEvent>,
@@ -268,7 +279,8 @@ export function useAgentLocalParticipant() {
   const agentSession = useAgentSession();
 
   const [localParticipant, setLocalParticipant] = React.useState(agentSession.localParticipant);
-  const [microphoneTrack, setMicrophoneTrack] = React.useState<TrackPublication | null>(null);
+  const [microphoneTrack, setMicrophoneTrack] = React.useState<TrackReference | null>(null);
+  const [cameraTrack, setCameraTrack] = React.useState<TrackReference | null>(null);
 
   useParticipantEvents(agentSession.localParticipant, [
     ParticipantEvent.TrackMuted,
@@ -282,13 +294,22 @@ export function useAgentLocalParticipant() {
     ParticipantEvent.MediaDevicesError,
     ParticipantEvent.TrackSubscriptionStatusChanged,
     // ParticipantEvent.ConnectionQualityChanged,
-  ], (p: LocalParticipant) => {
-    setLocalParticipant(p);
+  ], () => {
+    setLocalParticipant(agentSession.localParticipant);
     // FIXME: is the rest of this stuff needed?
     // const { isMicrophoneEnabled, isCameraEnabled, isScreenShareEnabled } = p;
-    const microphoneTrack = p.getTrackPublication(Track.Source.Microphone);
-    setMicrophoneTrack(microphoneTrack ?? null);
-    // const cameraTrack = p.getTrackPublication(Track.Source.Camera);
+    const microphoneTrack = agentSession.localParticipant.getTrackPublication(Track.Source.Microphone);
+    setMicrophoneTrack(microphoneTrack ? {
+      source: Track.Source.Microphone,
+      participant: localParticipant,
+      publication: microphoneTrack,
+    } : null);
+    const cameraTrack = agentSession.localParticipant.getTrackPublication(Track.Source.Camera);
+    setCameraTrack(cameraTrack ? {
+      source: Track.Source.Camera,
+      participant: localParticipant,
+      publication: cameraTrack,
+    } : null);
     // const participantMedia: ParticipantMedia<T> = {
     //   isCameraEnabled,
     //   isMicrophoneEnabled,
@@ -300,7 +321,7 @@ export function useAgentLocalParticipant() {
     // return participantMedia;
   }, []);
 
-  return { localParticipant, microphoneTrack };
+  return { localParticipant, microphoneTrack, cameraTrack };
 }
 
 // hook ideas:

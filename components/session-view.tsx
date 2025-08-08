@@ -36,13 +36,12 @@ export const SessionView = ({
   ref,
 }: React.ComponentProps<'div'> & SessionViewProps) => {
   const agentSession = useAgentSession();
-  const { state: agentState } = useAgentState();
   const { messages, send } = useAgentMessages();
 
   // const { state: agentState } = useVoiceAssistant();
   const [chatOpen, setChatOpen] = useState(false);
   // const { messages, send } = useChatAndTranscription();
-  const room = useRoomContext();
+  // const room = useRoomContext();
 
   useDebugMode();
 

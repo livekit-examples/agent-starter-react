@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { AgentTile } from './agent-tile';
 import { AvatarTile } from './avatar-tile';
 import { VideoTile } from './video-tile';
+import { useAgentLocalParticipant, useAgentState, useAgentTracks } from '@/agent-sdk';
 
 const MotionVideoTile = motion.create(VideoTile);
 const MotionAgentTile = motion.create(AgentTile);
@@ -91,13 +92,17 @@ interface MediaTilesProps {
 }
 
 export function MediaTiles({ chatOpen }: MediaTilesProps) {
+  const { state: agentState } = useAgentState();
+  // const { audioTrack: agentAudioTrack, videoTrack: agentVideoTrack } = useAgentTracks();
   const {
-    state: agentState,
+    // state: agentState,
     audioTrack: agentAudioTrack,
     videoTrack: agentVideoTrack,
   } = useVoiceAssistant();
-  const [screenShareTrack] = useTracks([Track.Source.ScreenShare]);
-  const cameraTrack: TrackReference | undefined = useLocalTrackRef(Track.Source.Camera);
+  // console.log('TRACKS:', agentAudioTrack, agentVideoTrack);
+  const [screenShareTrack] = useTracks([Track.Source.ScreenShare]); // FIXME: replace with agent alternative
+  // const cameraTrack: TrackReference | undefined = useLocalTrackRef(Track.Source.Camera); // FIXME: replace with agent alternative
+  const { cameraTrack } = useAgentLocalParticipant();
 
   const isCameraEnabled = cameraTrack && !cameraTrack.publication.isMuted;
   const isScreenShareEnabled = screenShareTrack && !screenShareTrack.publication.isMuted;
@@ -119,7 +124,7 @@ export function MediaTiles({ chatOpen }: MediaTilesProps) {
   const agentLayoutTransition = transition;
   const avatarLayoutTransition = transition;
 
-  const isAvatar = agentVideoTrack !== undefined;
+  const isAvatar = Boolean(agentVideoTrack);
 
   return (
     <div className="pointer-events-none fixed inset-x-0 top-8 bottom-32 z-50 md:top-12 md:bottom-40">

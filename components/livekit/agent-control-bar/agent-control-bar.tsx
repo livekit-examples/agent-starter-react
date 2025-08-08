@@ -38,7 +38,7 @@ export function AgentControlBar({
   onDeviceError,
   ...props
 }: AgentControlBarProps) {
-  const participants = useRemoteParticipants();
+  const participants = useRemoteParticipants(); // FIXME: replace with agent alternative
   const [chatOpen, setChatOpen] = React.useState(false);
   const [isSendingMessage, setIsSendingMessage] = React.useState(false);
 
@@ -56,7 +56,7 @@ export function AgentControlBar({
     handleAudioDeviceChange,
     handleVideoDeviceChange,
     handleDisconnect,
-  } = useAgentControlBar({
+  } = useAgentControlBar({ // FIXME: replace with agent alternative
     controls,
     saveUserChoices,
   });
