@@ -71,6 +71,8 @@ export class AgentSession extends (EventEmitter as new () => TypedEventEmitter<A
       // FIXME: make it so the preconenct buffer thing can be disabled?
       this.room.localParticipant.setMicrophoneEnabled(true, undefined, { preConnectBuffer: true }),
     ]);
+
+    await this.waitUntilAgentIsAvailable();
   }
   async disconnect() {
     await this.room.disconnect();
@@ -192,6 +194,31 @@ export class AgentSession extends (EventEmitter as new () => TypedEventEmitter<A
 
   get isAvailable() {
     return this.state == 'listening' || this.state == 'thinking' || this.state == 'speaking';
+  }
+
+  /** Returns a promise that resolves once the agent is available for interaction */
+  private async waitUntilAgentIsAvailable(signal?: AbortSignal) {
+    return new Promise<void>((resolve, reject) => {
+      const stateChangedHandler = () => {
+        if (!this.isAvailable) {
+          return;
+        }
+        cleanup();
+        resolve();
+      };
+      const abortHandler = () => {
+        cleanup();
+        reject(new Error('AgentSession.waitUntilAgentIsAvailable - signal aborted'));
+      };
+
+      const cleanup = () => {
+        this.off(AgentSessionEvent.AgentStateChanged, stateChangedHandler);
+        signal?.removeEventListener('abort', abortHandler);
+      };
+
+      this.on(AgentSessionEvent.AgentStateChanged, stateChangedHandler);
+      signal?.addEventListener('abort', abortHandler);
+    });
   }
 
   get localParticipant() {
