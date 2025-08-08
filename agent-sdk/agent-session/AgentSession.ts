@@ -3,7 +3,6 @@ import { EventEmitter } from "events";
 import { Room, RoomEvent, ConnectionState } from 'livekit-client';
 
 import {
-  type BaseMessageId,
   type ReceivedMessage,
   type SentMessage,
   MessageSender,
@@ -14,6 +13,7 @@ import {
   TranscriptionMessageReceiver,
 } from "./message";
 import AgentParticipant, { AgentParticipantEvent } from './AgentParticipant';
+import OrderedMessageList from '@/agent-sdk/lib/ordered-message-list';
 
 
 export enum AgentSessionEvent {
@@ -50,10 +50,7 @@ export class AgentSession extends (EventEmitter as new () => TypedEventEmitter<A
   agentParticipant: AgentParticipant | null = null;
   messageSender: MessageSender | null = null;
   messageReceiver: MessageReceiver | null = null;
-
-  // FIXME: maybe make an OrderedMessageList with these two fields in it?
-  messageById: Map<BaseMessageId, SentMessage | ReceivedMessage> = new Map();
-  messageIds: Array<BaseMessageId> = [];
+  messageList: OrderedMessageList<SentMessage | ReceivedMessage> | null = null;
 
   constructor() {
     super();
@@ -101,6 +98,8 @@ export class AgentSession extends (EventEmitter as new () => TypedEventEmitter<A
       }
     })();
 
+    this.messageList = new OrderedMessageList();
+
     this.startAgentConnectedTimeout();
   }
 
@@ -113,6 +112,8 @@ export class AgentSession extends (EventEmitter as new () => TypedEventEmitter<A
 
     this.messageReceiver?.close();
     this.messageReceiver = null;
+
+    this.messageList = null;
 
     if (this.agentConnectedTimeout) {
       clearTimeout(this.agentConnectedTimeout);
@@ -145,11 +146,10 @@ export class AgentSession extends (EventEmitter as new () => TypedEventEmitter<A
   }
 
   private handleIncomingMessage = (incomingMessage: ReceivedMessage) => {
-      // Upsert the message into the list
-    this.messageById.set(incomingMessage.id, incomingMessage);
-    if (!this.messageIds.includes(incomingMessage.id)) {
-      this.messageIds.push(incomingMessage.id);
+    if (!this.messageList) {
+      throw new Error('AgentSession.messageList is unset');
     }
+    this.messageList.upsert(incomingMessage);
 
     this.emit(AgentSessionEvent.MessagesChanged, this.messages);
   }
@@ -192,12 +192,7 @@ export class AgentSession extends (EventEmitter as new () => TypedEventEmitter<A
   }
 
   get messages() {
-    return (
-      this.messageIds
-        .map(id => this.messageById.get(id))
-        // FIXME: can I get rid of the filter somehow?
-        .filter((message): message is SentMessage | ReceivedMessage => typeof message !== 'undefined')
-    );
+    return this.messageList?.toArray() ?? [];
   }
 
   // FIXME: maybe there should be a special case where if message is `string` it is converted into
