@@ -46,7 +46,7 @@ importers:
         version: 2.15.4(@types/dom-mediacapture-record@1.0.22)
       livekit-server-sdk:
         specifier: ^2.13.0
-        version: 2.13.1
+        version: 2.13.2
       mime:
         specifier: ^4.0.7
         version: 4.0.7
@@ -423,9 +423,6 @@ packages:
 
   '@livekit/mutex@1.1.1':
     resolution: {integrity: sha512-EsshAucklmpuUAfkABPxJNhzj9v2sG7JuzFDL4ML1oJQSV14sqrpTYnsaOudMAw9yOaW53NU3QQTlUQoRs4czw==}
-
-  '@livekit/protocol@1.39.2':
-    resolution: {integrity: sha512-kYbIO/JlC6cylSxd4WJrBps9+zoZ9gifL7t3iW9whT8rbo5jHx03I4dwBLhzOonVyX+memSEO90m/ymNoT+aAw==}
 
   '@livekit/protocol@1.39.3':
     resolution: {integrity: sha512-hfOnbwPCeZBEvMRdRhU2sr46mjGXavQcrb3BFRfG+Gm0Z7WUSeFdy5WLstXJzEepz17Iwp/lkGwJ4ZgOOYfPuA==}
@@ -1968,8 +1965,8 @@ packages:
     peerDependencies:
       '@types/dom-mediacapture-record': ^1
 
-  livekit-server-sdk@2.13.1:
-    resolution: {integrity: sha512-k4qFvqjHUR0s9lMMueZ1CMDLw/IngOmL/wsh/zq0+6bIg3rMzns9s3ECOf7XuT56esEuu8LGlrw0+inL86QiqQ==}
+  livekit-server-sdk@2.13.2:
+    resolution: {integrity: sha512-5JrQPlOB+8AhiMFr4UuVQU7bsgYbFwfIpUgM5hpdz5Kh3jlSFTf/QXbjsBkN3rvH/rGvWfXRFkH7nykbc17tTA==}
     engines: {node: '>=18'}
 
   locate-path@6.0.0:
@@ -2936,10 +2933,6 @@ snapshots:
     optional: true
 
   '@livekit/mutex@1.1.1': {}
-
-  '@livekit/protocol@1.39.2':
-    dependencies:
-      '@bufbuild/protobuf': 1.10.1
 
   '@livekit/protocol@1.39.3':
     dependencies:
@@ -4558,10 +4551,10 @@ snapshots:
       typed-emitter: 2.1.0
       webrtc-adapter: 9.0.3
 
-  livekit-server-sdk@2.13.1:
+  livekit-server-sdk@2.13.2:
     dependencies:
       '@bufbuild/protobuf': 1.10.1
-      '@livekit/protocol': 1.39.2
+      '@livekit/protocol': 1.39.3
       camelcase-keys: 9.1.3
       jose: 5.10.0
 
