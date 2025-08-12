@@ -21,12 +21,11 @@ interface AppProps {
 export function App({ appConfig }: AppProps) {
   const room = useMemo(() => new Room(), []);
   const [sessionStarted, setSessionStarted] = useState(false);
-  const { refreshConnectionDetails, existingOrRefreshConnectionDetails } = useConnectionDetails();
+  const { refreshConnectionDetails } = useConnectionDetails();
 
   useEffect(() => {
     const onDisconnected = () => {
       setSessionStarted(false);
-      refreshConnectionDetails();
     };
     const onMediaDevicesError = (error: Error) => {
       toastAlert({
@@ -40,7 +39,7 @@ export function App({ appConfig }: AppProps) {
       room.off(RoomEvent.Disconnected, onDisconnected);
       room.off(RoomEvent.MediaDevicesError, onMediaDevicesError);
     };
-  }, [room, refreshConnectionDetails]);
+  }, [room]);
 
   useEffect(() => {
     let aborted = false;
@@ -49,7 +48,7 @@ export function App({ appConfig }: AppProps) {
         room.localParticipant.setMicrophoneEnabled(true, undefined, {
           preConnectBuffer: appConfig.isPreConnectBufferEnabled,
         }),
-        existingOrRefreshConnectionDetails().then((connectionDetails) =>
+        refreshConnectionDetails().then((connectionDetails) =>
           room.connect(connectionDetails.serverUrl, connectionDetails.participantToken)
         ),
       ]).catch((error) => {
