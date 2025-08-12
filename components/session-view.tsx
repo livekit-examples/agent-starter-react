@@ -39,7 +39,8 @@ export const SessionView = ({
   const { messages, send } = useChatAndTranscription();
   const room = useRoomContext();
 
-  useDebugMode();
+  // Uncomment the below to see verbose logs showing the underlying connection lifecycle
+  // useDebugMode();
 
   async function handleSendMessage(message: string) {
     await send(message);
