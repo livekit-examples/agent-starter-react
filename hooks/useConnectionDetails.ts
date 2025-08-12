@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import { ConnectionDetails } from '@/app/api/connection-details/route';
 
 export default function useConnectionDetails() {
@@ -11,10 +11,7 @@ export default function useConnectionDetails() {
   // In real-world application, you would likely allow the user to specify their
   // own participant name, and possibly to choose from existing rooms to join.
 
-  const [connectionDetails, setConnectionDetails] = useState<ConnectionDetails | null>(null);
-
   const fetchConnectionDetails = useCallback(async () => {
-    setConnectionDetails(null);
     const url = new URL(
       process.env.NEXT_PUBLIC_CONN_DETAILS_ENDPOINT ?? '/api/connection-details',
       window.location.origin
@@ -29,13 +26,8 @@ export default function useConnectionDetails() {
       throw new Error('Error fetching connection details!');
     }
 
-    setConnectionDetails(data);
     return data;
   }, []);
 
-  useEffect(() => {
-    fetchConnectionDetails();
-  }, [fetchConnectionDetails]);
-
-  return { connectionDetails, refreshConnectionDetails: fetchConnectionDetails };
+  return { fetchConnectionDetails };
 }
