@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { decodeJwt } from 'jose';
 import { ConnectionDetails } from '@/app/api/connection-details/route';
 
 export default function useConnectionDetails() {
@@ -13,25 +14,57 @@ export default function useConnectionDetails() {
 
   const [connectionDetails, setConnectionDetails] = useState<ConnectionDetails | null>(null);
 
-  const fetchConnectionDetails = useCallback(() => {
+  const fetchConnectionDetails = useCallback(async () => {
     setConnectionDetails(null);
     const url = new URL(
       process.env.NEXT_PUBLIC_CONN_DETAILS_ENDPOINT ?? '/api/connection-details',
       window.location.origin
     );
-    fetch(url.toString())
-      .then((res) => res.json())
-      .then((data) => {
-        setConnectionDetails(data);
-      })
-      .catch((error) => {
-        console.error('Error fetching connection details:', error);
-      });
+
+    let data;
+    try {
+      const res = await fetch(url.toString());
+      data = await res.json();
+    } catch (error) {
+      console.error('Error fetching connection details:', error);
+      return;
+    }
+
+    setConnectionDetails(data);
+    return data;
   }, []);
 
   useEffect(() => {
     fetchConnectionDetails();
   }, [fetchConnectionDetails]);
 
-  return { connectionDetails, refreshConnectionDetails: fetchConnectionDetails };
+  const isConnectionDetailsExpired = useCallback(() => {
+    const token = connectionDetails?.participantToken;
+    if (!token) {
+      return true;
+    }
+
+    const jwtPayload = decodeJwt(token);
+    if (!jwtPayload.exp) {
+      return true;
+    }
+    const expiresAt = new Date(jwtPayload.exp);
+
+    const now = new Date();
+    return expiresAt >= now;
+  }, [connectionDetails?.participantToken]);
+
+  const useOrRefreshConnectionDetails = useCallback(async () => {
+    if (isConnectionDetailsExpired()) {
+      return fetchConnectionDetails();
+    } else {
+      return connectionDetails;
+    }
+  }, [connectionDetails, fetchConnectionDetails, isConnectionDetailsExpired]);
+
+  return {
+    connectionDetails,
+    refreshConnectionDetails: fetchConnectionDetails,
+    useOrRefreshConnectionDetails,
+  };
 }
