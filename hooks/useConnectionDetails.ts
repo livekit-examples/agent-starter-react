@@ -21,7 +21,7 @@ export default function useConnectionDetails() {
       window.location.origin
     );
 
-    let data;
+    let data: ConnectionDetails;
     try {
       const res = await fetch(url.toString());
       data = await res.json();
@@ -55,7 +55,7 @@ export default function useConnectionDetails() {
   }, [connectionDetails?.participantToken]);
 
   const useOrRefreshConnectionDetails = useCallback(async () => {
-    if (isConnectionDetailsExpired()) {
+    if (isConnectionDetailsExpired() || !connectionDetails) {
       return fetchConnectionDetails();
     } else {
       return connectionDetails;
