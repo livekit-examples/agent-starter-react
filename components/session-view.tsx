@@ -14,7 +14,7 @@ import { ChatEntry } from '@/components/livekit/chat/chat-entry';
 import { ChatMessageView } from '@/components/livekit/chat/chat-message-view';
 import { MediaTiles } from '@/components/livekit/media-tiles';
 import useChatAndTranscription from '@/hooks/useChatAndTranscription';
-// import { useDebugMode } from '@/hooks/useDebug';
+import { useDebugMode } from '@/hooks/useDebug';
 import type { AppConfig } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -39,8 +39,9 @@ export const SessionView = ({
   const { messages, send } = useChatAndTranscription();
   const room = useRoomContext();
 
-  // Uncomment the below to see verbose logs showing the underlying connection lifecycle
-  // useDebugMode();
+  useDebugMode({
+    enabled: process.env.NODE_END !== 'production',
+  });
 
   async function handleSendMessage(message: string) {
     await send(message);
