@@ -34,7 +34,7 @@ export default function ComponentsLayout({ children }: { children: React.ReactNo
     return () => {
       room.disconnect();
     };
-  }, [room]);
+  }, [room, fetchConnectionDetails]);
 
   return (
     <div className="mx-auto min-h-svh max-w-3xl space-y-8 px-4 py-8">
