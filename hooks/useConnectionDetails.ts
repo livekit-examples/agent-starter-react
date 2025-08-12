@@ -54,7 +54,7 @@ export default function useConnectionDetails() {
     return expiresAt >= now;
   }, [connectionDetails?.participantToken]);
 
-  const useOrRefreshConnectionDetails = useCallback(async () => {
+  const existingOrRefreshConnectionDetails = useCallback(async () => {
     if (isConnectionDetailsExpired() || !connectionDetails) {
       return fetchConnectionDetails();
     } else {
@@ -65,6 +65,6 @@ export default function useConnectionDetails() {
   return {
     connectionDetails,
     refreshConnectionDetails: fetchConnectionDetails,
-    useOrRefreshConnectionDetails,
+    existingOrRefreshConnectionDetails,
   };
 }
