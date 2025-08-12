@@ -27,7 +27,7 @@ export default function useConnectionDetails() {
       data = await res.json();
     } catch (error) {
       console.error('Error fetching connection details:', error);
-      return;
+      throw new Error('Error fetching connection details!');
     }
 
     setConnectionDetails(data);
