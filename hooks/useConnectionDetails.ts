@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { decodeJwt } from 'jose';
 import { ConnectionDetails } from '@/app/api/connection-details/route';
 
+const ONE_MINUTE_IN_MILLISECONDS = 60 * 1000;
+
 export default function useConnectionDetails() {
   // Generate room connection details, including:
   //   - A random Room name
@@ -48,7 +50,7 @@ export default function useConnectionDetails() {
     if (!jwtPayload.exp) {
       return true;
     }
-    const expiresAt = new Date(jwtPayload.exp);
+    const expiresAt = new Date(jwtPayload.exp - ONE_MINUTE_IN_MILLISECONDS);
 
     const now = new Date();
     return expiresAt >= now;
