@@ -10,20 +10,18 @@ import useConnectionDetails from '@/hooks/useConnectionDetails';
 import { cn } from '@/lib/utils';
 
 export default function ComponentsLayout({ children }: { children: React.ReactNode }) {
-  const { fetchConnectionDetails } = useConnectionDetails();
+  const { connectionDetails } = useConnectionDetails();
 
   const pathname = usePathname();
   const room = React.useMemo(() => new Room(), []);
 
   React.useEffect(() => {
-    if (room.state === 'disconnected') {
+    if (room.state === 'disconnected' && connectionDetails) {
       Promise.all([
         room.localParticipant.setMicrophoneEnabled(true, undefined, {
           preConnectBuffer: true,
         }),
-        fetchConnectionDetails().then((connectionDetails) =>
-          room.connect(connectionDetails.serverUrl, connectionDetails.participantToken)
-        ),
+        room.connect(connectionDetails.serverUrl, connectionDetails.participantToken),
       ]).catch((error) => {
         toastAlert({
           title: 'There was an error connecting to the agent',
@@ -34,7 +32,7 @@ export default function ComponentsLayout({ children }: { children: React.ReactNo
     return () => {
       room.disconnect();
     };
-  }, [room]);
+  }, [room, connectionDetails]);
 
   return (
     <div className="mx-auto min-h-svh max-w-3xl space-y-8 px-4 py-8">

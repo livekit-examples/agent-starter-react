@@ -21,7 +21,7 @@ interface AppProps {
 export function App({ appConfig }: AppProps) {
   const room = useMemo(() => new Room(), []);
   const [sessionStarted, setSessionStarted] = useState(false);
-  const { fetchConnectionDetails } = useConnectionDetails();
+  const { refreshConnectionDetails } = useConnectionDetails();
 
   useEffect(() => {
     const onDisconnected = () => {
@@ -48,7 +48,7 @@ export function App({ appConfig }: AppProps) {
         room.localParticipant.setMicrophoneEnabled(true, undefined, {
           preConnectBuffer: appConfig.isPreConnectBufferEnabled,
         }),
-        fetchConnectionDetails().then((connectionDetails) =>
+        refreshConnectionDetails().then((connectionDetails) =>
           room.connect(connectionDetails.serverUrl, connectionDetails.participantToken)
         ),
       ]).catch((error) => {
