@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { decodeJwt } from 'jose';
 import { ConnectionDetails } from '@/app/api/connection-details/route';
 
 export default function useConnectionDetails() {
@@ -37,5 +38,33 @@ export default function useConnectionDetails() {
     fetchConnectionDetails();
   }, [fetchConnectionDetails]);
 
-  return { connectionDetails, refreshConnectionDetails: fetchConnectionDetails };
+  const isConnectionDetailsExpired = useCallback(() => {
+    const token = connectionDetails?.participantToken;
+    if (!token) {
+      return true;
+    }
+
+    const jwtPayload = decodeJwt(token);
+    if (!jwtPayload.exp) {
+      return true;
+    }
+    const expiresAt = new Date(jwtPayload.exp);
+
+    const now = new Date();
+    return expiresAt >= now;
+  }, [connectionDetails?.participantToken]);
+
+  const existingOrRefreshConnectionDetails = useCallback(async () => {
+    if (isConnectionDetailsExpired() || !connectionDetails) {
+      return fetchConnectionDetails();
+    } else {
+      return connectionDetails;
+    }
+  }, [connectionDetails, fetchConnectionDetails, isConnectionDetailsExpired]);
+
+  return {
+    connectionDetails,
+    refreshConnectionDetails: fetchConnectionDetails,
+    existingOrRefreshConnectionDetails,
+  };
 }

@@ -22,6 +22,7 @@
     "buffer-image-size": "^0.6.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "jose": "^6.0.12",
     "livekit-client": "^2.13.3",
     "livekit-server-sdk": "^2.13.0",
     "mime": "^4.0.7",
