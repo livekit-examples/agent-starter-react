@@ -75,7 +75,7 @@ export const SessionView = ({
           });
           room.disconnect();
         }
-      }, 10_000);
+      }, 20_000);
 
       return () => clearTimeout(timeout);
     }
