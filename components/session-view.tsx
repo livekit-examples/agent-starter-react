@@ -89,14 +89,15 @@ export const SessionView = ({
   };
 
   return (
-    <main
+    <section
       ref={ref}
       inert={disabled}
-      className={
+      className={cn(
+        'opacity-0',
         // prevent page scrollbar
         // when !chatOpen due to 'translate-y-20'
-        cn(!chatOpen && 'max-h-svh overflow-hidden')
-      }
+        !chatOpen && 'max-h-svh overflow-hidden'
+      )}
     >
       <ChatMessageView
         className={cn(
@@ -172,6 +173,6 @@ export const SessionView = ({
           <div className="from-background border-background absolute top-0 left-0 h-12 w-full -translate-y-full bg-gradient-to-t to-transparent" />
         </motion.div>
       </div>
-    </main>
+    </section>
   );
 };

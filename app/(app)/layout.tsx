@@ -18,7 +18,9 @@ export default async function AppLayout({ children }: AppLayoutProps) {
           href="https://livekit.io"
           className="scale-100 transition-transform duration-300 hover:scale-110"
         >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={logo} alt={`${companyName} Logo`} className="block size-6 dark:hidden" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={logoDark ?? logo}
             alt={`${companyName} Logo`}
