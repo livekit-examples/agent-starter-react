@@ -21,7 +21,8 @@ interface AppProps {
 export function App({ appConfig }: AppProps) {
   const room = useMemo(() => new Room(), []);
   const [sessionStarted, setSessionStarted] = useState(false);
-  const { refreshConnectionDetails, existingOrRefreshConnectionDetails } = useConnectionDetails();
+  const { refreshConnectionDetails, existingOrRefreshConnectionDetails } =
+    useConnectionDetails(appConfig);
 
   useEffect(() => {
     const onDisconnected = () => {
