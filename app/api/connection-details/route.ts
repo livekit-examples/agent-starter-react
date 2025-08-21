@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { AccessToken, type AccessTokenOptions, type VideoGrant } from 'livekit-server-sdk';
+import { RoomConfiguration } from '@livekit/protocol';
 
 // NOTE: you are expected to define the following environment variables in `.env.local`:
 const API_KEY = process.env.LIVEKIT_API_KEY;
@@ -81,12 +82,9 @@ function createParticipantToken(
   at.addGrant(grant);
 
   if (agentName) {
-    at.roomConfig = {
-      agents: [
-        // @ts-expect-error - RoomAgentDispatch is not constructable
-        { agentName },
-      ],
-    };
+    at.roomConfig = new RoomConfiguration({
+      agents: [{ agentName }],
+    });
   }
 
   return at.toJwt();

@@ -11,7 +11,8 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
-    "@livekit/components-react": "^2.9.9",
+    "@livekit/components-react": "^2.9.14",
+    "@livekit/protocol": "^1.40.0",
     "@phosphor-icons/react": "^2.1.8",
     "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-scroll-area": "^1.2.9",
@@ -23,8 +24,8 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "jose": "^6.0.12",
-    "livekit-client": "^2.13.3",
-    "livekit-server-sdk": "^2.13.0",
+    "livekit-client": "^2.15.5",
+    "livekit-server-sdk": "^2.13.2",
     "mime": "^4.0.7",
     "motion": "^12.16.0",
     "next": "15.4.7",
