@@ -46,7 +46,7 @@ importers:
         version: 2.1.1
       jose:
         specifier: ^6.0.12
-        version: 6.0.13
+        version: 6.1.0
       livekit-client:
         specifier: ^2.15.5
         version: 2.15.6(@types/dom-mediacapture-record@1.0.22)
@@ -1873,8 +1873,8 @@ packages:
   jose@5.10.0:
     resolution: {integrity: sha512-s+3Al/p9g32Iq+oqXxkW//7jk2Vig6FF1CFqzVXoTUXt2qz89YWbL+OwS17NFYEvxC35n0FKeGO2LGYSxeM2Gg==}
 
-  jose@6.0.13:
-    resolution: {integrity: sha512-Yms4GpbmdANamS51kKK6w4hRlKx8KTxbWyAAKT/MhUMtqbIqh5mb2HjhTNUbk7TFL8/MBB5zWSDohL7ed4k/UA==}
+  jose@6.1.0:
+    resolution: {integrity: sha512-TTQJyoEoKcC1lscpVDCSsVgYzUDg/0Bt3WE//WiTPK6uOCQC2KZS4MpugbMWt/zyjkopgZoXhZuCi00gLudfUA==}
 
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
@@ -4496,7 +4496,7 @@ snapshots:
 
   jose@5.10.0: {}
 
-  jose@6.0.13: {}
+  jose@6.1.0: {}
 
   js-tokens@4.0.0: {}
 
