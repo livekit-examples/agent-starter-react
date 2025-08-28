@@ -13,7 +13,7 @@ importers:
         version: 2.9.14(@livekit/krisp-noise-filter@0.2.16(livekit-client@2.15.6(@types/dom-mediacapture-record@1.0.22)))(livekit-client@2.15.6(@types/dom-mediacapture-record@1.0.22))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(tslib@2.8.1)
       '@livekit/protocol':
         specifier: ^1.40.0
-        version: 1.40.0
+        version: 1.41.0
       '@phosphor-icons/react':
         specifier: ^2.1.8
         version: 2.1.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -444,8 +444,8 @@ packages:
   '@livekit/protocol@1.39.3':
     resolution: {integrity: sha512-hfOnbwPCeZBEvMRdRhU2sr46mjGXavQcrb3BFRfG+Gm0Z7WUSeFdy5WLstXJzEepz17Iwp/lkGwJ4ZgOOYfPuA==}
 
-  '@livekit/protocol@1.40.0':
-    resolution: {integrity: sha512-1q0TNqlSTDW9ZuQCYTLDusyO+StvAXPmECQgyuszThDjzhTwQOkA6Rv7B1wPcvpTcwieIG0vuAO4cw4+kg+xWA==}
+  '@livekit/protocol@1.41.0':
+    resolution: {integrity: sha512-bozBB39VSbd0IjRBwShMlLskqkd9weWJNskaB1CVpcEO9UUI1gMwAtBJOKYblzZJT9kE1SJa3L4oWWwsZMzSXw==}
 
   '@napi-rs/wasm-runtime@0.2.10':
     resolution: {integrity: sha512-bCsCyeZEwVErsGmyPNSzwfwFn4OdxBj0mmv6hOFucB/k81Ojdu68RbZdxYsRQUPc9l6SU5F/cG+bXgWs3oUgsQ==}
@@ -2977,7 +2977,7 @@ snapshots:
     dependencies:
       '@bufbuild/protobuf': 1.10.1
 
-  '@livekit/protocol@1.40.0':
+  '@livekit/protocol@1.41.0':
     dependencies:
       '@bufbuild/protobuf': 1.10.1
 
@@ -4599,7 +4599,7 @@ snapshots:
   livekit-server-sdk@2.13.2:
     dependencies:
       '@bufbuild/protobuf': 1.10.1
-      '@livekit/protocol': 1.40.0
+      '@livekit/protocol': 1.41.0
       camelcase-keys: 9.1.3
       jose: 5.10.0
 
