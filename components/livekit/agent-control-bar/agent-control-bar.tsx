@@ -149,6 +149,7 @@ export function AgentControlBar({
               <DeviceSelect
                 size="sm"
                 kind="audioinput"
+                requestPermissions={false}
                 onMediaDeviceError={onMicrophoneDeviceSelectError}
                 onActiveDeviceChange={handleAudioDeviceChange}
                 className={cn([
@@ -177,6 +178,7 @@ export function AgentControlBar({
               <DeviceSelect
                 size="sm"
                 kind="videoinput"
+                requestPermissions={false}
                 onMediaDeviceError={onCameraDeviceSelectError}
                 onActiveDeviceChange={handleVideoDeviceChange}
                 className={cn([
