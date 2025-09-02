@@ -1,11 +1,8 @@
-# .github/workflows/sync-main-to-sandbox-production.yml
+# .github/workflows/sync-to-production.yml
 
 name: Sync main to sandbox-production
 
 on:
-  # push:
-  #  branches:
-  #    - main
   workflow_dispatch:
 
 permissions:
@@ -34,3 +31,13 @@ jobs:
           git checkout sandbox-production || git checkout -b sandbox-production
           git merge --strategy-option theirs main
           git push origin sandbox-production
+
+      - name: Tag the deployment
+        if: github.ref == 'refs/heads/main'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Increment version from previous tag of format vX
+          VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//' | awk -F. -v OFS=. '{$NF++;print}')
+          git tag -a "v$VERSION" -m "Deploy v$VERSION to production"
+          git push origin "v$VERSION"
