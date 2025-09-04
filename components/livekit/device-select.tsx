@@ -1,5 +1,6 @@
 'use client';
 
+import { useLayoutEffect, useState } from 'react';
 import { cva } from 'class-variance-authority';
 import { LocalAudioTrack, LocalVideoTrack } from 'livekit-client';
 import { useMaybeRoomContext, useMediaDeviceSelect } from '@livekit/components-react';
@@ -53,27 +54,46 @@ export function DeviceSelect({
 }: DeviceSelectProps) {
   const size = props.size || 'default';
 
+  const [open, setOpen] = useState(false);
+  const [requestPermissionsState, setRequestPermissionsState] = useState(requestPermissions);
+
   const room = useMaybeRoomContext();
   const { devices, activeDeviceId, setActiveMediaDevice } = useMediaDeviceSelect({
     kind,
     room,
     track,
-    requestPermissions,
+    requestPermissions: requestPermissionsState,
     onError: onMediaDeviceError,
   });
+
+  // When the select opens, ensure that media devices are re-requested in case when they were last
+  // requested, permissions were not granted
+  useLayoutEffect(() => {
+    if (open) {
+      setRequestPermissionsState(true);
+    }
+  }, [open]);
+
   return (
-    <Select value={activeDeviceId} onValueChange={setActiveMediaDevice}>
+    <Select
+      value={activeDeviceId}
+      onValueChange={setActiveMediaDevice}
+      open={open}
+      onOpenChange={setOpen}
+    >
       <SelectTrigger className={cn(selectVariants({ size }), props.className)}>
         {size !== 'sm' && (
           <SelectValue className="font-mono text-sm" placeholder={`Select a ${kind}`} />
         )}
       </SelectTrigger>
       <SelectContent>
-        {devices.map((device) => (
-          <SelectItem key={device.deviceId} value={device.deviceId} className="font-mono text-xs">
-            {device.label}
-          </SelectItem>
-        ))}
+        {devices
+          .filter((d) => d.deviceId !== '')
+          .map((device) => (
+            <SelectItem key={device.deviceId} value={device.deviceId} className="font-mono text-xs">
+              {device.label}
+            </SelectItem>
+          ))}
       </SelectContent>
     </Select>
   );
