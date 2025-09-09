@@ -64,10 +64,10 @@ export default function useConnectionDetails(appConfig: AppConfig) {
     if (!jwtPayload.exp) {
       return true;
     }
-    const expiresAt = new Date(jwtPayload.exp - ONE_MINUTE_IN_MILLISECONDS);
+    const expiresAt = new Date(jwtPayload.exp * 1000 - ONE_MINUTE_IN_MILLISECONDS);
 
     const now = new Date();
-    return expiresAt >= now;
+    return expiresAt <= now;
   }, [connectionDetails?.participantToken]);
 
   const existingOrRefreshConnectionDetails = useCallback(async () => {
