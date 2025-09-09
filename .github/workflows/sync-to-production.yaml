@@ -1,43 +1,16 @@
-# .github/workflows/sync-to-production.yml
-
+# .github/workflows/sync-to-production.yaml
 name: Sync main to sandbox-production
 
 on:
   workflow_dispatch:
 
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
   sync:
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: write
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: livekit-examples/sandbox-deploy-action@v1
         with:
-          fetch-depth: 0 # Fetch all history so we can force push
-
-      - name: Set up Git
-        run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@livekit.io'
-
-      - name: Sync to sandbox-production
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git checkout sandbox-production || git checkout -b sandbox-production
-          git merge --strategy-option theirs main
-          git push origin sandbox-production
-
-      - name: Tag the deployment
-        if: github.ref == 'refs/heads/main'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # Increment version from previous tag of format vX
-          VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//' | awk -F. -v OFS=. '{$NF++;print}')
-          git tag -a "v$VERSION" -m "Deploy v$VERSION to production"
-          git push origin "v$VERSION"
+          production_branch: 'sandbox-production'
+          token: ${{ secrets.GITHUB_TOKEN }}
