@@ -1,8 +1,9 @@
 import { Track } from 'livekit-client';
 import { AgentControlBar } from '@/components/livekit/agent-control-bar/agent-control-bar';
-import { DeviceSelect } from '@/components/livekit/device-select';
+import { TrackDeviceSelect } from '@/components/livekit/track-device-select';
 import { TrackToggle } from '@/components/livekit/track-toggle';
-import { Container } from '../Container';
+import { AppConfig } from '@/lib/types';
+import { Container } from '../container';
 
 export default function LiveKit() {
   return (
@@ -15,11 +16,11 @@ export default function LiveKit() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <h4 className="text-muted-foreground mb-2 font-mono text-xs uppercase">Size default</h4>
-            <DeviceSelect kind="audioinput" />
+            <TrackDeviceSelect kind="audioinput" />
           </div>
           <div>
             <h4 className="text-muted-foreground mb-2 font-mono text-xs uppercase">Size sm</h4>
-            <DeviceSelect size="sm" kind="audioinput" />
+            <TrackDeviceSelect size="sm" kind="audioinput" />
           </div>
         </div>
       </Container>
@@ -53,10 +54,12 @@ export default function LiveKit() {
         <div className="relative flex items-center justify-center">
           <AgentControlBar
             className="w-full"
-            capabilities={{
-              supportsChatInput: true,
-              supportsVideoInput: true,
-              supportsScreenShare: true,
+            controls={{
+              leave: true,
+              chat: true,
+              camera: true,
+              microphone: true,
+              screenShare: true,
             }}
           />
         </div>

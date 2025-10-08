@@ -1,8 +1,6 @@
 import { cache } from 'react';
 import { type ClassValue, clsx } from 'clsx';
-import { Room } from 'livekit-client';
 import { twMerge } from 'tailwind-merge';
-import type { ReceivedChatMessage, TextStreamData } from '@livekit/components-react';
 import { APP_CONFIG_DEFAULTS } from '@/app-config';
 import type { AppConfig, SandboxConfig } from './types';
 
@@ -14,23 +12,6 @@ export const THEME_MEDIA_QUERY = '(prefers-color-scheme: dark)';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
-}
-
-export function transcriptionToChatMessage(
-  textStream: TextStreamData,
-  room: Room
-): ReceivedChatMessage {
-  return {
-    id: textStream.streamInfo.id,
-    timestamp: textStream.streamInfo.timestamp,
-    message: textStream.text,
-    from:
-      textStream.participantInfo.identity === room.localParticipant.identity
-        ? room.localParticipant
-        : Array.from(room.remoteParticipants.values()).find(
-            (p) => p.identity === textStream.participantInfo.identity
-          ),
-  };
 }
 
 // https://react.dev/reference/react/cache#caveats
@@ -75,3 +56,25 @@ export const getAppConfig = cache(async (headers: Headers): Promise<AppConfig> =
 
   return APP_CONFIG_DEFAULTS;
 });
+
+// check provided accent colors against defaults
+// apply styles if they differ (or in development mode)
+// generate a hover color for the accent color by mixing it with 20% black
+export function getStyles(appConfig: AppConfig) {
+  const { accent, accentDark } = appConfig;
+  const hasCustomAccentColor =
+    process.env.NODE_ENV === 'development' || accent !== APP_CONFIG_DEFAULTS.accent;
+  const hasCustomAccentDarkColor =
+    process.env.NODE_ENV === 'development' || accentDark !== APP_CONFIG_DEFAULTS.accentDark;
+
+  return [
+    hasCustomAccentColor
+      ? `:root { --primary: ${accent}; --primary-hover: color-mix(in srgb, ${accent} 80%, #000); }`
+      : '',
+    hasCustomAccentDarkColor
+      ? `.dark { --primary: ${accentDark}; --primary-hover: color-mix(in srgb, ${accentDark} 80%, #000); }`
+      : '',
+  ]
+    .filter(Boolean)
+    .join('\n');
+}

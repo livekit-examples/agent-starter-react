@@ -9,10 +9,18 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Toggle } from '@/components/ui/toggle';
-import { Container } from '../Container';
+import { Container } from '../container';
 
-const buttonVariants = ['default', 'secondary', 'outline', 'ghost', 'link', 'destructive'] as const;
-const toggleVariants = ['default', 'outline'] as const;
+const buttonVariants = [
+  'default',
+  'primary',
+  'secondary',
+  'outline',
+  'ghost',
+  'link',
+  'destructive',
+] as const;
+const toggleVariants = ['default', 'primary', 'secondary', 'outline'] as const;
 const alertVariants = ['default', 'destructive'] as const;
 
 export default function Base() {

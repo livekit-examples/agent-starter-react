@@ -1,11 +1,11 @@
 import { headers } from 'next/headers';
 import { getAppConfig } from '@/lib/utils';
 
-interface AppLayoutProps {
+interface LayoutProps {
   children: React.ReactNode;
 }
 
-export default async function AppLayout({ children }: AppLayoutProps) {
+export default async function Layout({ children }: LayoutProps) {
   const hdrs = await headers();
   const { companyName, logo, logoDark } = await getAppConfig(hdrs);
 
@@ -39,6 +39,7 @@ export default async function AppLayout({ children }: AppLayoutProps) {
           </a>
         </span>
       </header>
+
       {children}
     </>
   );

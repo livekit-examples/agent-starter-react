@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { decodeJwt } from 'jose';
-import { ConnectionDetails } from '@/app/api/connection-details/route';
-import { AppConfig } from '@/lib/types';
+import type { AppConfig, ConnectionDetails } from '@/lib/types';
 
 const ONE_MINUTE_IN_MILLISECONDS = 60 * 1000;
 

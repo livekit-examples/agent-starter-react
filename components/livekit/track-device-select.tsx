@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect, useState } from 'react';
+import { memo, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { cva } from 'class-variance-authority';
 import { LocalAudioTrack, LocalVideoTrack } from 'livekit-client';
 import { useMaybeRoomContext, useMediaDeviceSelect } from '@livekit/components-react';
@@ -13,15 +13,16 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
+const NOOP = () => {};
+
 type DeviceSelectProps = React.ComponentProps<typeof SelectTrigger> & {
   kind: MediaDeviceKind;
+  variant?: 'default' | 'small';
   track?: LocalAudioTrack | LocalVideoTrack | undefined;
   requestPermissions?: boolean;
   onMediaDeviceError?: (error: Error) => void;
-  initialSelection?: string;
-  onActiveDeviceChange?: (deviceId: string) => void;
   onDeviceListChange?: (devices: MediaDeviceInfo[]) => void;
-  variant?: 'default' | 'small';
+  onActiveDeviceChange?: (deviceId: string) => void;
 };
 
 const selectVariants = cva(
@@ -42,29 +43,30 @@ const selectVariants = cva(
   }
 );
 
-export function DeviceSelect({
+export const TrackDeviceSelect = memo(function TrackDeviceSelect({
   kind,
   track,
-  requestPermissions,
-  onMediaDeviceError,
-  // initialSelection,
-  // onActiveDeviceChange,
-  // onDeviceListChange,
+  size = 'default',
+  requestPermissions = false,
+  onMediaDeviceError = NOOP,
+  onDeviceListChange = NOOP,
+  onActiveDeviceChange = NOOP,
   ...props
 }: DeviceSelectProps) {
-  const size = props.size || 'default';
-
+  const room = useMaybeRoomContext();
   const [open, setOpen] = useState(false);
   const [requestPermissionsState, setRequestPermissionsState] = useState(requestPermissions);
-
-  const room = useMaybeRoomContext();
   const { devices, activeDeviceId, setActiveMediaDevice } = useMediaDeviceSelect({
-    kind,
     room,
+    kind,
     track,
     requestPermissions: requestPermissionsState,
     onError: onMediaDeviceError,
   });
+
+  useEffect(() => {
+    onDeviceListChange(devices);
+  }, [devices, onDeviceListChange]);
 
   // When the select opens, ensure that media devices are re-requested in case when they were last
   // requested, permissions were not granted
@@ -74,12 +76,23 @@ export function DeviceSelect({
     }
   }, [open]);
 
+  const handleActiveDeviceChange = (deviceId: string) => {
+    setActiveMediaDevice(deviceId);
+    onActiveDeviceChange(deviceId);
+  };
+
+  const filteredDevices = useMemo(() => devices.filter((d) => d.deviceId !== ''), [devices]);
+
+  if (filteredDevices.length < 2) {
+    return null;
+  }
+
   return (
     <Select
-      value={activeDeviceId}
-      onValueChange={setActiveMediaDevice}
       open={open}
+      value={activeDeviceId}
       onOpenChange={setOpen}
+      onValueChange={handleActiveDeviceChange}
     >
       <SelectTrigger className={cn(selectVariants({ size }), props.className)}>
         {size !== 'sm' && (
@@ -87,14 +100,12 @@ export function DeviceSelect({
         )}
       </SelectTrigger>
       <SelectContent>
-        {devices
-          .filter((d) => d.deviceId !== '')
-          .map((device) => (
-            <SelectItem key={device.deviceId} value={device.deviceId} className="font-mono text-xs">
-              {device.label}
-            </SelectItem>
-          ))}
+        {filteredDevices.map((device) => (
+          <SelectItem key={device.deviceId} value={device.deviceId} className="font-mono text-xs">
+            {device.label}
+          </SelectItem>
+        ))}
       </SelectContent>
     </Select>
   );
-}
+});

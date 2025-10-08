@@ -1,5 +1,12 @@
 import type { TranscriptionSegment } from 'livekit-client';
 
+export type ConnectionDetails = {
+  serverUrl: string;
+  roomName: string;
+  participantName: string;
+  participantToken: string;
+};
+
 export interface CombinedTranscription extends TranscriptionSegment {
   role: 'assistant' | 'user';
   receivedAtMediaTimestamp: number;
