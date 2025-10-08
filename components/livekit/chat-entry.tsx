@@ -1,7 +1,7 @@
 import * as React from 'react';
+import { useMemo } from 'react';
 import type { MessageFormatter, ReceivedChatMessage } from '@livekit/components-react';
 import { cn } from '@/lib/utils';
-import { useChatMessage } from './hooks/utils';
 
 export interface ChatEntryProps extends React.HTMLAttributes<HTMLLIElement> {
   /** The chat massage object to display. */
@@ -16,39 +16,47 @@ export interface ChatEntryProps extends React.HTMLAttributes<HTMLLIElement> {
 
 export const ChatEntry = ({
   entry,
-  messageFormatter,
-  hideName,
-  hideTimestamp,
+  hideName = false,
+  hideTimestamp = false,
   className,
+  messageFormatter,
   ...props
 }: ChatEntryProps) => {
-  const { message, hasBeenEdited, time, locale, name } = useChatMessage(entry, messageFormatter);
+  const time = new Date(entry.timestamp);
+  const hasBeenEdited = !!entry.editTimestamp;
+  const name = entry.from?.name || entry.from?.identity;
+  const locale = typeof navigator !== 'undefined' ? navigator.language : 'en-US';
 
   const isUser = entry.from?.isLocal ?? false;
   const messageOrigin = isUser ? 'remote' : 'local';
+  const showHeader = !hideTimestamp || !hideName || hasBeenEdited;
+  const title = time.toLocaleTimeString(locale, { timeStyle: 'full' });
+
+  const formattedMessage = useMemo(() => {
+    return messageFormatter ? messageFormatter(entry.message) : entry.message;
+  }, [entry.message, messageFormatter]);
 
   return (
     <li
+      title={title}
       data-lk-message-origin={messageOrigin}
-      title={time.toLocaleTimeString(locale, { timeStyle: 'full' })}
       className={cn('group flex flex-col gap-0.5', className)}
       {...props}
     >
-      {(!hideTimestamp || !hideName || hasBeenEdited) && (
-        <span className="text-muted-foreground flex text-sm">
+      {showHeader && (
+        <header className="text-muted-foreground flex text-sm">
           {!hideName && <strong className="mt-2">{name}</strong>}
-
           {!hideTimestamp && (
             <span className="align-self-end ml-auto font-mono text-xs opacity-0 transition-opacity ease-linear group-hover:opacity-100">
               {hasBeenEdited && '*'}
               {time.toLocaleTimeString(locale, { timeStyle: 'short' })}
             </span>
           )}
-        </span>
+        </header>
       )}
 
-      <span className={cn('max-w-4/5 rounded-[20px] p-2', isUser ? 'bg-muted ml-auto' : 'mr-auto')}>
-        {message}
+      <span className={cn('max-w-4/5 rounded-[20px]', isUser ? 'bg-muted ml-auto p-2' : 'mr-auto')}>
+        {formattedMessage}
       </span>
     </li>
   );

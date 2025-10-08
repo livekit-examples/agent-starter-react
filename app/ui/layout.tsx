@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { headers } from 'next/headers';
-import { Tabs } from '@/app/components/Tabs';
-import { Provider } from '@/components/provider';
-import { cn, getAppConfig } from '@/lib/utils';
+import { getAppConfig } from '@/lib/utils';
+import { RoomProvider } from './room-provider';
+import { Tabs } from './tabs';
 
 export default async function ComponentsLayout({ children }: { children: React.ReactNode }) {
   const hdrs = await headers();
@@ -16,9 +16,9 @@ export default async function ComponentsLayout({ children }: { children: React.R
         </p>
       </header>
       <Tabs />
-      <Provider appConfig={appConfig}>
+      <RoomProvider appConfig={appConfig}>
         <main className="flex w-full flex-1 flex-col items-stretch gap-8">{children}</main>
-      </Provider>
+      </RoomProvider>
     </div>
   );
 }

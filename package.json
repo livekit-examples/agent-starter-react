@@ -11,7 +11,7 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
-    "@livekit/components-react": "^2.9.14",
+    "@livekit/components-react": "^2.9.15",
     "@livekit/protocol": "^1.40.0",
     "@phosphor-icons/react": "^2.1.8",
     "@radix-ui/react-label": "^2.1.7",
