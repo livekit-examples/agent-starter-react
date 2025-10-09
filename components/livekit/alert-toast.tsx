@@ -18,7 +18,7 @@ export function toastAlert(toast: Omit<ToastProps, 'id'>) {
   );
 }
 
-function AlertToast(props: ToastProps) {
+export function AlertToast(props: ToastProps) {
   const { title, description, id } = props;
 
   return (

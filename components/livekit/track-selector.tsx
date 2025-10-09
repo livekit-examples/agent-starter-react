@@ -1,3 +1,5 @@
+'use client';
+
 import {
   BarVisualizer,
   type TrackReferenceOrPlaceholder,
@@ -14,7 +16,7 @@ interface TrackSelectorProps {
   pending?: boolean;
   disabled?: boolean;
   className?: string;
-  audioVisualizerTrackRef?: TrackReferenceOrPlaceholder;
+  audioTrackRef?: TrackReferenceOrPlaceholder;
   onPressedChange?: (pressed: boolean) => void;
   onMediaDeviceError?: (error: Error) => void;
   onActiveDeviceChange?: (deviceId: string) => void;
@@ -27,7 +29,7 @@ export function TrackSelector({
   pending,
   disabled,
   className,
-  audioVisualizerTrackRef,
+  audioTrackRef,
   onPressedChange,
   onMediaDeviceError,
   onActiveDeviceChange,
@@ -42,13 +44,13 @@ export function TrackSelector({
         pending={pending}
         disabled={disabled}
         onPressedChange={onPressedChange}
-        className="peer/track group/track has-[.audiovisualizer]:w-auto has-[.audiovisualizer]:pl-3 has-[~_button]:rounded-r-none has-[~_button]:pr-2"
+        className="peer/track group/track has-[.audiovisualizer]:w-auto has-[~_button]:rounded-r-none has-[~_button]:pr-2 has-[~_button]:pl-3"
       >
-        {audioVisualizerTrackRef && (
+        {audioTrackRef && (
           <BarVisualizer
             barCount={3}
             options={{ minHeight: 5 }}
-            trackRef={audioVisualizerTrackRef}
+            trackRef={audioTrackRef}
             className="audiovisualizer flex h-full w-auto items-center justify-center gap-0.5"
           >
             <span

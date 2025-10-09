@@ -14,6 +14,7 @@ import { UseInputControlsProps, useInputControls } from './hooks/use-input-contr
 import { usePublishPermissions } from './hooks/use-publish-permissions';
 
 const NOOP = () => {};
+
 export interface ControlBarControls {
   leave?: boolean;
   camera?: boolean;
@@ -58,10 +59,7 @@ export function AgentControlBar({
     handleVideoDeviceChange,
     handleMicrophoneDeviceSelectError,
     handleCameraDeviceSelectError,
-  } = useInputControls({
-    onDeviceError,
-    saveUserChoices,
-  });
+  } = useInputControls({ onDeviceError, saveUserChoices });
 
   const handleSendMessage = async (message: string) => {
     setIsSendingMessage(true);
@@ -126,8 +124,8 @@ export function AgentControlBar({
               aria-label="Toggle microphone"
               source={Track.Source.Microphone}
               pressed={microphoneToggle.enabled}
-              disabled={microphoneToggle.pending || !visibleControls.microphone}
-              audioVisualizerTrackRef={micTrackRef}
+              disabled={microphoneToggle.pending}
+              audioTrackRef={micTrackRef}
               onPressedChange={microphoneToggle.toggle}
               onMediaDeviceError={handleMicrophoneDeviceSelectError}
               onActiveDeviceChange={handleAudioDeviceChange}
@@ -142,7 +140,7 @@ export function AgentControlBar({
               source={Track.Source.Camera}
               pressed={cameraToggle.enabled}
               pending={cameraToggle.pending}
-              disabled={cameraToggle.pending || !visibleControls.camera}
+              disabled={cameraToggle.pending}
               onPressedChange={cameraToggle.toggle}
               onMediaDeviceError={handleCameraDeviceSelectError}
               onActiveDeviceChange={handleVideoDeviceChange}
@@ -157,7 +155,7 @@ export function AgentControlBar({
               aria-label="Toggle screen share"
               source={Track.Source.ScreenShare}
               pressed={screenShareToggle.enabled}
-              disabled={screenShareToggle.pending || !visibleControls.screenShare}
+              disabled={screenShareToggle.pending}
               onPressedChange={screenShareToggle.toggle}
             />
           )}
@@ -169,7 +167,7 @@ export function AgentControlBar({
             aria-label="Toggle transcript"
             pressed={chatOpen}
             onPressedChange={handleToggleTranscript}
-            disabled={!isAgentAvailable || !visibleControls.chat}
+            disabled={!isAgentAvailable}
           >
             <ChatTextIcon weight="bold" />
           </Toggle>
