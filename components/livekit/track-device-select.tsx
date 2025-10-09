@@ -26,10 +26,7 @@ type DeviceSelectProps = React.ComponentProps<typeof SelectTrigger> & {
 };
 
 const selectVariants = cva(
-  [
-    'w-full rounded-full px-3 py-2 text-sm cursor-pointer',
-    'disabled:not-allowed hover:bg-button-hover focus:bg-button-hover',
-  ],
+  'w-full rounded-full px-3 py-2 text-sm cursor-pointer disabled:not-allowed',
   {
     variants: {
       size: {
