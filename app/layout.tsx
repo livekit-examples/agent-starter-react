@@ -1,7 +1,7 @@
 import { Public_Sans } from 'next/font/google';
 import localFont from 'next/font/local';
 import { headers } from 'next/headers';
-import { ApplyThemeScript, ThemeToggle } from '@/components/livekit/theme-toggle';
+import { ApplyThemeScript, ThemeToggle } from '@/components/app/theme-toggle';
 import { cn, getAppConfig, getStyles } from '@/lib/utils';
 import '@/styles/globals.css';
 

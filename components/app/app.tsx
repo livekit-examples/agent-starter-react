@@ -2,14 +2,32 @@
 
 import { AnimatePresence, motion } from 'motion/react';
 import { RoomAudioRenderer, RoomContext, StartAudio } from '@livekit/components-react';
+import { SessionView } from '@/components/app/session-view';
+import { Welcome } from '@/components/app/welcome';
 import { Toaster } from '@/components/livekit/toaster';
-import { SessionView } from '@/components/session-view';
-import { Welcome } from '@/components/welcome';
 import { useRoom } from '@/hooks/useRoom';
 import type { AppConfig } from '@/lib/types';
 
 const MotionWelcome = motion.create(Welcome);
 const MotionSessionView = motion.create(SessionView);
+
+const VIEW_MOTION_PROPS = {
+  variants: {
+    visible: {
+      opacity: 1,
+    },
+    hidden: {
+      opacity: 0,
+    },
+  },
+  initial: 'hidden',
+  animate: 'visible',
+  exit: 'hidden',
+  transition: {
+    duration: 0.5,
+    ease: 'linear',
+  },
+};
 
 interface AppProps {
   appConfig: AppConfig;
@@ -18,11 +36,6 @@ interface AppProps {
 export function App({ appConfig }: AppProps) {
   const { room, sessionStarted, setSessionStarted } = useRoom(appConfig);
   const { startButtonText } = appConfig;
-
-  const transition = {
-    duration: 0.5,
-    ease: 'linear',
-  };
 
   const handleStartCall = () => {
     setSessionStarted(true);
@@ -36,25 +49,15 @@ export function App({ appConfig }: AppProps) {
           {!sessionStarted && (
             <MotionWelcome
               key="welcome"
+              {...VIEW_MOTION_PROPS}
               startButtonText={startButtonText}
               onStartCall={handleStartCall}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={transition}
             />
           )}
 
           {/* Session view */}
           {sessionStarted && (
-            <MotionSessionView
-              key="session-view"
-              appConfig={appConfig}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={transition}
-            />
+            <MotionSessionView key="session-view" {...VIEW_MOTION_PROPS} appConfig={appConfig} />
           )}
         </AnimatePresence>
       </main>

@@ -40,7 +40,7 @@ export const ChatEntry = ({
     <li
       title={title}
       data-lk-message-origin={messageOrigin}
-      className={cn('group flex flex-col gap-0.5', className)}
+      className={cn('group flex w-full flex-col gap-0.5', className)}
       {...props}
     >
       {showHeader && (

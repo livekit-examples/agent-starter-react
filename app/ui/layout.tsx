@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { headers } from 'next/headers';
 import { getAppConfig } from '@/lib/utils';
-import { RoomProvider } from './room-provider';
-import { Tabs } from './tabs';
+import { RoomProvider } from './_room-provider';
+import { Tabs } from './_tabs';
 
 export default async function ComponentsLayout({ children }: { children: React.ReactNode }) {
   const hdrs = await headers();

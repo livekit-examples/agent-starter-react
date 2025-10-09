@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Toggle } from '@/components/ui/toggle';
-import { Container } from '../container';
+import { Container } from '../_container';
 
 const buttonVariants = [
   'default',
