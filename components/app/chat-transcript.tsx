@@ -2,7 +2,7 @@
 
 import { AnimatePresence, type HTMLMotionProps, motion } from 'motion/react';
 import { type ReceivedChatMessage } from '@livekit/components-react';
-import { ChatEntry } from '@/components/livekit/chat-entry';
+import { ChatEntry, ChatEntryProps } from '@/components/livekit/chat-entry';
 
 const MotionContainer = motion.create('div');
 const MotionChatEntry = motion.create(ChatEntry);
@@ -48,7 +48,7 @@ const MESSAGE_MOTION_PROPS = {
   },
 };
 
-interface ChatTranscriptProps {
+interface ChatTranscriptProps extends Omit<ChatEntryProps, 'entry'> {
   hidden?: boolean;
   messages?: ReceivedChatMessage[];
 }
@@ -56,6 +56,9 @@ interface ChatTranscriptProps {
 export function ChatTranscript({
   hidden = false,
   messages = [],
+  hideName,
+  hideTimestamp,
+  messageFormatter,
   ...props
 }: ChatTranscriptProps & Omit<HTMLMotionProps<'div'>, 'ref'>) {
   return (
@@ -63,7 +66,14 @@ export function ChatTranscript({
       {!hidden && (
         <MotionContainer {...CONTAINER_MOTION_PROPS} {...props}>
           {messages.map((message: ReceivedChatMessage) => (
-            <MotionChatEntry hideName key={message.id} entry={message} {...MESSAGE_MOTION_PROPS} />
+            <MotionChatEntry
+              key={message.id}
+              entry={message}
+              hideName={hideName}
+              hideTimestamp={hideTimestamp}
+              messageFormatter={messageFormatter}
+              {...MESSAGE_MOTION_PROPS}
+            />
           ))}
         </MotionContainer>
       )}

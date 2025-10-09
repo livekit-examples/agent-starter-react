@@ -4,14 +4,14 @@ import { type HTMLAttributes, useCallback, useState } from 'react';
 import { Track } from 'livekit-client';
 import { useChat, useRemoteParticipants, useRoomContext } from '@livekit/components-react';
 import { ChatTextIcon, PhoneDisconnectIcon } from '@phosphor-icons/react/dist/ssr';
-import { TrackToggle } from '@/components/livekit/track-toggle';
-import { Button } from '@/components/ui/button';
-import { Toggle } from '@/components/ui/toggle';
+import { TrackToggle } from '@/components/livekit/agent-control-bar/track-toggle';
+import { Button } from '@/components/livekit/button';
+import { Toggle } from '@/components/livekit/toggle';
 import { cn } from '@/lib/utils';
-import { TrackSelector } from '../track-selector';
 import { ChatInput } from './chat-input';
 import { UseInputControlsProps, useInputControls } from './hooks/use-input-controls';
 import { usePublishPermissions } from './hooks/use-publish-permissions';
+import { TrackSelector } from './track-selector';
 
 const NOOP = () => {};
 

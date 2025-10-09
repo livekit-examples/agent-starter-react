@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Room, RoomEvent } from 'livekit-client';
+import { AppConfig } from '@/app-config';
 import { toastAlert } from '@/components/livekit/alert-toast';
 import useConnectionDetails from '@/hooks/useConnectionDetails';
-import { AppConfig } from '@/lib/types';
 
 export function useRoom(appConfig: AppConfig) {
   const room = useMemo(() => new Room(), []);

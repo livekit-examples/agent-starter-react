@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/livekit/button';
 
 function WelcomeImage() {
   return (
@@ -18,16 +18,16 @@ function WelcomeImage() {
   );
 }
 
-interface WelcomeProps {
+interface WelcomeViewProps {
   startButtonText: string;
   onStartCall: () => void;
 }
 
-export const Welcome = ({
+export const WelcomeView = ({
   startButtonText,
   onStartCall,
   ref,
-}: React.ComponentProps<'div'> & WelcomeProps) => {
+}: React.ComponentProps<'div'> & WelcomeViewProps) => {
   return (
     <div ref={ref}>
       <section className="bg-background flex flex-col items-center justify-center text-center">

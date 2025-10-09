@@ -3,9 +3,9 @@
 import React from 'react';
 import { Room } from 'livekit-client';
 import { RoomContext } from '@livekit/components-react';
+import { AppConfig } from '@/app-config';
 import { toastAlert } from '@/components/livekit/alert-toast';
 import useConnectionDetails from '@/hooks/useConnectionDetails';
-import { AppConfig } from '@/lib/types';
 
 export function RoomProvider({
   appConfig,

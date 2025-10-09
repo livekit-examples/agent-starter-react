@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
+import type { AppConfig } from '@/app-config';
 import { ChatTranscript } from '@/components/app/chat-transcript';
 import { PreConnectMessage } from '@/components/app/preconnect-message';
 import { TileLayout } from '@/components/app/tile-layout';
@@ -9,13 +10,11 @@ import {
   AgentControlBar,
   type ControlBarControls,
 } from '@/components/livekit/agent-control-bar/agent-control-bar';
-import { Skrim } from '@/components/livekit/skrim';
-import { useChatTranscriptions } from '@/hooks/useChatAndTranscription';
+import { useChatMessages } from '@/hooks/useChatMessages';
 import { useConnectionTimeout } from '@/hooks/useConnectionTimout';
 import { useDebugMode } from '@/hooks/useDebug';
-import type { AppConfig } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { ScrollArea } from '../livekit/scroll-area';
+import { ScrollArea } from '../livekit/scroll-area/scroll-area';
 
 const MotionBottom = motion.create('div');
 
@@ -41,6 +40,24 @@ const BOTTOM_VIEW_MOTION_PROPS = {
   },
 };
 
+interface FadeProps {
+  top?: boolean;
+  bottom?: boolean;
+  className?: string;
+}
+
+export function Fade({ top = false, bottom = false, className }: FadeProps) {
+  return (
+    <div
+      className={cn(
+        'from-background pointer-events-none h-4 bg-linear-to-b to-transparent',
+        top && 'bg-linear-to-b',
+        bottom && 'bg-linear-to-t',
+        className
+      )}
+    />
+  );
+}
 interface SessionViewProps {
   appConfig: AppConfig;
 }
@@ -52,7 +69,7 @@ export const SessionView = ({
   useConnectionTimeout(200_000);
   useDebugMode({ enabled: IN_DEVELOPMENT });
 
-  const messages = useChatTranscriptions();
+  const messages = useChatMessages();
   const [chatOpen, setChatOpen] = useState(false);
 
   const controls: ControlBarControls = {
@@ -72,9 +89,10 @@ export const SessionView = ({
           !chatOpen && 'pointer-events-none'
         )}
       >
-        <Skrim top className="absolute inset-x-4 top-0 h-40" />
+        <Fade top className="absolute inset-x-4 top-0 h-40" />
         <ScrollArea className="px-4 pt-40 pb-[150px] md:px-6 md:pb-[180px]">
           <ChatTranscript
+            hideName
             hidden={!chatOpen}
             messages={messages}
             className="mx-auto max-w-2xl space-y-3 transition-opacity duration-300 ease-out"
@@ -94,7 +112,7 @@ export const SessionView = ({
           <PreConnectMessage messages={messages} className="pb-4" />
         )}
         <div className="bg-background relative mx-auto max-w-2xl pb-3 md:pb-12">
-          <Skrim bottom className="absolute inset-x-0 top-0 h-4 -translate-y-full" />
+          <Fade bottom className="absolute inset-x-0 top-0 h-4 -translate-y-full" />
           <AgentControlBar controls={controls} onChatOpenChange={setChatOpen} />
         </div>
       </MotionBottom>

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/livekit/button';
 import { cn } from '@/lib/utils';
 
 interface ChatInputProps {

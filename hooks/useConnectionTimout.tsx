@@ -40,5 +40,5 @@ export function useConnectionTimeout(timout = 20_000) {
     }, timout);
 
     return () => clearTimeout(timeout);
-  }, [agentState, room]);
+  }, [agentState, room, timout]);
 }
