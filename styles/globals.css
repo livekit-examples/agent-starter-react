@@ -4,33 +4,6 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --fg0: #000000;
-  --fg1: #3b3b3b;
-  --fg2: #4d4d4d;
-  --fg3: #636363;
-  --fg4: #707070;
-  --fgSerious: #db1b06;
-  --fgSuccess: #006430;
-  --fgModerate: #a65006;
-  --fgAccent: #002cf2;
-
-  --bg1: #f9f9f6;
-  --bg2: #f3f3f1;
-  --bg3: #e2e2df;
-  --bgSerious: #fae6e6;
-  --bgSerious2: #ffcdc7;
-  --bgSuccess: #d1fadf;
-  --bgModerate: #faedd1;
-  --bgAccent: #b3ccff;
-  --bgAccentPrimary: #e2ebfd;
-
-  --separator1: #dbdbd8;
-  --separator2: #bdbdbb;
-  --separatorSerious: #ffcdc7;
-  --separatorSuccess: #94dcb5;
-  --separatorModerate: #fbd7a0;
-  --separatorAccent: #b3ccff;
-
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -38,15 +11,15 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: #002cf2;
-  --primary-hover: #0020b9;
+  --primary: oklch(0.205 0 0);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
-  --muted: #f3f3f1;
+  --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
@@ -66,48 +39,21 @@
 }
 
 .dark {
-  --fg0: #ffffff;
-  --fg1: #cccccc;
-  --fg2: #b2b2b2;
-  --fg3: #999999;
-  --fg4: #666666;
-  --fgSerious: #ff7566;
-  --fgSuccess: #3bc981;
-  --fgModerate: #ffb752;
-  --fgAccent: #6e9dfe;
-
-  --bg1: #070707;
-  --bg2: #131313;
-  --bg3: #202020;
-  --bgSerious: #1f0e0b;
-  --bgSerious2: #5a1c16;
-  --bgSuccess: #001905;
-  --bgModerate: #1a0e04;
-  --bgAccent: #090c17;
-  --bgAccentPrimary: #0c1640;
-
-  --separator1: #202020;
-  --separator2: #30302f;
-  --separatorSerious: #5a1c16;
-  --separatorSuccess: #003213;
-  --separatorModerate: #3f2208;
-  --separatorAccent: #0c1640;
-
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.269 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: #1fd5f9;
-  --primary-hover: #19a7c7;
+  --primary: oklch(0.922 0 0);
   --primary-foreground: oklch(0.205 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
-  --muted: #131313;
+  --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
   --accent: oklch(0.371 0 0);
   --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
@@ -134,32 +80,6 @@
     var(--font-commit-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     'Liberation Mono', 'Courier New', monospace;
 
-  --color-fg1: var(--fg1);
-  --color-fg2: var(--fg2);
-  --color-fg3: var(--fg3);
-  --color-fg4: var(--fg4);
-  --color-fgSerious: var(--fgSerious);
-  --color-fgSuccess: var(--fgSuccess);
-  --color-fgModerate: var(--fgModerate);
-  --color-fgAccent: var(--fgAccent);
-
-  --color-bg1: var(--bg1);
-  --color-bg2: var(--bg2);
-  --color-bg3: var(--bg3);
-  --color-bgSerious: var(--bgSerious);
-  --color-bgSerious2: var(--bgSerious2);
-  --color-bgSuccess: var(--bgSuccess);
-  --color-bgModerate: var(--bgModerate);
-  --color-bgAccent: var(--bgAccent);
-  --color-bgAccentPrimary: var(--bgAccentPrimary);
-
-  --color-separator1: var(--separator1);
-  --color-separator2: var(--separator2);
-  --color-separatorSerious: var(--separatorSerious);
-  --color-separatorSuccess: var(--separatorSuccess);
-  --color-separatorModerate: var(--separatorModerate);
-  --color-separatorAccent: var(--separatorAccent);
-
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -167,7 +87,6 @@
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
-  --color-primary-hover: var(--primary-hover);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
@@ -176,7 +95,7 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
-  --color-border: var(--separator1);
+  --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-chart-1: var(--chart-1);
@@ -192,23 +111,11 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-
-  --color-button: var(--bg2);
-  --color-button-hover: var(--bg3);
-  --color-button-foreground: var(--fg1);
-  --color-button-primary: var(--bg2);
-  --color-button-primary-foreground: var(--fgSerious);
-  --color-button-secondary: var(--bgAccentPrimary);
-  --color-button-secondary-foreground: var(--fgAccent);
-
-  --color-destructive: var(--bgSerious);
-  --color-destructive-hover: var(--bgSerious2);
-  --color-destructive-foreground: var(--fgSerious);
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-foreground/20 outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;

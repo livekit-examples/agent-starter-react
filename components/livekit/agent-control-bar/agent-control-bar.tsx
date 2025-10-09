@@ -107,7 +107,7 @@ export function AgentControlBar({
     <div
       aria-label="Voice assistant controls"
       className={cn(
-        'bg-background border-bg2 dark:border-separator1 flex flex-col rounded-[31px] border p-3 drop-shadow-md/3',
+        'bg-background border-input/50 dark:border-muted flex flex-col rounded-[31px] border p-3 drop-shadow-md/3',
         className
       )}
       {...props}
@@ -123,6 +123,7 @@ export function AgentControlBar({
           {visibleControls.microphone && (
             <TrackSelector
               kind="audioinput"
+              aria-label="Toggle microphone"
               source={Track.Source.Microphone}
               pressed={microphoneToggle.enabled}
               disabled={microphoneToggle.pending || !visibleControls.microphone}
@@ -137,8 +138,10 @@ export function AgentControlBar({
           {visibleControls.camera && (
             <TrackSelector
               kind="videoinput"
+              aria-label="Toggle camera"
               source={Track.Source.Camera}
               pressed={cameraToggle.enabled}
+              pending={cameraToggle.pending}
               disabled={cameraToggle.pending || !visibleControls.camera}
               onPressedChange={cameraToggle.toggle}
               onMediaDeviceError={handleCameraDeviceSelectError}
@@ -149,23 +152,24 @@ export function AgentControlBar({
           {/* Toggle Screen Share */}
           {visibleControls.screenShare && (
             <TrackToggle
+              size="icon"
               variant="secondary"
+              aria-label="Toggle screen share"
               source={Track.Source.ScreenShare}
               pressed={screenShareToggle.enabled}
               disabled={screenShareToggle.pending || !visibleControls.screenShare}
               onPressedChange={screenShareToggle.toggle}
-              className="relative w-auto"
             />
           )}
 
           {/* Toggle Transcript */}
           <Toggle
+            size="icon"
             variant="secondary"
             aria-label="Toggle transcript"
             pressed={chatOpen}
             onPressedChange={handleToggleTranscript}
             disabled={!isAgentAvailable || !visibleControls.chat}
-            className="aspect-square h-full"
           >
             <ChatTextIcon weight="bold" />
           </Toggle>

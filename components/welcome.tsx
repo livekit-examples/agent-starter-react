@@ -33,7 +33,7 @@ export const Welcome = ({
       <section className="bg-background flex flex-col items-center justify-center text-center">
         <WelcomeImage />
 
-        <p className="text-fg1 max-w-prose pt-1 leading-6 font-medium">
+        <p className="text-foreground max-w-prose pt-1 leading-6 font-medium">
           Chat live with your voice AI agent
         </p>
 
@@ -43,7 +43,7 @@ export const Welcome = ({
       </section>
 
       <div className="fixed bottom-5 left-0 flex w-full items-center justify-center">
-        <p className="text-fg1 max-w-prose pt-1 text-xs leading-5 font-normal text-pretty md:text-sm">
+        <p className="text-muted-foreground max-w-prose pt-1 text-xs leading-5 font-normal text-pretty md:text-sm">
           Need help getting set up? Check out the{' '}
           <a
             target="_blank"

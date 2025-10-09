@@ -60,7 +60,7 @@ export function ChatInput({ chatOpen, disabled = false, onSend = () => {} }: Cha
           </Button>
         </form>
       </div>
-      <hr className="border-bg2 my-3" />
+      <hr className="border-input/50 my-3" />
     </div>
   );
 }
