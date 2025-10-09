@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
-import { useAutoScroll } from '@/hooks/useAutoScroll';
+import { useAutoScroll } from '@/components/livekit/scroll-area/hooks/useAutoScroll';
 import { cn } from '@/lib/utils';
 
 interface ScrollAreaProps {

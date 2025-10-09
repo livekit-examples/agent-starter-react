@@ -1,8 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import { decodeJwt } from 'jose';
-import type { AppConfig, ConnectionDetails } from '@/lib/types';
+import type { AppConfig } from '@/app-config';
 
 const ONE_MINUTE_IN_MILLISECONDS = 60 * 1000;
+
+export type ConnectionDetails = {
+  serverUrl: string;
+  roomName: string;
+  participantName: string;
+  participantToken: string;
+};
 
 export default function useConnectionDetails(appConfig: AppConfig) {
   // Generate room connection details, including:

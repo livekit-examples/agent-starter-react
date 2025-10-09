@@ -2,13 +2,13 @@
 
 import { AnimatePresence, motion } from 'motion/react';
 import { RoomAudioRenderer, RoomContext, StartAudio } from '@livekit/components-react';
+import type { AppConfig } from '@/app-config';
 import { SessionView } from '@/components/app/session-view';
-import { Welcome } from '@/components/app/welcome';
+import { WelcomeView } from '@/components/app/welcome-view';
 import { Toaster } from '@/components/livekit/toaster';
 import { useRoom } from '@/hooks/useRoom';
-import type { AppConfig } from '@/lib/types';
 
-const MotionWelcome = motion.create(Welcome);
+const MotionWelcomeView = motion.create(WelcomeView);
 const MotionSessionView = motion.create(SessionView);
 
 const VIEW_MOTION_PROPS = {
@@ -47,7 +47,7 @@ export function App({ appConfig }: AppProps) {
         <AnimatePresence mode="wait">
           {/* Welcome screen */}
           {!sessionStarted && (
-            <MotionWelcome
+            <MotionWelcomeView
               key="welcome"
               {...VIEW_MOTION_PROPS}
               startButtonText={startButtonText}

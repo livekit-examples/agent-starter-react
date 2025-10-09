@@ -22,7 +22,7 @@ function transcriptionToChatMessage(textStream: TextStreamData, room: Room): Rec
   };
 }
 
-export function useChatTranscriptions() {
+export function useChatMessages() {
   const chat = useChat();
   const room = useRoomContext();
   const transcriptions: TextStreamData[] = useTranscriptions();

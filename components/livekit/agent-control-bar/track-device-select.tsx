@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { cva } from 'class-variance-authority';
 import { LocalAudioTrack, LocalVideoTrack } from 'livekit-client';
 import { useMaybeRoomContext, useMediaDeviceSelect } from '@livekit/components-react';
@@ -10,7 +10,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@/components/livekit/select';
 import { cn } from '@/lib/utils';
 
 const NOOP = () => {};
@@ -40,7 +40,7 @@ const selectVariants = cva(
   }
 );
 
-export const TrackDeviceSelect = memo(function TrackDeviceSelect({
+export function TrackDeviceSelect({
   kind,
   track,
   size = 'default',
@@ -105,4 +105,4 @@ export const TrackDeviceSelect = memo(function TrackDeviceSelect({
       </SelectContent>
     </Select>
   );
-});
+}
