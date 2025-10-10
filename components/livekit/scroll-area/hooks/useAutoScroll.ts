@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-const AUTO_SCROLL_THRESHOLD = 50;
+const AUTO_SCROLL_THRESHOLD_PX = 50;
 
 export function useAutoScroll(scrollContentContainer?: Element | null) {
   useEffect(() => {
@@ -12,7 +12,7 @@ export function useAutoScroll(scrollContentContainer?: Element | null) {
         scrollContentContainer.clientHeight -
         scrollContentContainer.scrollTop;
 
-      if (distanceFromBottom < AUTO_SCROLL_THRESHOLD) {
+      if (distanceFromBottom < AUTO_SCROLL_THRESHOLD_PX) {
         scrollContentContainer.scrollTop = scrollContentContainer.scrollHeight;
       }
     }

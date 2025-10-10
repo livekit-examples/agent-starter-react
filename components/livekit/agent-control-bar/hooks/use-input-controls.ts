@@ -7,8 +7,6 @@ import {
   useTrackToggle,
 } from '@livekit/components-react';
 
-const NOOP = () => {};
-
 export interface UseInputControlsProps {
   saveUserChoices?: boolean;
   onDisconnect?: () => void;
@@ -28,23 +26,23 @@ export interface UseInputControlsReturn {
 
 export function useInputControls({
   saveUserChoices = true,
-  onDeviceError = NOOP,
+  onDeviceError,
 }: UseInputControlsProps = {}): UseInputControlsReturn {
   const { microphoneTrack, localParticipant } = useLocalParticipant();
 
   const microphoneToggle = useTrackToggle({
     source: Track.Source.Microphone,
-    onDeviceError: (error) => onDeviceError({ source: Track.Source.Microphone, error }),
+    onDeviceError: (error) => onDeviceError?.({ source: Track.Source.Microphone, error }),
   });
 
   const cameraToggle = useTrackToggle({
     source: Track.Source.Camera,
-    onDeviceError: (error) => onDeviceError({ source: Track.Source.Camera, error }),
+    onDeviceError: (error) => onDeviceError?.({ source: Track.Source.Camera, error }),
   });
 
   const screenShareToggle = useTrackToggle({
     source: Track.Source.ScreenShare,
-    onDeviceError: (error) => onDeviceError({ source: Track.Source.ScreenShare, error }),
+    onDeviceError: (error) => onDeviceError?.({ source: Track.Source.ScreenShare, error }),
   });
 
   const micTrackRef = useMemo(() => {
@@ -107,12 +105,12 @@ export function useInputControls({
     [cameraToggle, screenShareToggle]
   );
   const handleMicrophoneDeviceSelectError = useCallback(
-    (error: Error) => onDeviceError({ source: Track.Source.Microphone, error }),
+    (error: Error) => onDeviceError?.({ source: Track.Source.Microphone, error }),
     [onDeviceError]
   );
 
   const handleCameraDeviceSelectError = useCallback(
-    (error: Error) => onDeviceError({ source: Track.Source.Camera, error }),
+    (error: Error) => onDeviceError?.({ source: Track.Source.Camera, error }),
     [onDeviceError]
   );
 

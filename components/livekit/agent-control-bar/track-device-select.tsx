@@ -13,8 +13,6 @@ import {
 } from '@/components/livekit/select';
 import { cn } from '@/lib/utils';
 
-const NOOP = () => {};
-
 type DeviceSelectProps = React.ComponentProps<typeof SelectTrigger> & {
   kind: MediaDeviceKind;
   variant?: 'default' | 'small';
@@ -45,9 +43,9 @@ export function TrackDeviceSelect({
   track,
   size = 'default',
   requestPermissions = false,
-  onMediaDeviceError = NOOP,
-  onDeviceListChange = NOOP,
-  onActiveDeviceChange = NOOP,
+  onMediaDeviceError,
+  onDeviceListChange,
+  onActiveDeviceChange,
   ...props
 }: DeviceSelectProps) {
   const room = useMaybeRoomContext();
@@ -62,7 +60,7 @@ export function TrackDeviceSelect({
   });
 
   useEffect(() => {
-    onDeviceListChange(devices);
+    onDeviceListChange?.(devices);
   }, [devices, onDeviceListChange]);
 
   // When the select opens, ensure that media devices are re-requested in case when they were last
@@ -75,7 +73,7 @@ export function TrackDeviceSelect({
 
   const handleActiveDeviceChange = (deviceId: string) => {
     setActiveMediaDevice(deviceId);
-    onActiveDeviceChange(deviceId);
+    onActiveDeviceChange?.(deviceId);
   };
 
   const filteredDevices = useMemo(() => devices.filter((d) => d.deviceId !== ''), [devices]);

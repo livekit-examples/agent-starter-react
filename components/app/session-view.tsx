@@ -18,7 +18,7 @@ import { ScrollArea } from '../livekit/scroll-area/scroll-area';
 
 const MotionBottom = motion.create('div');
 
-const IN_DEVELOPMENT = process.env.NODE_END !== 'production';
+const IN_DEVELOPMENT = process.env.NODE_ENV !== 'production';
 const BOTTOM_VIEW_MOTION_PROPS = {
   variants: {
     visible: {
