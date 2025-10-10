@@ -1,14 +1,14 @@
 import * as React from 'react';
 import { headers } from 'next/headers';
+import { SessionProvider } from '@/components/app/session-provider';
 import { getAppConfig } from '@/lib/utils';
-import { RoomProvider } from './_room-provider';
 
 export default async function ComponentsLayout({ children }: { children: React.ReactNode }) {
   const hdrs = await headers();
   const appConfig = await getAppConfig(hdrs);
 
   return (
-    <RoomProvider appConfig={appConfig}>
+    <SessionProvider appConfig={appConfig}>
       <div className="bg-muted/20 min-h-svh p-8">
         <div className="mx-auto max-w-3xl space-y-8">
           <header className="space-y-2">
@@ -25,6 +25,6 @@ export default async function ComponentsLayout({ children }: { children: React.R
           <main className="space-y-20">{children}</main>
         </div>
       </div>
-    </RoomProvider>
+    </SessionProvider>
   );
 }

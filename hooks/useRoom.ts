@@ -1,15 +1,16 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Room, RoomEvent, TokenSource } from 'livekit-client';
 import { AppConfig } from '@/app-config';
 import { toastAlert } from '@/components/livekit/alert-toast';
 
 export function useRoom(appConfig: AppConfig) {
+  const aborted = useRef(false);
   const room = useMemo(() => new Room(), []);
-  const [isSessionActive, setIsSessionStarted] = useState(false);
+  const [isSessionActive, setIsSessionActive] = useState(false);
 
   useEffect(() => {
     function onDisconnected() {
-      setIsSessionStarted(false);
+      setIsSessionActive(false);
     }
 
     function onMediaDevicesError(error: Error) {
@@ -29,7 +30,14 @@ export function useRoom(appConfig: AppConfig) {
   }, [room]);
 
   useEffect(() => {
-    let aborted = false;
+    return () => {
+      aborted.current = true;
+      room.disconnect();
+    };
+  }, [room]);
+
+  const startSession = useCallback(() => {
+    setIsSessionActive(true);
 
     const tokenSource = TokenSource.custom(async () => {
       const url = new URL(
@@ -59,7 +67,7 @@ export function useRoom(appConfig: AppConfig) {
       }
     });
 
-    if (isSessionActive && room.state === 'disconnected') {
+    if (room.state === 'disconnected') {
       const { isPreConnectBufferEnabled } = appConfig;
       Promise.all([
         room.localParticipant.setMicrophoneEnabled(true, undefined, {
@@ -71,7 +79,7 @@ export function useRoom(appConfig: AppConfig) {
             room.connect(connectionDetails.serverUrl, connectionDetails.participantToken)
           ),
       ]).catch((error) => {
-        if (aborted) {
+        if (aborted.current) {
           // Once the effect has cleaned up after itself, drop any errors
           //
           // These errors are likely caused by this effect rerunning rapidly,
@@ -86,16 +94,11 @@ export function useRoom(appConfig: AppConfig) {
         });
       });
     }
+  }, [room, appConfig]);
 
-    return () => {
-      aborted = true;
-      room.disconnect();
-    };
-  }, [room, isSessionActive, appConfig]);
+  const endSession = useCallback(() => {
+    setIsSessionActive(false);
+  }, []);
 
-  const startSession = () => {
-    setIsSessionStarted(true);
-  };
-
-  return { room, isSessionActive, startSession };
+  return { room, isSessionActive, startSession, endSession };
 }

@@ -2,8 +2,9 @@
 
 import { type HTMLAttributes, useCallback, useState } from 'react';
 import { Track } from 'livekit-client';
-import { useChat, useRemoteParticipants, useRoomContext } from '@livekit/components-react';
+import { useChat, useRemoteParticipants } from '@livekit/components-react';
 import { ChatTextIcon, PhoneDisconnectIcon } from '@phosphor-icons/react/dist/ssr';
+import { useSession } from '@/components/app/session-provider';
 import { TrackToggle } from '@/components/livekit/agent-control-bar/track-toggle';
 import { Button } from '@/components/livekit/button';
 import { Toggle } from '@/components/livekit/toggle';
@@ -41,11 +42,10 @@ export function AgentControlBar({
   ...props
 }: AgentControlBarProps & HTMLAttributes<HTMLDivElement>) {
   const { send } = useChat();
-  const room = useRoomContext();
   const participants = useRemoteParticipants();
   const [chatOpen, setChatOpen] = useState(false);
   const publishPermissions = usePublishPermissions();
-  const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const { isSessionActive, endSession } = useSession();
   const [isSendingMessage, setIsSendingMessage] = useState(false);
 
   const {
@@ -78,15 +78,9 @@ export function AgentControlBar({
   );
 
   const handleDisconnect = useCallback(async () => {
-    setIsDisconnecting(true);
-
-    if (room) {
-      await room.disconnect();
-    }
-
-    setIsDisconnecting(false);
+    endSession();
     onDisconnect?.();
-  }, [room, onDisconnect]);
+  }, [endSession, onDisconnect]);
 
   const visibleControls = {
     leave: controls?.leave ?? true,
@@ -176,7 +170,7 @@ export function AgentControlBar({
           <Button
             variant="destructive"
             onClick={handleDisconnect}
-            disabled={isDisconnecting}
+            disabled={!isSessionActive}
             className="font-mono"
           >
             <PhoneDisconnectIcon weight="bold" />
