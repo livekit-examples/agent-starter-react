@@ -24,7 +24,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "jose": "^6.0.12",
-    "livekit-client": "^2.15.5",
+    "livekit-client": "^2.15.8",
     "livekit-server-sdk": "^2.13.2",
     "mime": "^4.0.7",
     "motion": "^12.16.0",

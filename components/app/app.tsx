@@ -34,29 +34,25 @@ interface AppProps {
 }
 
 export function App({ appConfig }: AppProps) {
-  const { room, sessionStarted, setSessionStarted } = useRoom(appConfig);
+  const { room, isSessionActive, startSession } = useRoom(appConfig);
   const { startButtonText } = appConfig;
-
-  const handleStartCall = () => {
-    setSessionStarted(true);
-  };
 
   return (
     <RoomContext.Provider value={room}>
       <main className="grid h-svh grid-cols-1 place-content-center">
         <AnimatePresence mode="wait">
           {/* Welcome screen */}
-          {!sessionStarted && (
+          {!isSessionActive && (
             <MotionWelcomeView
               key="welcome"
               {...VIEW_MOTION_PROPS}
               startButtonText={startButtonText}
-              onStartCall={handleStartCall}
+              onStartCall={startSession}
             />
           )}
 
           {/* Session view */}
-          {sessionStarted && (
+          {isSessionActive && (
             <MotionSessionView key="session-view" {...VIEW_MOTION_PROPS} appConfig={appConfig} />
           )}
         </AnimatePresence>
