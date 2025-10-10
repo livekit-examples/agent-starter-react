@@ -29,8 +29,22 @@ export async function POST(req: Request) {
       throw new Error('LIVEKIT_API_SECRET is not defined');
     }
 
+    const raw = await req.text();
+
+    // Helpful dev log (remove in production)
+    // console.debug("POST /api/connection-details raw body:", raw);
+
+    if (!raw) {
+      return NextResponse.json({ error: 'Empty request body' }, { status: 400 });
+    }
+
     // Parse agent configuration from request body
-    const body = await req.json();
+    let body: any;
+    try {
+      body = JSON.parse(raw);
+    } catch (err) {
+      return NextResponse.json({ error: 'Invalid JSON', details: String(err) }, { status: 400 });
+    }
     const agentName: string = body?.room_config?.agents?.[0]?.agent_name;
 
     // Generate participant token
