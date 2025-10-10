@@ -13,8 +13,6 @@ import { UseInputControlsProps, useInputControls } from './hooks/use-input-contr
 import { usePublishPermissions } from './hooks/use-publish-permissions';
 import { TrackSelector } from './track-selector';
 
-const NOOP = () => {};
-
 export interface ControlBarControls {
   leave?: boolean;
   camera?: boolean;
@@ -37,9 +35,9 @@ export function AgentControlBar({
   controls,
   saveUserChoices = true,
   className,
-  onDisconnect = NOOP,
-  onDeviceError = NOOP,
-  onChatOpenChange = NOOP,
+  onDisconnect,
+  onDeviceError,
+  onChatOpenChange,
   ...props
 }: AgentControlBarProps & HTMLAttributes<HTMLDivElement>) {
   const { send } = useChat();
@@ -74,7 +72,7 @@ export function AgentControlBar({
   const handleToggleTranscript = useCallback(
     (open: boolean) => {
       setChatOpen(open);
-      onChatOpenChange(open);
+      onChatOpenChange?.(open);
     },
     [onChatOpenChange, setChatOpen]
   );
@@ -87,7 +85,7 @@ export function AgentControlBar({
     }
 
     setIsDisconnecting(false);
-    onDisconnect();
+    onDisconnect?.();
   }, [room, onDisconnect]);
 
   const visibleControls = {
