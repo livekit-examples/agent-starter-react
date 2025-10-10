@@ -43,36 +43,83 @@ export default function Base() {
 
       {/* Button */}
       <Container componentName="Button">
-        {buttonVariants.map((variant) => (
-          <div key={variant}>
-            <StoryTitle>{variant}</StoryTitle>
-            <div className="flex justify-center gap-8">
-              <div>
-                <Button variant={variant} size="sm">
-                  Size sm
-                </Button>
-              </div>
-              <div>
-                <Button variant={variant}>Size default</Button>
-              </div>
-              <div>
-                <Button variant={variant} size="lg">
-                  Size lg
-                </Button>
-              </div>
-              <div>
-                <Button variant={variant} size="icon">
-                  <PlusIcon size={16} weight="bold" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        ))}
+        <table className="w-full">
+          <thead className="font-mono text-xs font-normal uppercase [&_th]:w-1/5 [&_th]:p-2 [&_th]:text-center [&_th]:font-normal">
+            <tr>
+              <th></th>
+              <th>Small</th>
+              <th>Default</th>
+              <th>Large</th>
+              <th>Icon</th>
+            </tr>
+          </thead>
+          <tbody className="[&_td]:p-2 [&_td:not(:first-child)]:text-center">
+            {buttonVariants.map((variant) => (
+              <tr key={variant}>
+                <td className="text-right font-mono text-xs font-normal uppercase">{variant}</td>
+                <td>
+                  <Button variant={variant} size="sm">
+                    Button
+                  </Button>
+                </td>
+                <td>
+                  <Button variant={variant}>Button</Button>
+                </td>
+                <td>
+                  <Button variant={variant} size="lg">
+                    Button
+                  </Button>
+                </td>
+                <td>
+                  <Button variant={variant} size="icon">
+                    <PlusIcon size={16} weight="bold" />
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </Container>
 
       {/* Toggle */}
       <Container componentName="Toggle">
-        {toggleVariants.map((variant) => (
+        <table className="w-full">
+          <thead className="font-mono text-xs font-normal uppercase [&_th]:w-1/5 [&_th]:p-2 [&_th]:text-center [&_th]:font-normal">
+            <tr>
+              <th></th>
+              <th>Small</th>
+              <th>Default</th>
+              <th>Large</th>
+              <th>Icon</th>
+            </tr>
+          </thead>
+          <tbody className="[&_td]:p-2 [&_td:not(:first-child)]:text-center">
+            {toggleVariants.map((variant) => (
+              <tr key={variant}>
+                <td className="text-right font-mono text-xs font-normal uppercase">{variant}</td>
+                <td>
+                  <Toggle variant={variant} size="sm">
+                    Toggle
+                  </Toggle>
+                </td>
+                <td>
+                  <Toggle variant={variant}>Toggle</Toggle>
+                </td>
+                <td>
+                  <Toggle variant={variant} size="lg">
+                    Toggle
+                  </Toggle>
+                </td>
+                <td>
+                  <Toggle variant={variant} size="icon">
+                    <PlusIcon size={16} weight="bold" />
+                  </Toggle>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {/* {toggleVariants.map((variant) => (
           <div key={variant}>
             <StoryTitle>{variant}</StoryTitle>
             <div className="flex justify-center gap-8">
@@ -93,7 +140,7 @@ export default function Base() {
               </div>
             </div>
           </div>
-        ))}
+        ))} */}
       </Container>
 
       {/* Alert */}
