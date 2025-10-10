@@ -1,19 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Room, RoomEvent } from 'livekit-client';
+import { Room, RoomEvent, TokenSource } from 'livekit-client';
 import { AppConfig } from '@/app-config';
 import { toastAlert } from '@/components/livekit/alert-toast';
-import useConnectionDetails from '@/hooks/useConnectionDetails';
 
 export function useRoom(appConfig: AppConfig) {
   const room = useMemo(() => new Room(), []);
-  const [sessionStarted, setSessionStarted] = useState(false);
-  const { refreshConnectionDetails, existingOrRefreshConnectionDetails } =
-    useConnectionDetails(appConfig);
+  const [isSessionActive, setIsSessionStarted] = useState(false);
 
   useEffect(() => {
     function onDisconnected() {
-      setSessionStarted(false);
-      refreshConnectionDetails();
+      setIsSessionStarted(false);
     }
 
     function onMediaDevicesError(error: Error) {
@@ -30,20 +26,50 @@ export function useRoom(appConfig: AppConfig) {
       room.off(RoomEvent.Disconnected, onDisconnected);
       room.off(RoomEvent.MediaDevicesError, onMediaDevicesError);
     };
-  }, [room, refreshConnectionDetails]);
+  }, [room]);
 
   useEffect(() => {
     let aborted = false;
 
-    if (sessionStarted && room.state === 'disconnected') {
+    const tokenSource = TokenSource.custom(async () => {
+      const url = new URL(
+        process.env.NEXT_PUBLIC_CONN_DETAILS_ENDPOINT ?? '/api/connection-details',
+        window.location.origin
+      );
+
+      try {
+        const res = await fetch(url.toString(), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Sandbox-Id': appConfig.sandboxId ?? '',
+          },
+          body: JSON.stringify({
+            room_config: appConfig.agentName
+              ? {
+                  agents: [{ agent_name: appConfig.agentName }],
+                }
+              : undefined,
+          }),
+        });
+        return await res.json();
+      } catch (error) {
+        console.error('Error fetching connection details:', error);
+        throw new Error('Error fetching connection details!');
+      }
+    });
+
+    if (isSessionActive && room.state === 'disconnected') {
       const { isPreConnectBufferEnabled } = appConfig;
       Promise.all([
         room.localParticipant.setMicrophoneEnabled(true, undefined, {
           preConnectBuffer: isPreConnectBufferEnabled,
         }),
-        existingOrRefreshConnectionDetails().then((connectionDetails) =>
-          room.connect(connectionDetails.serverUrl, connectionDetails.participantToken)
-        ),
+        tokenSource
+          .fetch({ agentName: appConfig.agentName })
+          .then((connectionDetails) =>
+            room.connect(connectionDetails.serverUrl, connectionDetails.participantToken)
+          ),
       ]).catch((error) => {
         if (aborted) {
           // Once the effect has cleaned up after itself, drop any errors
@@ -65,7 +91,11 @@ export function useRoom(appConfig: AppConfig) {
       aborted = true;
       room.disconnect();
     };
-  }, [room, sessionStarted, appConfig, existingOrRefreshConnectionDetails]);
+  }, [room, isSessionActive, appConfig]);
 
-  return { room, sessionStarted, setSessionStarted };
+  const startSession = () => {
+    setIsSessionStarted(true);
+  };
+
+  return { room, isSessionActive, startSession };
 }

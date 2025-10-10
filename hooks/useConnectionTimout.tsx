@@ -35,6 +35,7 @@ export function useConnectionTimeout(timout = 20_000) {
             </p>
           ),
         });
+
         room.disconnect();
       }
     }, timout);
