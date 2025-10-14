@@ -2,7 +2,7 @@
 
 import { AnimatePresence, type HTMLMotionProps, motion } from 'motion/react';
 import { type ReceivedChatMessage } from '@livekit/components-react';
-import { ChatEntry, ChatEntryProps } from '@/components/livekit/chat-entry';
+import { ChatEntry } from '@/components/livekit/chat-entry';
 
 const MotionContainer = motion.create('div');
 const MotionChatEntry = motion.create(ChatEntry);
@@ -48,7 +48,7 @@ const MESSAGE_MOTION_PROPS = {
   },
 };
 
-interface ChatTranscriptProps extends Omit<ChatEntryProps, 'entry'> {
+interface ChatTranscriptProps {
   hidden?: boolean;
   messages?: ReceivedChatMessage[];
 }
