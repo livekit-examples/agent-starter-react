@@ -63,7 +63,6 @@ export function ChatTranscript({
       {!hidden && (
         <MotionContainer {...CONTAINER_MOTION_PROPS} {...props}>
           {messages.map(({ id, timestamp, from, message, editTimestamp }: ReceivedChatMessage) => {
-            const name = from?.name ?? from?.identity;
             const locale = navigator?.language ?? 'en-US';
             const messageOrigin = from?.isLocal ? 'local' : 'remote';
             const hasBeenEdited = !!editTimestamp;
@@ -71,7 +70,6 @@ export function ChatTranscript({
             return (
               <MotionChatEntry
                 key={id}
-                name={name}
                 locale={locale}
                 timestamp={timestamp}
                 message={message}

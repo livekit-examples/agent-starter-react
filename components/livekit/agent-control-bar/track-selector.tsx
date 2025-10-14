@@ -51,7 +51,7 @@ export function TrackSelector({
             barCount={3}
             options={{ minHeight: 5 }}
             trackRef={audioTrackRef}
-            className="audiovisualizer flex h-full w-auto items-center justify-center gap-0.5"
+            className="audiovisualizer flex h-6 w-auto items-center justify-center gap-0.5"
           >
             <span
               className={cn([
@@ -59,7 +59,7 @@ export function TrackSelector({
                 'group-data-[state=on]/track:bg-foreground group-data-[state=off]/track:bg-destructive',
                 'data-lk-muted:bg-muted',
               ])}
-            ></span>
+            />
           </BarVisualizer>
         )}
       </TrackToggle>

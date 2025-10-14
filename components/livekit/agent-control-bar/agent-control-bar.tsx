@@ -46,7 +46,6 @@ export function AgentControlBar({
   const [chatOpen, setChatOpen] = useState(false);
   const publishPermissions = usePublishPermissions();
   const { isSessionActive, endSession } = useSession();
-  const [isSendingMessage, setIsSendingMessage] = useState(false);
 
   const {
     micTrackRef,
@@ -60,13 +59,7 @@ export function AgentControlBar({
   } = useInputControls({ onDeviceError, saveUserChoices });
 
   const handleSendMessage = async (message: string) => {
-    setIsSendingMessage(true);
-
-    try {
-      await send(message);
-    } finally {
-      setIsSendingMessage(false);
-    }
+    await send(message);
   };
 
   const handleToggleTranscript = useCallback(
@@ -91,7 +84,6 @@ export function AgentControlBar({
   };
 
   const isAgentAvailable = participants.some((p) => p.isAgent);
-  const isChatDisabled = !chatOpen || !isAgentAvailable || isSendingMessage;
 
   return (
     <div
@@ -104,7 +96,11 @@ export function AgentControlBar({
     >
       {/* Chat Input */}
       {visibleControls.chat && (
-        <ChatInput chatOpen={chatOpen} disabled={isChatDisabled} onSend={handleSendMessage} />
+        <ChatInput
+          chatOpen={chatOpen}
+          isAgentAvailable={isAgentAvailable}
+          onSend={handleSendMessage}
+        />
       )}
 
       <div className="flex gap-1">
@@ -159,7 +155,6 @@ export function AgentControlBar({
             aria-label="Toggle transcript"
             pressed={chatOpen}
             onPressedChange={handleToggleTranscript}
-            disabled={!isAgentAvailable}
           >
             <ChatTextIcon weight="bold" />
           </Toggle>
