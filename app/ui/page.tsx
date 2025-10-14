@@ -1,13 +1,13 @@
+import { type VariantProps } from 'class-variance-authority';
 import { Track } from 'livekit-client';
-import { type ReceivedChatMessage } from '@livekit/components-react';
-import { PlusIcon } from '@phosphor-icons/react/dist/ssr';
+import { MicrophoneIcon } from '@phosphor-icons/react/dist/ssr';
 import { AgentControlBar } from '@/components/livekit/agent-control-bar/agent-control-bar';
 import { TrackDeviceSelect } from '@/components/livekit/agent-control-bar/track-device-select';
 import { TrackSelector } from '@/components/livekit/agent-control-bar/track-selector';
 import { TrackToggle } from '@/components/livekit/agent-control-bar/track-toggle';
-import { Alert, AlertDescription, AlertTitle } from '@/components/livekit/alert';
+import { Alert, AlertDescription, AlertTitle, alertVariants } from '@/components/livekit/alert';
 import { AlertToast } from '@/components/livekit/alert-toast';
-import { Button } from '@/components/livekit/button';
+import { Button, buttonVariants } from '@/components/livekit/button';
 import { ChatEntry } from '@/components/livekit/chat-entry';
 import {
   Select,
@@ -17,20 +17,33 @@ import {
   SelectValue,
 } from '@/components/livekit/select';
 import { ShimmerText } from '@/components/livekit/shimmer-text';
-import { Toggle } from '@/components/livekit/toggle';
-import { Container } from './_container';
+import { Toggle, toggleVariants } from '@/components/livekit/toggle';
+import { cn } from '@/lib/utils';
 
-const buttonVariants = [
-  'default',
-  'primary',
-  'secondary',
-  'outline',
-  'ghost',
-  'link',
-  'destructive',
-] as const;
-const toggleVariants = ['default', 'primary', 'secondary', 'outline'] as const;
-const alertVariants = ['default', 'destructive'] as const;
+type toggleVariantsType = VariantProps<typeof toggleVariants>['variant'];
+type toggleVariantsSizeType = VariantProps<typeof toggleVariants>['size'];
+type buttonVariantsType = VariantProps<typeof buttonVariants>['variant'];
+type buttonVariantsSizeType = VariantProps<typeof buttonVariants>['size'];
+type alertVariantsType = VariantProps<typeof alertVariants>['variant'];
+
+interface ContainerProps {
+  componentName?: string;
+  children: React.ReactNode;
+  className?: string;
+}
+
+function Container({ componentName, children, className }: ContainerProps) {
+  return (
+    <div className={cn('space-y-4', className)}>
+      <h3 className="text-foreground text-2xl font-bold">
+        <span className="tracking-tight">{componentName}</span>
+      </h3>
+      <div className="bg-background border-input space-y-4 rounded-3xl border p-8 drop-shadow-lg/5">
+        {children}
+      </div>
+    </div>
+  );
+}
 
 function StoryTitle({ children }: { children: React.ReactNode }) {
   return <h4 className="text-muted-foreground mb-2 font-mono text-xs uppercase">{children}</h4>;
@@ -54,29 +67,23 @@ export default function Base() {
             </tr>
           </thead>
           <tbody className="[&_td]:p-2 [&_td:not(:first-child)]:text-center">
-            {buttonVariants.map((variant) => (
-              <tr key={variant}>
-                <td className="text-right font-mono text-xs font-normal uppercase">{variant}</td>
-                <td>
-                  <Button variant={variant} size="sm">
-                    Button
-                  </Button>
-                </td>
-                <td>
-                  <Button variant={variant}>Button</Button>
-                </td>
-                <td>
-                  <Button variant={variant} size="lg">
-                    Button
-                  </Button>
-                </td>
-                <td>
-                  <Button variant={variant} size="icon">
-                    <PlusIcon size={16} weight="bold" />
-                  </Button>
-                </td>
-              </tr>
-            ))}
+            {['default', 'primary', 'secondary', 'outline', 'ghost', 'link', 'destructive'].map(
+              (variant) => (
+                <tr key={variant}>
+                  <td className="text-right font-mono text-xs font-normal uppercase">{variant}</td>
+                  {['sm', 'default', 'lg', 'icon'].map((size) => (
+                    <td key={size}>
+                      <Button
+                        variant={variant as buttonVariantsType}
+                        size={size as buttonVariantsSizeType}
+                      >
+                        {size === 'icon' ? <MicrophoneIcon size={16} weight="bold" /> : 'Button'}
+                      </Button>
+                    </td>
+                  ))}
+                </tr>
+              )
+            )}
           </tbody>
         </table>
       </Container>
@@ -94,61 +101,31 @@ export default function Base() {
             </tr>
           </thead>
           <tbody className="[&_td]:p-2 [&_td:not(:first-child)]:text-center">
-            {toggleVariants.map((variant) => (
+            {['default', 'primary', 'secondary', 'outline'].map((variant) => (
               <tr key={variant}>
                 <td className="text-right font-mono text-xs font-normal uppercase">{variant}</td>
-                <td>
-                  <Toggle variant={variant} size="sm">
-                    Toggle
-                  </Toggle>
-                </td>
-                <td>
-                  <Toggle variant={variant}>Toggle</Toggle>
-                </td>
-                <td>
-                  <Toggle variant={variant} size="lg">
-                    Toggle
-                  </Toggle>
-                </td>
-                <td>
-                  <Toggle variant={variant} size="icon">
-                    <PlusIcon size={16} weight="bold" />
-                  </Toggle>
-                </td>
+                {['sm', 'default', 'lg', 'icon'].map((size) => (
+                  <td key={size}>
+                    <Toggle
+                      size={size as toggleVariantsSizeType}
+                      variant={variant as toggleVariantsType}
+                    >
+                      {size === 'icon' ? <MicrophoneIcon size={16} weight="bold" /> : 'Toggle'}
+                    </Toggle>
+                  </td>
+                ))}
               </tr>
             ))}
           </tbody>
         </table>
-        {/* {toggleVariants.map((variant) => (
-          <div key={variant}>
-            <StoryTitle>{variant}</StoryTitle>
-            <div className="flex justify-center gap-8">
-              <div>
-                <Toggle key={variant} variant={variant} size="sm">
-                  Size sm
-                </Toggle>
-              </div>
-              <div>
-                <Toggle key={variant} variant={variant}>
-                  Size default
-                </Toggle>
-              </div>
-              <div>
-                <Toggle key={variant} variant={variant} size="lg">
-                  Size lg
-                </Toggle>
-              </div>
-            </div>
-          </div>
-        ))} */}
       </Container>
 
       {/* Alert */}
       <Container componentName="Alert">
-        {alertVariants.map((variant) => (
+        {['default', 'destructive'].map((variant) => (
           <div key={variant}>
             <StoryTitle>{variant}</StoryTitle>
-            <Alert key={variant} variant={variant}>
+            <Alert key={variant} variant={variant as alertVariantsType}>
               <AlertTitle>Alert {variant} title</AlertTitle>
               <AlertDescription>This is a {variant} alert description.</AlertDescription>
             </Alert>
@@ -252,40 +229,18 @@ export default function Base() {
       <Container componentName="ChatEntry">
         <div className="mx-auto max-w-prose space-y-4">
           <ChatEntry
-            entry={
-              {
-                id: '1',
-                timestamp: Date.now(),
-                message: 'Hello, how are you?',
-                from: {
-                  identity: 'user',
-                  isLocal: true,
-                  name: 'User',
-                  audioTrackPublications: new Map(),
-                  videoTrackPublications: new Map(),
-                  trackPublications: new Map(),
-                  audioLevel: 0,
-                },
-              } as ReceivedChatMessage
-            }
+            locale="en-US"
+            timestamp={Date.now() + 1000}
+            message="Hello, how are you?"
+            messageOrigin="local"
+            name="User"
           />
           <ChatEntry
-            entry={
-              {
-                id: '1',
-                timestamp: Date.now(),
-                message: 'I am good, how about you?',
-                from: {
-                  identity: 'agent',
-                  isLocal: false,
-                  name: 'Agent',
-                  audioTrackPublications: new Map(),
-                  videoTrackPublications: new Map(),
-                  trackPublications: new Map(),
-                  audioLevel: 0,
-                },
-              } as ReceivedChatMessage
-            }
+            locale="en-US"
+            timestamp={Date.now() + 5000}
+            message="I am good, how about you?"
+            messageOrigin="remote"
+            name="Agent"
           />
         </div>
       </Container>

@@ -25,11 +25,15 @@ const MOTION_PROPS = {
 
 interface ChatInputProps {
   chatOpen: boolean;
-  disabled?: boolean;
+  isAgentAvailable?: boolean;
   onSend?: (message: string) => void;
 }
 
-export function ChatInput({ chatOpen, disabled = false, onSend = async () => {} }: ChatInputProps) {
+export function ChatInput({
+  chatOpen,
+  isAgentAvailable = false,
+  onSend = async () => {},
+}: ChatInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isSending, setIsSending] = useState(false);
   const [message, setMessage] = useState<string>('');
@@ -48,13 +52,13 @@ export function ChatInput({ chatOpen, disabled = false, onSend = async () => {} 
     }
   };
 
-  const isDisabled = disabled || message.trim().length === 0;
+  const isDisabled = isSending || !isAgentAvailable || message.trim().length === 0;
 
   useEffect(() => {
-    if (disabled) return;
+    if (chatOpen && isAgentAvailable) return;
     // when not disabled refocus on input
     inputRef.current?.focus();
-  }, [disabled]);
+  }, [chatOpen, isAgentAvailable]);
 
   return (
     <motion.div
@@ -72,7 +76,7 @@ export function ChatInput({ chatOpen, disabled = false, onSend = async () => {} 
           ref={inputRef}
           type="text"
           value={message}
-          disabled={disabled}
+          disabled={!chatOpen}
           placeholder="Type something..."
           onChange={(e) => setMessage(e.target.value)}
           className="h-8 flex-1 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"

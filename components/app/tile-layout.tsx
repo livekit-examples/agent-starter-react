@@ -86,8 +86,10 @@ export function TileLayout({ chatOpen }: TileLayoutProps) {
   const isScreenShareEnabled = screenShareTrack && !screenShareTrack.publication.isMuted;
   const hasSecondTile = isCameraEnabled || isScreenShareEnabled;
 
-  const isAvatar = agentVideoTrack !== undefined;
   const animationDelay = chatOpen ? 0 : 0.15;
+  const isAvatar = agentVideoTrack !== undefined;
+  const videoWidth = agentVideoTrack?.publication.dimensions?.width ?? 0;
+  const videoHeight = agentVideoTrack?.publication.dimensions?.height ?? 0;
 
   return (
     <div className="pointer-events-none fixed inset-x-0 top-8 bottom-32 z-50 md:top-12 md:bottom-40">
@@ -165,23 +167,21 @@ export function TileLayout({ chatOpen }: TileLayoutProps) {
                     ...ANIMATION_TRANSITION,
                     delay: animationDelay,
                     maskImage: {
-                      ease: 'easeIn',
                       duration: 1,
                     },
                     filter: {
-                      ease: 'easeIn',
                       duration: 1,
                     },
                   }}
                   className={cn(
-                    'overflow-hidden drop-shadow-xl/80',
+                    'overflow-hidden bg-black drop-shadow-xl/80',
                     chatOpen ? 'h-[90px]' : 'h-auto w-full'
                   )}
                 >
                   <VideoTrack
+                    width={videoWidth}
+                    height={videoHeight}
                     trackRef={agentVideoTrack}
-                    width={agentVideoTrack?.publication.dimensions?.width ?? 0}
-                    height={agentVideoTrack?.publication.dimensions?.height ?? 0}
                     className={cn(chatOpen && 'size-[90px] object-cover')}
                   />
                 </MotionContainer>

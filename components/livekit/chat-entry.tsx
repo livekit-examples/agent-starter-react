@@ -36,16 +36,18 @@ export const ChatEntry = ({
       className={cn('group flex w-full flex-col gap-0.5', className)}
       {...props}
     >
-      {name && (
-        <header className="text-muted-foreground flex text-sm">
-          {name && <strong className="mt-2">{name}</strong>}
-          <span className="align-self-end ml-auto font-mono text-xs opacity-0 transition-opacity ease-linear group-hover:opacity-100">
-            {hasBeenEdited && '*'}
-            {time.toLocaleTimeString(locale, { timeStyle: 'short' })}
-          </span>
-        </header>
-      )}
-
+      <header
+        className={cn(
+          'text-muted-foreground flex items-center gap-2 text-sm',
+          messageOrigin === 'local' ? 'flex-row-reverse' : 'text-left'
+        )}
+      >
+        {name && <strong>{name}</strong>}
+        <span className="font-mono text-xs opacity-0 transition-opacity ease-linear group-hover:opacity-100">
+          {hasBeenEdited && '*'}
+          {time.toLocaleTimeString(locale, { timeStyle: 'short' })}
+        </span>
+      </header>
       <span
         className={cn(
           'max-w-4/5 rounded-[20px]',
