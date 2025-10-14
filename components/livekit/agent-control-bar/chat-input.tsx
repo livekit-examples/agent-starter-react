@@ -1,6 +1,27 @@
 import { useEffect, useRef, useState } from 'react';
+import { motion } from 'motion/react';
+import { PaperPlaneRightIcon, SpinnerIcon } from '@phosphor-icons/react/dist/ssr';
 import { Button } from '@/components/livekit/button';
-import { cn } from '@/lib/utils';
+
+const MOTION_PROPS = {
+  variants: {
+    hidden: {
+      height: 0,
+      opacity: 0,
+      marginBottom: 0,
+    },
+    visible: {
+      height: 'auto',
+      opacity: 1,
+      marginBottom: 12,
+    },
+  },
+  initial: 'hidden',
+  transition: {
+    duration: 0.3,
+    ease: 'easeOut',
+  },
+};
 
 interface ChatInputProps {
   chatOpen: boolean;
@@ -8,14 +29,23 @@ interface ChatInputProps {
   onSend?: (message: string) => void;
 }
 
-export function ChatInput({ chatOpen, disabled = false, onSend = () => {} }: ChatInputProps) {
+export function ChatInput({ chatOpen, disabled = false, onSend = async () => {} }: ChatInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [isSending, setIsSending] = useState(false);
   const [message, setMessage] = useState<string>('');
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    onSend(message);
-    setMessage('');
+
+    try {
+      setIsSending(true);
+      await onSend(message);
+      setMessage('');
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const isDisabled = disabled || message.trim().length === 0;
@@ -27,40 +57,41 @@ export function ChatInput({ chatOpen, disabled = false, onSend = () => {} }: Cha
   }, [disabled]);
 
   return (
-    <div
+    <motion.div
       inert={!chatOpen}
-      className={cn(
-        'overflow-hidden transition-[height] duration-300 ease-out',
-        chatOpen ? 'h-[57px]' : 'h-0'
-      )}
+      {...MOTION_PROPS}
+      animate={chatOpen ? 'visible' : 'hidden'}
+      className="border-input/50 flex w-full items-start overflow-hidden border-b"
     >
-      <div className="flex h-8 w-full">
-        <form
-          onSubmit={handleSubmit}
-          className="flex grow items-center gap-2 rounded-md pl-1 text-sm"
+      <form
+        onSubmit={handleSubmit}
+        className="mb-3 flex grow items-end gap-2 rounded-md pl-1 text-sm"
+      >
+        <input
+          autoFocus
+          ref={inputRef}
+          type="text"
+          value={message}
+          disabled={disabled}
+          placeholder="Type something..."
+          onChange={(e) => setMessage(e.target.value)}
+          className="h-8 flex-1 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+        />
+        <Button
+          size="icon"
+          type="submit"
+          disabled={isDisabled}
+          variant={isDisabled ? 'secondary' : 'primary'}
+          title={isSending ? 'Sending...' : 'Send'}
+          className="self-start"
         >
-          <input
-            autoFocus
-            ref={inputRef}
-            type="text"
-            value={message}
-            disabled={disabled}
-            placeholder="Type something..."
-            onChange={(e) => setMessage(e.target.value)}
-            className="flex-1 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-          />
-          <Button
-            size="sm"
-            type="submit"
-            disabled={isDisabled}
-            variant={isDisabled ? 'secondary' : 'primary'}
-            className="font-mono uppercase"
-          >
-            Send
-          </Button>
-        </form>
-      </div>
-      <hr className="border-input/50 my-3" />
-    </div>
+          {isSending ? (
+            <SpinnerIcon className="animate-spin" weight="bold" />
+          ) : (
+            <PaperPlaneRightIcon weight="bold" />
+          )}
+        </Button>
+      </form>
+    </motion.div>
   );
 }
