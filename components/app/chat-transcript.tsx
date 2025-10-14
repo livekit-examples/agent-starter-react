@@ -56,25 +56,31 @@ interface ChatTranscriptProps extends Omit<ChatEntryProps, 'entry'> {
 export function ChatTranscript({
   hidden = false,
   messages = [],
-  hideName,
-  hideTimestamp,
-  messageFormatter,
   ...props
 }: ChatTranscriptProps & Omit<HTMLMotionProps<'div'>, 'ref'>) {
   return (
     <AnimatePresence>
       {!hidden && (
         <MotionContainer {...CONTAINER_MOTION_PROPS} {...props}>
-          {messages.map((message: ReceivedChatMessage) => (
-            <MotionChatEntry
-              key={message.id}
-              entry={message}
-              hideName={hideName}
-              hideTimestamp={hideTimestamp}
-              messageFormatter={messageFormatter}
-              {...MESSAGE_MOTION_PROPS}
-            />
-          ))}
+          {messages.map(({ id, timestamp, from, message, editTimestamp }: ReceivedChatMessage) => {
+            const name = from?.name ?? from?.identity;
+            const locale = navigator?.language ?? 'en-US';
+            const messageOrigin = from?.isLocal ? 'local' : 'remote';
+            const hasBeenEdited = !!editTimestamp;
+
+            return (
+              <MotionChatEntry
+                key={id}
+                name={name}
+                locale={locale}
+                timestamp={timestamp}
+                message={message}
+                messageOrigin={messageOrigin}
+                hasBeenEdited={hasBeenEdited}
+                {...MESSAGE_MOTION_PROPS}
+              />
+            );
+          })}
         </MotionContainer>
       )}
     </AnimatePresence>
