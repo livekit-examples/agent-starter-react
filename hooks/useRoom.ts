@@ -36,36 +36,40 @@ export function useRoom(appConfig: AppConfig) {
     };
   }, [room]);
 
+  const tokenSource = useMemo(
+    () =>
+      TokenSource.custom(async () => {
+        const url = new URL(
+          process.env.NEXT_PUBLIC_CONN_DETAILS_ENDPOINT ?? '/api/connection-details',
+          window.location.origin
+        );
+
+        try {
+          const res = await fetch(url.toString(), {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Sandbox-Id': appConfig.sandboxId ?? '',
+            },
+            body: JSON.stringify({
+              room_config: appConfig.agentName
+                ? {
+                    agents: [{ agent_name: appConfig.agentName }],
+                  }
+                : undefined,
+            }),
+          });
+          return await res.json();
+        } catch (error) {
+          console.error('Error fetching connection details:', error);
+          throw new Error('Error fetching connection details!');
+        }
+      }),
+    [appConfig]
+  );
+
   const startSession = useCallback(() => {
     setIsSessionActive(true);
-
-    const tokenSource = TokenSource.custom(async () => {
-      const url = new URL(
-        process.env.NEXT_PUBLIC_CONN_DETAILS_ENDPOINT ?? '/api/connection-details',
-        window.location.origin
-      );
-
-      try {
-        const res = await fetch(url.toString(), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Sandbox-Id': appConfig.sandboxId ?? '',
-          },
-          body: JSON.stringify({
-            room_config: appConfig.agentName
-              ? {
-                  agents: [{ agent_name: appConfig.agentName }],
-                }
-              : undefined,
-          }),
-        });
-        return await res.json();
-      } catch (error) {
-        console.error('Error fetching connection details:', error);
-        throw new Error('Error fetching connection details!');
-      }
-    });
 
     if (room.state === 'disconnected') {
       const { isPreConnectBufferEnabled } = appConfig;
@@ -94,7 +98,7 @@ export function useRoom(appConfig: AppConfig) {
         });
       });
     }
-  }, [room, appConfig]);
+  }, [room, appConfig, tokenSource]);
 
   const endSession = useCallback(() => {
     setIsSessionActive(false);
