@@ -70,16 +70,12 @@ export const getAppConfig = cache(async (headers: Headers): Promise<AppConfig> =
 // generate a hover color for the accent color by mixing it with 20% black
 export function getStyles(appConfig: AppConfig) {
   const { accent, accentDark } = appConfig;
-  const hasCustomAccentColor =
-    process.env.NODE_ENV === 'development' || accent !== APP_CONFIG_DEFAULTS.accent;
-  const hasCustomAccentDarkColor =
-    process.env.NODE_ENV === 'development' || accentDark !== APP_CONFIG_DEFAULTS.accentDark;
 
   return [
-    hasCustomAccentColor
+    accent
       ? `:root { --primary: ${accent}; --primary-hover: color-mix(in srgb, ${accent} 80%, #000); }`
       : '',
-    hasCustomAccentDarkColor
+    accentDark
       ? `.dark { --primary: ${accentDark}; --primary-hover: color-mix(in srgb, ${accentDark} 80%, #000); }`
       : '',
   ]
