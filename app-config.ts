@@ -36,7 +36,6 @@ export const APP_CONFIG_DEFAULTS: AppConfig = {
   startButtonText: 'Start call',
 
   // for LiveKit Cloud Sandbox
-  // these must be defined to satisfy `getAppConfig` in `lib/utils.ts`
-  sandboxId: undefined as string | undefined,
-  agentName: undefined as string | undefined,
+  sandboxId: undefined,
+  agentName: undefined,
 };
