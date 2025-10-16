@@ -14,6 +14,7 @@ export interface AppConfig {
   logoDark?: string;
   accentDark?: string;
 
+  // for LiveKit Cloud Sandbox
   sandboxId?: string;
   agentName?: string;
 }
@@ -33,4 +34,9 @@ export const APP_CONFIG_DEFAULTS: AppConfig = {
   logoDark: '/lk-logo-dark.svg',
   accentDark: '#1fd5f9',
   startButtonText: 'Start call',
+
+  // for LiveKit Cloud Sandbox
+  // these must be defined to satisfy `getAppConfig` in `lib/utils.ts`
+  sandboxId: undefined as string | undefined,
+  agentName: undefined as string | undefined,
 };
