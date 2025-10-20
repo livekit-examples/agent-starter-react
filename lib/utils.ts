@@ -38,25 +38,32 @@ export const getAppConfig = cache(async (headers: Headers): Promise<AppConfig> =
         headers: { 'X-Sandbox-ID': sandboxId },
       });
 
-      const remoteConfig: SandboxConfig = await response.json();
-      const config: AppConfig = { ...APP_CONFIG_DEFAULTS, sandboxId };
+      if (response.ok) {
+        const remoteConfig: SandboxConfig = await response.json();
 
-      for (const [key, entry] of Object.entries(remoteConfig)) {
-        if (entry === null) continue;
-        // Only include app config entries that are declared in defaults and, if set,
-        // share the same primitive type as the default value.
-        if (
-          (key in APP_CONFIG_DEFAULTS &&
-            APP_CONFIG_DEFAULTS[key as keyof AppConfig] === undefined) ||
-          (typeof config[key as keyof AppConfig] === entry.type &&
-            typeof config[key as keyof AppConfig] === typeof entry.value)
-        ) {
-          // @ts-expect-error I'm not sure quite how to appease TypeScript, but we've thoroughly checked types above
-          config[key as keyof AppConfig] = entry.value as AppConfig[keyof AppConfig];
+        const config: AppConfig = { ...APP_CONFIG_DEFAULTS, sandboxId };
+
+        for (const [key, entry] of Object.entries(remoteConfig)) {
+          if (entry === null) continue;
+          // Only include app config entries that are declared in defaults and, if set,
+          // share the same primitive type as the default value.
+          if (
+            (key in APP_CONFIG_DEFAULTS &&
+              APP_CONFIG_DEFAULTS[key as keyof AppConfig] === undefined) ||
+            (typeof config[key as keyof AppConfig] === entry.type &&
+              typeof config[key as keyof AppConfig] === typeof entry.value)
+          ) {
+            // @ts-expect-error I'm not sure quite how to appease TypeScript, but we've thoroughly checked types above
+            config[key as keyof AppConfig] = entry.value as AppConfig[keyof AppConfig];
+          }
         }
-      }
 
-      return config;
+        return config;
+      } else {
+        console.error(
+          `ERROR: querying config endpoint failed with status ${response.status}: ${response.statusText}`
+        );
+      }
     } catch (error) {
       console.error('ERROR: getAppConfig() - lib/utils.ts', error);
     }
