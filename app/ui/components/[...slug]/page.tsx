@@ -14,10 +14,8 @@ export default function Page() {
 
   return (
     <>
-      <div className="py-8">
-        <h1 className="text-foreground mb-8 text-5xl font-bold">{componentName}</h1>
-        {component()}
-      </div>
+      <h1 className="text-foreground mb-8 text-5xl font-bold">{componentName}</h1>
+      {component()}
     </>
   );
 }

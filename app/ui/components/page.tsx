@@ -14,15 +14,17 @@ export default function Page() {
       </p>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {Object.entries(COMPONENTS).map(([componentName]) => (
-          <Link
-            href={`/ui/components/${componentName}`}
-            key={componentName}
-            className="font-semibold underline-offset-4 hover:underline focus:underline"
-          >
-            {componentName}
-          </Link>
-        ))}
+        {Object.entries(COMPONENTS)
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([componentName]) => (
+            <Link
+              href={`/ui/components/${componentName}`}
+              key={componentName}
+              className="font-semibold underline-offset-4 hover:underline focus:underline"
+            >
+              {componentName}
+            </Link>
+          ))}
       </div>
 
       <div className="space-y-20 py-20">

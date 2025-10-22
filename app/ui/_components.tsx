@@ -1,14 +1,27 @@
 'use client';
 
+import { useEffect, useMemo, useState } from 'react';
 import { type VariantProps } from 'class-variance-authority';
 import { Track } from 'livekit-client';
+import {
+  type AgentState,
+  type TrackReference,
+  type TrackReferenceOrPlaceholder,
+  useLocalParticipant,
+} from '@livekit/components-react';
 import { MicrophoneIcon } from '@phosphor-icons/react/dist/ssr';
+import { useSession } from '@/components/app/session-provider';
 import { AgentControlBar } from '@/components/livekit/agent-control-bar/agent-control-bar';
+import { TrackControl } from '@/components/livekit/agent-control-bar/track-control';
 import { TrackDeviceSelect } from '@/components/livekit/agent-control-bar/track-device-select';
-import { TrackSelector } from '@/components/livekit/agent-control-bar/track-selector';
 import { TrackToggle } from '@/components/livekit/agent-control-bar/track-toggle';
 import { Alert, AlertDescription, AlertTitle, alertVariants } from '@/components/livekit/alert';
 import { AlertToast } from '@/components/livekit/alert-toast';
+import { BarVisualizer } from '@/components/livekit/audio-visualizer/audio-bar-visualizer/_bar-visualizer';
+import {
+  AudioBarVisualizer,
+  audioBarVisualizerVariants,
+} from '@/components/livekit/audio-visualizer/audio-bar-visualizer/audio-bar-visualizer';
 import { Button, buttonVariants } from '@/components/livekit/button';
 import { ChatEntry } from '@/components/livekit/chat-entry';
 import {
@@ -20,13 +33,23 @@ import {
 } from '@/components/livekit/select';
 import { ShimmerText } from '@/components/livekit/shimmer-text';
 import { Toggle, toggleVariants } from '@/components/livekit/toggle';
-import { cn } from '@/lib/utils';
 
 type toggleVariantsType = VariantProps<typeof toggleVariants>['variant'];
 type toggleVariantsSizeType = VariantProps<typeof toggleVariants>['size'];
 type buttonVariantsType = VariantProps<typeof buttonVariants>['variant'];
 type buttonVariantsSizeType = VariantProps<typeof buttonVariants>['size'];
 type alertVariantsType = VariantProps<typeof alertVariants>['variant'];
+type audioBarVisualizerVariantsSizeType = VariantProps<typeof audioBarVisualizerVariants>['size'];
+
+export function useMicrophone() {
+  const { startSession } = useSession();
+  const { localParticipant } = useLocalParticipant();
+
+  useEffect(() => {
+    startSession();
+    localParticipant.setMicrophoneEnabled(true, undefined);
+  }, [startSession, localParticipant]);
+}
 
 interface ContainerProps {
   componentName: string;
@@ -34,7 +57,7 @@ interface ContainerProps {
   className?: string;
 }
 
-function Container({ componentName, children, className }: ContainerProps) {
+function Container({ children, className }: ContainerProps) {
   return (
     <div className={className}>
       <div className="bg-background border-input space-y-4 rounded-3xl border p-8 drop-shadow-lg/5">
@@ -168,71 +191,217 @@ export const COMPONENTS = {
     </Container>
   ),
 
+  // Audio visualizer
+  AudioVisualizer: () => {
+    const barCounts = ['0', '3', '5', '7', '9'];
+    const sizes = ['icon', 'xs', 'sm', 'md', 'lg', 'xl'];
+    const states = [
+      'disconnected',
+      'connecting',
+      'initializing',
+      'listening',
+      'thinking',
+      'speaking',
+    ] as AgentState[];
+
+    const { microphoneTrack, localParticipant } = useLocalParticipant();
+    const [barCount, setBarCount] = useState<string>(barCounts[0]);
+    const [size, setSize] = useState<audioBarVisualizerVariantsSizeType>(
+      sizes[3] as audioBarVisualizerVariantsSizeType
+    );
+    const [state, setState] = useState<AgentState>(states[0]);
+
+    const micTrackRef = useMemo<TrackReferenceOrPlaceholder | undefined>(() => {
+      return state === 'speaking'
+        ? ({
+            participant: localParticipant,
+            source: Track.Source.Microphone,
+            publication: microphoneTrack,
+          } as TrackReference)
+        : undefined;
+    }, [state, localParticipant, microphoneTrack]);
+
+    useMicrophone();
+
+    return (
+      <Container componentName="AudioVisualizer">
+        <div className="flex items-center gap-2">
+          <div className="flex-1">
+            <label className="font-mono text-xs uppercase" htmlFor="state">
+              State
+            </label>
+            <Select value={state} onValueChange={(value) => setState(value as AgentState)}>
+              <SelectTrigger id="state" className="w-full">
+                <SelectValue placeholder="Select a state" />
+              </SelectTrigger>
+              <SelectContent>
+                {states.map((state) => (
+                  <SelectItem key={state} value={state}>
+                    {state}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex-1">
+            <label className="font-mono text-xs uppercase" htmlFor="size">
+              Size
+            </label>
+            <Select
+              value={size as string}
+              onValueChange={(value) => setSize(value as audioBarVisualizerVariantsSizeType)}
+            >
+              <SelectTrigger id="size" className="w-full">
+                <SelectValue placeholder="Select a size" />
+              </SelectTrigger>
+              <SelectContent>
+                {sizes.map((size) => (
+                  <SelectItem key={size} value={size as string}>
+                    {size}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex-1">
+            <label className="font-mono text-xs uppercase" htmlFor="barCount">
+              Bar count
+            </label>
+            <Select value={barCount.toString()} onValueChange={(value) => setBarCount(value)}>
+              <SelectTrigger id="barCount" className="w-full">
+                <SelectValue placeholder="Select a bar count" />
+              </SelectTrigger>
+              <SelectContent>
+                {barCounts.map((barCount) => (
+                  <SelectItem key={barCount} value={barCount.toString()}>
+                    {parseInt(barCount) || 'Default'}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="relative flex flex-col justify-center gap-4">
+          <div className="grid h-40 place-items-center">
+            <AudioBarVisualizer
+              size={size as audioBarVisualizerVariantsSizeType}
+              state={state}
+              audioTrack={micTrackRef!}
+              barCount={parseInt(barCount) || undefined}
+              className="mx-auto"
+            />
+          </div>
+          <div className="text-center">Original BarVisualizer</div>
+          <div className="border-border grid h-40 place-items-center space-y-4 rounded-xl border p-4">
+            <BarVisualizer
+              size={size as audioBarVisualizerVariantsSizeType}
+              state={state}
+              audioTrack={micTrackRef!}
+              barCount={parseInt(barCount) || undefined}
+              className="mx-auto"
+            />
+          </div>
+        </div>
+      </Container>
+    );
+  },
+
   // Agent control bar
-  AgentControlBar: () => (
-    <Container componentName="AgentControlBar">
-      <div className="relative flex items-center justify-center">
-        <AgentControlBar
-          className="w-full"
-          controls={{
-            leave: true,
-            chat: true,
-            camera: true,
-            microphone: true,
-            screenShare: true,
-          }}
-        />
-      </div>
-    </Container>
-  ),
+  AgentControlBar: () => {
+    useMicrophone();
+
+    return (
+      <Container componentName="AgentControlBar">
+        <div className="relative flex items-center justify-center">
+          <AgentControlBar
+            className="w-full"
+            controls={{
+              leave: true,
+              chat: true,
+              camera: true,
+              microphone: true,
+              screenShare: true,
+            }}
+          />
+        </div>
+      </Container>
+    );
+  },
 
   // Track device select
-  TrackDeviceSelect: () => (
-    <Container componentName="TrackDeviceSelect">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <StoryTitle>Size default</StoryTitle>
-          <TrackDeviceSelect kind="audioinput" />
-        </div>
-        <div>
-          <StoryTitle>Size sm</StoryTitle>
-          <TrackDeviceSelect size="sm" kind="audioinput" />
-        </div>
-      </div>
-    </Container>
-  ),
+  // TrackDeviceSelect: () => (
+  //   <Container componentName="TrackDeviceSelect">
+  //     <div className="grid grid-cols-2 gap-4">
+  //       <div>
+  //         <StoryTitle>Size default</StoryTitle>
+  //         <TrackDeviceSelect kind="audioinput" />
+  //       </div>
+  //       <div>
+  //         <StoryTitle>Size sm</StoryTitle>
+  //         <TrackDeviceSelect size="sm" kind="audioinput" />
+  //       </div>
+  //     </div>
+  //   </Container>
+  // ),
 
   // Track toggle
-  TrackToggle: () => (
-    <Container componentName="TrackToggle">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <StoryTitle>Track.Source.Microphone</StoryTitle>
-          <TrackToggle variant="outline" source={Track.Source.Microphone} />
-        </div>
-        <div>
-          <StoryTitle>Track.Source.Camera</StoryTitle>
-          <TrackToggle variant="outline" source={Track.Source.Camera} />
-        </div>
-      </div>
-    </Container>
-  ),
+  // TrackToggle: () => (
+  //   <Container componentName="TrackToggle">
+  //     <div className="grid grid-cols-2 gap-4">
+  //       <div>
+  //         <StoryTitle>Track.Source.Microphone</StoryTitle>
+  //         <TrackToggle variant="outline" source={Track.Source.Microphone} />
+  //       </div>
+  //       <div>
+  //         <StoryTitle>Track.Source.Camera</StoryTitle>
+  //         <TrackToggle variant="outline" source={Track.Source.Camera} />
+  //       </div>
+  //     </div>
+  //   </Container>
+  // ),
 
-  // Track selector
-  TrackSelector: () => (
-    <Container componentName="TrackSelector">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <StoryTitle>Track.Source.Camera</StoryTitle>
-          <TrackSelector kind="videoinput" source={Track.Source.Camera} />
+  // Track control
+  TrackControl: () => {
+    const { microphoneTrack, localParticipant } = useLocalParticipant();
+    const micTrackRef = useMemo<TrackReferenceOrPlaceholder | undefined>(() => {
+      return {
+        participant: localParticipant,
+        source: Track.Source.Microphone,
+        publication: microphoneTrack,
+      } as TrackReference;
+    }, [localParticipant, microphoneTrack]);
+
+    useMicrophone();
+
+    return (
+      <Container componentName="TrackSelector">
+        <div className="grid grid-cols-2 gap-8">
+          <div className="flex flex-col gap-8">
+            <div>
+              <StoryTitle>Track.Source.Microphone</StoryTitle>
+              <TrackControl kind="audioinput" source={Track.Source.Microphone} />
+            </div>
+            <div>
+              <StoryTitle>Track.Source.Microphone</StoryTitle>
+              <TrackControl
+                kind="audioinput"
+                source={Track.Source.Microphone}
+                audioTrackRef={micTrackRef}
+              />
+            </div>
+          </div>
+
+          <div>
+            <StoryTitle>Track.Source.Camera</StoryTitle>
+            <TrackControl kind="videoinput" source={Track.Source.Camera} />
+          </div>
         </div>
-        <div>
-          <StoryTitle>Track.Source.Microphone</StoryTitle>
-          <TrackSelector kind="audioinput" source={Track.Source.Microphone} />
-        </div>
-      </div>
-    </Container>
-  ),
+      </Container>
+    );
+  },
 
   // Chat entry
   ChatEntry: () => (
