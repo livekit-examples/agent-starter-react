@@ -13,8 +13,8 @@ import { MicrophoneIcon } from '@phosphor-icons/react/dist/ssr';
 import { useSession } from '@/components/app/session-provider';
 import { AgentControlBar } from '@/components/livekit/agent-control-bar/agent-control-bar';
 import { TrackControl } from '@/components/livekit/agent-control-bar/track-control';
-import { TrackDeviceSelect } from '@/components/livekit/agent-control-bar/track-device-select';
-import { TrackToggle } from '@/components/livekit/agent-control-bar/track-toggle';
+// import { TrackDeviceSelect } from '@/components/livekit/agent-control-bar/track-device-select';
+// import { TrackToggle } from '@/components/livekit/agent-control-bar/track-toggle';
 import { Alert, AlertDescription, AlertTitle, alertVariants } from '@/components/livekit/alert';
 import { AlertToast } from '@/components/livekit/alert-toast';
 import { BarVisualizer } from '@/components/livekit/audio-visualizer/audio-bar-visualizer/_bar-visualizer';
@@ -22,6 +22,10 @@ import {
   AudioBarVisualizer,
   audioBarVisualizerVariants,
 } from '@/components/livekit/audio-visualizer/audio-bar-visualizer/audio-bar-visualizer';
+import {
+  AudioRadialVisualizer,
+  audioRadialVisualizerVariants,
+} from '@/components/livekit/audio-visualizer/audio-radial-visualizer/audio-radial-visualizer';
 import { Button, buttonVariants } from '@/components/livekit/button';
 import { ChatEntry } from '@/components/livekit/chat-entry';
 import {
@@ -40,6 +44,9 @@ type buttonVariantsType = VariantProps<typeof buttonVariants>['variant'];
 type buttonVariantsSizeType = VariantProps<typeof buttonVariants>['size'];
 type alertVariantsType = VariantProps<typeof alertVariants>['variant'];
 type audioBarVisualizerVariantsSizeType = VariantProps<typeof audioBarVisualizerVariants>['size'];
+type audioRadialVisualizerVariantsSizeType = VariantProps<
+  typeof audioRadialVisualizerVariants
+>['size'];
 
 export function useMicrophone() {
   const { startSession } = useSession();
@@ -191,10 +198,10 @@ export const COMPONENTS = {
     </Container>
   ),
 
-  // Audio visualizer
-  AudioVisualizer: () => {
+  // Audio bar visualizer
+  AudioBarVisualizer: () => {
     const barCounts = ['0', '3', '5', '7', '9'];
-    const sizes = ['icon', 'xs', 'sm', 'md', 'lg', 'xl'];
+    const sizes = ['icon', 'sm', 'md', 'lg', 'xl'];
     const states = [
       'disconnected',
       'connecting',
@@ -207,7 +214,7 @@ export const COMPONENTS = {
     const { microphoneTrack, localParticipant } = useLocalParticipant();
     const [barCount, setBarCount] = useState<string>(barCounts[0]);
     const [size, setSize] = useState<audioBarVisualizerVariantsSizeType>(
-      sizes[3] as audioBarVisualizerVariantsSizeType
+      'md' as audioBarVisualizerVariantsSizeType
     );
     const [state, setState] = useState<AgentState>(states[0]);
 
@@ -258,7 +265,7 @@ export const COMPONENTS = {
               <SelectContent>
                 {sizes.map((size) => (
                   <SelectItem key={size} value={size as string}>
-                    {size}
+                    {size.toUpperCase()}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -285,7 +292,7 @@ export const COMPONENTS = {
         </div>
 
         <div className="relative flex flex-col justify-center gap-4">
-          <div className="grid h-40 place-items-center">
+          <div className="grid place-items-center py-8">
             <AudioBarVisualizer
               size={size as audioBarVisualizerVariantsSizeType}
               state={state}
@@ -295,8 +302,116 @@ export const COMPONENTS = {
             />
           </div>
           <div className="text-center">Original BarVisualizer</div>
-          <div className="border-border grid h-40 place-items-center space-y-4 rounded-xl border p-4">
+          <div className="border-border grid place-items-center rounded-xl border p-4 py-8">
             <BarVisualizer
+              size={size as audioBarVisualizerVariantsSizeType}
+              state={state}
+              audioTrack={micTrackRef!}
+              barCount={parseInt(barCount) || undefined}
+              className="mx-auto"
+            />
+          </div>
+        </div>
+      </Container>
+    );
+  },
+
+  // Audio bar visualizer
+  AudioRadialVisualizer: () => {
+    const barCounts = ['0', '4', '8', '12', '16', '24'];
+    const sizes = ['icon', 'sm', 'md', 'lg', 'xl'];
+    const states = [
+      'disconnected',
+      'connecting',
+      'initializing',
+      'listening',
+      'thinking',
+      'speaking',
+    ] as AgentState[];
+
+    const { microphoneTrack, localParticipant } = useLocalParticipant();
+    const [barCount, setBarCount] = useState<string>(barCounts[0]);
+    const [size, setSize] = useState<audioRadialVisualizerVariantsSizeType>(
+      'md' as audioRadialVisualizerVariantsSizeType
+    );
+    const [state, setState] = useState<AgentState>(states[0]);
+
+    const micTrackRef = useMemo<TrackReferenceOrPlaceholder | undefined>(() => {
+      return state === 'speaking'
+        ? ({
+            participant: localParticipant,
+            source: Track.Source.Microphone,
+            publication: microphoneTrack,
+          } as TrackReference)
+        : undefined;
+    }, [state, localParticipant, microphoneTrack]);
+
+    useMicrophone();
+
+    return (
+      <Container componentName="AudioVisualizer">
+        <div className="flex items-center gap-2">
+          <div className="flex-1">
+            <label className="font-mono text-xs uppercase" htmlFor="state">
+              State
+            </label>
+            <Select value={state} onValueChange={(value) => setState(value as AgentState)}>
+              <SelectTrigger id="state" className="w-full">
+                <SelectValue placeholder="Select a state" />
+              </SelectTrigger>
+              <SelectContent>
+                {states.map((state) => (
+                  <SelectItem key={state} value={state}>
+                    {state}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex-1">
+            <label className="font-mono text-xs uppercase" htmlFor="size">
+              Size
+            </label>
+            <Select
+              value={size as string}
+              onValueChange={(value) => setSize(value as audioRadialVisualizerVariantsSizeType)}
+            >
+              <SelectTrigger id="size" className="w-full">
+                <SelectValue placeholder="Select a size" />
+              </SelectTrigger>
+              <SelectContent>
+                {sizes.map((size) => (
+                  <SelectItem key={size} value={size as string}>
+                    {size.toUpperCase()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex-1">
+            <label className="font-mono text-xs uppercase" htmlFor="barCount">
+              Bar count
+            </label>
+            <Select value={barCount.toString()} onValueChange={(value) => setBarCount(value)}>
+              <SelectTrigger id="barCount" className="w-full">
+                <SelectValue placeholder="Select a bar count" />
+              </SelectTrigger>
+              <SelectContent>
+                {barCounts.map((barCount) => (
+                  <SelectItem key={barCount} value={barCount.toString()}>
+                    {parseInt(barCount) || 'Default'}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="relative flex flex-col justify-center gap-4">
+          <div className="grid place-items-center py-20">
+            <AudioRadialVisualizer
               size={size as audioBarVisualizerVariantsSizeType}
               state={state}
               audioTrack={micTrackRef!}

@@ -9,7 +9,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useBarAnimator } from './hooks/useBarAnimator';
 
-export const audioBarVisualizerVariants = cva(['relative flex items-center justify-center'], {
+export const audioRadialVisualizerVariants = cva(['relative flex items-center justify-center'], {
   variants: {
     size: {
       icon: 'h-[24px] gap-[2px]',
@@ -24,7 +24,7 @@ export const audioBarVisualizerVariants = cva(['relative flex items-center justi
   },
 });
 
-export const audioBarVisualizerBarVariants = cva(
+export const audioRadialVisualizerBarVariants = cva(
   [
     'rounded-full transition-colors duration-250 ease-linear bg-(--audio-visualizer-idle) data-[lk-highlighted=true]:bg-(--audio-visualizer-active)',
   ],
@@ -44,22 +44,24 @@ export const audioBarVisualizerBarVariants = cva(
   }
 );
 
-interface AudioBarVisualizerProps {
+interface AudioRadialVisualizerProps {
   state?: AgentState;
+  radius?: number;
   barCount?: number;
   audioTrack?: LocalAudioTrack | RemoteAudioTrack | TrackReferenceOrPlaceholder;
   className?: string;
   barClassName?: string;
 }
 
-export function AudioBarVisualizer({
+export function AudioRadialVisualizer({
   size,
   state,
+  radius,
   barCount,
   audioTrack,
   className,
   barClassName,
-}: AudioBarVisualizerProps & VariantProps<typeof audioBarVisualizerVariants>) {
+}: AudioRadialVisualizerProps & VariantProps<typeof audioRadialVisualizerVariants>) {
   const _barCount = useMemo(() => {
     if (barCount) {
       return barCount;
@@ -67,14 +69,14 @@ export function AudioBarVisualizer({
     switch (size) {
       case 'icon':
       case 'sm':
-        return 3;
+        return 9;
       default:
-        return 5;
+        return 12;
     }
   }, [barCount, size]);
 
   const volumeBands = useMultibandTrackVolume(audioTrack, {
-    bands: _barCount,
+    bands: Math.floor(_barCount / 2),
     loPass: 100,
     hiPass: 200,
   });
@@ -94,20 +96,55 @@ export function AudioBarVisualizer({
     }
   }, [state, _barCount]);
 
-  const highlightedIndices = useBarAnimator(state, _barCount, sequencerInterval);
+  const distanceFromCenter = useMemo(() => {
+    if (radius) {
+      return radius;
+    }
+    switch (size) {
+      case 'icon':
+        return 6;
+      case 'xl':
+        return 128;
+      case 'lg':
+        return 64;
+      case 'sm':
+        return 16;
+      case 'md':
+      default:
+        return 32;
+    }
+  }, [size, radius]);
 
-  const bands = audioTrack ? volumeBands : new Array(_barCount).fill(0);
+  const highlightedIndices = useBarAnimator(state, _barCount, sequencerInterval);
+  const bands = audioTrack ? [...volumeBands, ...volumeBands] : new Array(_barCount).fill(0);
+
   return (
-    <div className={cn(audioBarVisualizerVariants({ size }), className)}>
-      {bands.map((band, idx) => (
-        <div
-          key={idx}
-          data-lk-index={idx}
-          data-lk-highlighted={highlightedIndices.includes(idx)}
-          className={cn(audioBarVisualizerBarVariants({ size }), barClassName)}
-          style={{ height: `${band * 100}%` }}
-        />
-      ))}
+    <div className={cn(audioRadialVisualizerVariants({ size }), 'relative', className)}>
+      {bands.map((band, idx) => {
+        const angle = (idx / _barCount) * Math.PI * 2;
+
+        return (
+          <div
+            key={idx}
+            className={cn('absolute top-1/2 left-1/2 h-1 w-1 -translate-x-1/2 -translate-y-1/2')}
+            style={{
+              transformOrigin: 'center',
+              transform: `rotate(${angle}rad) translateY(${distanceFromCenter}px)`,
+            }}
+          >
+            <div
+              data-lk-index={idx}
+              data-lk-highlighted={highlightedIndices.includes(idx)}
+              className={cn(
+                audioRadialVisualizerBarVariants({ size }),
+                'absolute top-1/2 left-1/2 origin-bottom -translate-x-1/2',
+                barClassName
+              )}
+              style={{ height: `${band * distanceFromCenter * 2}px` }}
+            />
+          </div>
+        );
+      })}
     </div>
   );
 }
