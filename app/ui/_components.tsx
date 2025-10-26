@@ -3,11 +3,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { type VariantProps } from 'class-variance-authority';
 import { Track } from 'livekit-client';
+import { RoomAudioRenderer, StartAudio } from '@livekit/components-react';
 import {
   type AgentState,
   type TrackReference,
   type TrackReferenceOrPlaceholder,
   useLocalParticipant,
+  useVoiceAssistant,
 } from '@livekit/components-react';
 import { MicrophoneIcon } from '@phosphor-icons/react/dist/ssr';
 import { useSession } from '@/components/app/session-provider';
@@ -22,15 +24,13 @@ import {
   AudioBarVisualizer,
   audioBarVisualizerVariants,
 } from '@/components/livekit/audio-visualizer/audio-bar-visualizer/audio-bar-visualizer';
-import {
-  AudioGridVisualizer,
-  type GridOptions,
-} from '@/components/livekit/audio-visualizer/audio-grid-visualizer/audio-grid-visualizer';
+import { AudioGridVisualizer } from '@/components/livekit/audio-visualizer/audio-grid-visualizer/audio-grid-visualizer';
 import { gridVariants } from '@/components/livekit/audio-visualizer/audio-grid-visualizer/demos';
 import {
   AudioRadialVisualizer,
   audioRadialVisualizerVariants,
 } from '@/components/livekit/audio-visualizer/audio-radial-visualizer/audio-radial-visualizer';
+import { AudioShaderVisualizer } from '@/components/livekit/audio-visualizer/audio-shader-visualizer/audio-shader-visualizer';
 import { Button, buttonVariants } from '@/components/livekit/button';
 import { ChatEntry } from '@/components/livekit/chat-entry';
 import {
@@ -442,11 +442,11 @@ export const COMPONENTS = {
       'speaking',
     ] as AgentState[];
 
-    const { microphoneTrack, localParticipant } = useLocalParticipant();
     const [rowCount, setRowCount] = useState(rowCounts[0]);
     const [columnCount, setColumnCount] = useState(columnCounts[0]);
     const [state, setState] = useState<AgentState>(states[0]);
     const [demoIndex, setDemoIndex] = useState(0);
+    const { microphoneTrack, localParticipant } = useLocalParticipant();
 
     const micTrackRef = useMemo<TrackReferenceOrPlaceholder | undefined>(() => {
       return state === 'speaking'
@@ -557,6 +557,99 @@ export const COMPONENTS = {
           <pre className="text-muted-foreground text-sm">
             <code>{JSON.stringify(demoOptions, null, 2)}</code>
           </pre>
+        </div>
+      </Container>
+    );
+  },
+
+  AudioShaderVisualizer: () => {
+    const [presetIndex, setPresetIndex] = useState(3);
+
+    // speed
+    const [a, setA] = useState(50);
+    // // color scale
+    const [h, setH] = useState(0.1);
+    // // color position
+    const [i, setI] = useState(0.15);
+    // blur
+    const [f, setF] = useState(0.1);
+    // shape
+    const [g, setG] = useState(1.0);
+
+    const {
+      // state,
+      audioTrack,
+    } = useVoiceAssistant();
+
+    useMicrophone();
+
+    const fields = [
+      ['speed', a, setA, 0, 250, 10],
+      ['color position', i, setI, 0, 1, 0.01],
+      ['color scale', h, setH, 0, 1, 0.01],
+      ['blur', f, setF, 0, 2, 0.01],
+      ['shape', g, setG, 1, 5, 1],
+    ] as const;
+
+    return (
+      <Container componentName="AudioShaderVisualizer">
+        <StartAudio label="Start Audio" />
+        <RoomAudioRenderer />
+        <div className="grid grid-cols-2 gap-4">
+          <AudioShaderVisualizer
+            speed={a}
+            blur={f}
+            shape={g}
+            colorScale={h}
+            colorPosition={i}
+            audioTrack={audioTrack}
+            presetIndex={presetIndex}
+            // className="bg-amber-100"
+          />
+          <div>
+            <div className="mb-4">
+              <StoryTitle>Preset</StoryTitle>
+              <Select
+                value={String(presetIndex)}
+                onValueChange={(value) => setPresetIndex(parseInt(value))}
+              >
+                <SelectTrigger id="presetIndex" className="w-full">
+                  <SelectValue placeholder="Select a preset" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">Preset 1</SelectItem>
+                  <SelectItem value="1">Preset 2</SelectItem>
+                  <SelectItem value="2">Preset 3</SelectItem>
+                  <SelectItem value="3">Preset 4</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {fields.map(([name, value, setValue, min = 0.1, max = 10, step = 0.1]) => {
+              // Use 0-1 range for color phase channels
+              const isColorPhase = name.toString().startsWith('colorPhase');
+
+              return (
+                <div key={name}>
+                  <div className="flex items-center justify-between">
+                    <StoryTitle>{name}</StoryTitle>
+                    <div className="text-muted-foreground mb-2 text-xs">
+                      {isColorPhase ? Number(value).toFixed(2) : String(value)}
+                    </div>
+                  </div>
+                  <input
+                    type="range"
+                    value={String(value)}
+                    min={min}
+                    max={max}
+                    step={step}
+                    onChange={(e) => setValue(parseFloat(e.target.value))}
+                    className="w-full"
+                  />
+                </div>
+              );
+            })}
+          </div>
         </div>
       </Container>
     );
