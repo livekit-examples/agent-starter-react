@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import type { AppConfig } from '@/app-config';
 import { ChatTranscript } from '@/components/app/chat-transcript';
@@ -71,6 +71,7 @@ export const SessionView = ({
 
   const messages = useChatMessages();
   const [chatOpen, setChatOpen] = useState(false);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const controls: ControlBarControls = {
     leave: true,
@@ -79,6 +80,15 @@ export const SessionView = ({
     camera: appConfig.supportsVideoInput,
     screenShare: appConfig.supportsVideoInput,
   };
+
+  useEffect(() => {
+    const lastMessage = messages.at(-1);
+    const lastMessageIsLocal = lastMessage?.from?.isLocal === true;
+
+    if (scrollAreaRef.current && lastMessageIsLocal) {
+      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   return (
     <section className="bg-background relative z-10 h-full w-full overflow-hidden" {...props}>
@@ -90,7 +100,7 @@ export const SessionView = ({
         )}
       >
         <Fade top className="absolute inset-x-4 top-0 h-40" />
-        <ScrollArea className="px-4 pt-40 pb-[150px] md:px-6 md:pb-[180px]">
+        <ScrollArea ref={scrollAreaRef} className="px-4 pt-40 pb-[150px] md:px-6 md:pb-[180px]">
           <ChatTranscript
             hidden={!chatOpen}
             messages={messages}

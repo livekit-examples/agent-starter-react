@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-const AUTO_SCROLL_THRESHOLD_PX = 50;
+const AUTO_SCROLL_THRESHOLD_PX = 100;
 
 export function useAutoScroll(scrollContentContainer?: Element | null) {
   useEffect(() => {
