@@ -51,7 +51,8 @@ float getSdf(vec2 st) {
 }
 
 vec2 turb(vec2 pos, float t, float it) {
-  mat2 rot = mat2(0.6, -0.8, 0.8, 0.6);
+  // mat2 rot = mat2(0.6, -0.8, 0.8, 0.6);
+  mat2 rot = mat2(0.6, -0.25, 0.25, 0.9);
   float freq = mix(2.0, 15.0, uFrequency);
   float amp = uAmplitude;
   float xp = 1.4;

@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { type VariantProps, cva } from 'class-variance-authority';
 import {
   type AnimationPlaybackControlsWithThen,
+  type KeyframesTarget,
   type ValueAnimationTransition,
   animate,
   useMotionValue,
@@ -19,32 +20,28 @@ import {
 import { AuroraShaders, type AuroraShadersProps } from '@/components/ui/shadcn-io/aurora-shaders';
 import { cn } from '@/lib/utils';
 
-// const PRESETS = [
-//   (volume: number) => ({
-//     amplitude: 0.3,
-//     scale: 0.35 - 0.05 * volume,
-//     frequency: 0.25,
-//     brightness: 1.5 + 2.5 * volume,
-//   }),
-//   (volume: number) => ({
-//     amplitude: 0.2 + 1 * volume,
-//     scale: 0.35 - 0.05 * volume,
-//     frequency: 0.25 + 5 * volume,
-//     brightness: 1.5 + 2.5 * volume,
-//   }),
-//   (volume: number) => ({
-//     amplitude: 0.5 + 0.05 * volume,
-//     scale: 0.35 + 0.05 * volume,
-//     frequency: 2 - 2 * volume,
-//     brightness: 1.5 + 2.5 * volume,
-//   }),
-//   (volume: number) => ({
-//     amplitude: 0.5 + 0.2 * volume,
-//     scale: 0.35 - 0.05 * volume,
-//     frequency: 1 - 1 * volume,
-//     brightness: 1.5 + 2.5 * volume,
-//   }),
-// ];
+const DEFAULT_SPEED = 10;
+const DEFAULT_AMPLITUDE = 2;
+const DEFAULT_FREQUENCY = 0.5;
+const DEFAULT_SCALE = 0.2;
+const DEFAULT_BRIGHTNESS = 1.5;
+const DEFAULT_TRANSITION: ValueAnimationTransition = { duration: 0.5, ease: 'easeOut' };
+
+function useAnimatedValue<T>(initialValue: T) {
+  const [value, setValue] = useState(initialValue);
+  const motionValue = useMotionValue(initialValue);
+  const controlsRef = useRef<AnimationPlaybackControlsWithThen | null>(null);
+  useMotionValueEvent(motionValue, 'change', (value) => setValue(value as T));
+
+  const animateFn = useCallback(
+    (targetValue: T | KeyframesTarget, transition: ValueAnimationTransition) => {
+      controlsRef.current = animate(motionValue, targetValue, transition);
+    },
+    [motionValue]
+  );
+
+  return { value, controls: controlsRef, animate: animateFn };
+}
 
 export const audioShaderVisualizerVariants = cva(['aspect-square'], {
   variants: {
@@ -77,133 +74,82 @@ export function AudioShaderVisualizer({
 }: AudioShaderVisualizerProps &
   AuroraShadersProps &
   VariantProps<typeof audioShaderVisualizerVariants>) {
-  const [speed, setSpeed] = useState(10);
-  const [amplitude, setAmplitude] = useState(0.5);
-  const [frequency, setFrequency] = useState(1.0);
-  const [scale, setScale] = useState(0.2);
-  const [brightness, setBrightness] = useState(1.5);
-
-  const amplitudeValue = useMotionValue(0.5);
-  const frequencyValue = useMotionValue(0.5);
-  const scaleValue = useMotionValue(0.3);
-  const brightnessValue = useMotionValue(0);
-
-  const amplitudeControlsRef = useRef<AnimationPlaybackControlsWithThen | null>(null);
-  const frequencyControlsRef = useRef<AnimationPlaybackControlsWithThen | null>(null);
-  const scaleControlsRef = useRef<AnimationPlaybackControlsWithThen | null>(null);
-  const brightnessControlsRef = useRef<AnimationPlaybackControlsWithThen | null>(null);
-
-  useMotionValueEvent(amplitudeValue, 'change', (value) => setAmplitude(value));
-  useMotionValueEvent(frequencyValue, 'change', (value) => setFrequency(value));
-  useMotionValueEvent(scaleValue, 'change', (value) => setScale(value));
-  useMotionValueEvent(brightnessValue, 'change', (value) => setBrightness(value));
+  const [speed, setSpeed] = useState(DEFAULT_SPEED);
+  const { value: amplitude, animate: animateAmplitude } = useAnimatedValue(DEFAULT_AMPLITUDE);
+  const { value: frequency, animate: animateFrequency } = useAnimatedValue(DEFAULT_FREQUENCY);
+  const { value: scale, animate: animateScale } = useAnimatedValue(DEFAULT_SCALE);
+  const { value: brightness, animate: animateBrightness } = useAnimatedValue(DEFAULT_BRIGHTNESS);
 
   const volume = useTrackVolume(audioTrack as TrackReference, {
     fftSize: 512,
-    smoothingTimeConstant: 0.5,
+    smoothingTimeConstant: 0.55,
   });
 
   useEffect(() => {
-    const DEFAULT_TRANSITION: ValueAnimationTransition = { duration: 0.5, ease: 'easeOut' };
-
     switch (state) {
       case 'disconnected':
         setSpeed(5);
-        scaleControlsRef.current = animate(scaleValue, 0.2, DEFAULT_TRANSITION);
-        amplitudeControlsRef.current = animate(amplitudeValue, 1.2, DEFAULT_TRANSITION);
-        frequencyControlsRef.current = animate(frequencyValue, 0.4, DEFAULT_TRANSITION);
-        brightnessControlsRef.current = animate(brightnessValue, 1.0, DEFAULT_TRANSITION);
+        animateScale(0.2, DEFAULT_TRANSITION);
+        animateAmplitude(1.2, DEFAULT_TRANSITION);
+        animateFrequency(0.4, DEFAULT_TRANSITION);
+        animateBrightness(1.0, DEFAULT_TRANSITION);
         return;
+      case 'listening':
       case 'connecting':
-        setSpeed(50);
-        scaleControlsRef.current = animate(scaleValue, 0.3, DEFAULT_TRANSITION);
-        amplitudeControlsRef.current = animate(amplitudeValue, 0.5, DEFAULT_TRANSITION);
-        frequencyControlsRef.current = animate(frequencyValue, 1, DEFAULT_TRANSITION);
-        brightnessControlsRef.current = animate(brightnessValue, [0.5, 2.5], {
-          duration: 1,
-          repeat: Infinity,
-          repeatType: 'mirror',
-        });
+        setSpeed(20);
+        animateScale(0.35, DEFAULT_TRANSITION);
+        animateAmplitude(1, DEFAULT_TRANSITION);
+        animateFrequency(0.7, DEFAULT_TRANSITION);
+        animateBrightness(2.0, DEFAULT_TRANSITION);
         return;
       case 'initializing':
         setSpeed(30);
-        scaleControlsRef.current = animate(scaleValue, 0.3, DEFAULT_TRANSITION);
-        amplitudeControlsRef.current = animate(amplitudeValue, 0.5, DEFAULT_TRANSITION);
-        frequencyControlsRef.current = animate(frequencyValue, 1, DEFAULT_TRANSITION);
-        brightnessControlsRef.current = animate(brightnessValue, [0.5, 2.5], {
+        animateScale(0.3, DEFAULT_TRANSITION);
+        animateAmplitude(0.5, DEFAULT_TRANSITION);
+        animateFrequency(1, DEFAULT_TRANSITION);
+        animateBrightness([0.5, 2.5], {
           duration: 0.2,
-          repeat: Infinity,
-          repeatType: 'mirror',
-        });
-        return;
-      case 'listening':
-        setSpeed(20);
-        scaleControlsRef.current = animate(scaleValue, [0.3, 0.35], {
-          duration: 1.5,
-          repeat: Infinity,
-          repeatType: 'mirror',
-        });
-        amplitudeControlsRef.current = animate(amplitudeValue, 0.5, DEFAULT_TRANSITION);
-        frequencyControlsRef.current = animate(frequencyValue, 1.0, DEFAULT_TRANSITION);
-        brightnessControlsRef.current = animate(brightnessValue, [1.5, 2.5], {
-          duration: 1.5,
           repeat: Infinity,
           repeatType: 'mirror',
         });
         return;
       case 'thinking':
-        setSpeed(50);
-        scaleControlsRef.current = animate(scaleValue, [0.35, 0.3], {
-          duration: 0.5,
+        setSpeed(30);
+        animateScale([0.15, 0.13], {
+          duration: 0.3,
           repeat: Infinity,
           repeatType: 'mirror',
         });
-        amplitudeControlsRef.current = animate(amplitudeValue, 0.5, {
-          ...DEFAULT_TRANSITION,
-          duration: 0.2,
-        });
-        frequencyControlsRef.current = animate(frequencyValue, 2.5, {
-          ...DEFAULT_TRANSITION,
-          duration: 0.2,
-        });
-        brightnessControlsRef.current = animate(brightnessValue, [0.5, 2.5], {
-          duration: 0.2,
+        animateAmplitude(1.0, DEFAULT_TRANSITION);
+        animateFrequency(3.0, DEFAULT_TRANSITION);
+        animateBrightness([1.5, 2.5], {
+          duration: 0.3,
           repeat: Infinity,
           repeatType: 'mirror',
         });
         return;
       case 'speaking':
         setSpeed(50);
-        scaleControlsRef.current = animate(scaleValue, 0.35, DEFAULT_TRANSITION);
-        amplitudeControlsRef.current = animate(amplitudeValue, 0.5, DEFAULT_TRANSITION);
-        frequencyControlsRef.current = animate(frequencyValue, 1.0, DEFAULT_TRANSITION);
-        brightnessControlsRef.current = animate(brightnessValue, 0.5, DEFAULT_TRANSITION);
         return;
     }
   }, [
     state,
     shape,
     colorScale,
-    scaleValue,
-    colorPosition,
-    amplitudeValue,
-    frequencyValue,
-    brightnessValue,
+    animateScale,
+    animateAmplitude,
+    animateFrequency,
+    animateBrightness,
   ]);
 
   useEffect(() => {
     if (state === 'speaking' && volume > 0) {
-      scaleControlsRef.current?.stop();
-      amplitudeControlsRef.current?.stop();
-      frequencyControlsRef.current?.stop();
-      brightnessControlsRef.current?.stop();
-
-      scaleValue.set(0.3 - 0.05 * volume);
-      amplitudeValue.set(0.5 + 0.2 * volume);
-      frequencyValue.set(1 - 1 * volume);
-      brightnessValue.set(1.0 + 2.0 * volume);
+      animateScale(0.3 - 0.1 * volume, { duration: 0 });
+      animateAmplitude(1.0 + 0.2 * volume, { duration: 0 });
+      animateFrequency(0.7 - 0.3 * volume, { duration: 0 });
+      animateBrightness(1.5 + 1.0 * volume, { duration: 0 });
     }
-  }, [state, volume, scaleValue, amplitudeValue, frequencyValue, brightnessValue]);
+  }, [state, volume, animateScale, animateAmplitude, animateFrequency, animateBrightness]);
 
   return (
     <AuroraShaders
