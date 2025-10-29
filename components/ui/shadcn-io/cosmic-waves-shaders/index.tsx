@@ -1,7 +1,7 @@
 'use client';
 
 import React, { forwardRef } from 'react';
-import { Shader } from 'react-shaders';
+import { Shader } from '@/components/livekit/react-shader/react-shader';
 import { cn } from '@/lib/utils';
 
 export interface CosmicWavesShadersProps extends React.HTMLAttributes<HTMLDivElement> {

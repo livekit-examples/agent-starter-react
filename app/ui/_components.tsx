@@ -30,7 +30,10 @@ import {
   AudioRadialVisualizer,
   audioRadialVisualizerVariants,
 } from '@/components/livekit/audio-visualizer/audio-radial-visualizer/audio-radial-visualizer';
-import { AudioShaderVisualizer } from '@/components/livekit/audio-visualizer/audio-shader-visualizer/audio-shader-visualizer';
+import {
+  AudioShaderVisualizer,
+  audioShaderVisualizerVariants,
+} from '@/components/livekit/audio-visualizer/audio-shader-visualizer/audio-shader-visualizer';
 import { Button, buttonVariants } from '@/components/livekit/button';
 import { ChatEntry } from '@/components/livekit/chat-entry';
 import {
@@ -51,6 +54,9 @@ type alertVariantsType = VariantProps<typeof alertVariants>['variant'];
 type audioBarVisualizerVariantsSizeType = VariantProps<typeof audioBarVisualizerVariants>['size'];
 type audioRadialVisualizerVariantsSizeType = VariantProps<
   typeof audioRadialVisualizerVariants
+>['size'];
+type audioShaderVisualizerVariantsSizeType = VariantProps<
+  typeof audioShaderVisualizerVariants
 >['size'];
 
 export function useMicrophone() {
@@ -563,93 +569,142 @@ export const COMPONENTS = {
   },
 
   AudioShaderVisualizer: () => {
-    const [presetIndex, setPresetIndex] = useState(3);
+    const { startSession, endSession } = useSession();
+    const { localParticipant } = useLocalParticipant();
 
-    // speed
-    const [a, setA] = useState(50);
-    // // color scale
-    const [h, setH] = useState(0.1);
-    // // color position
-    const [i, setI] = useState(0.15);
-    // blur
-    const [f, setF] = useState(0.1);
     // shape
-    const [g, setG] = useState(1.0);
+    const [shape, setShape] = useState(1.0);
+    // color scale
+    const [colorScale, setColorScale] = useState(0.1);
+    // color position
+    const [colorPosition, setColorPosition] = useState(0.15);
+
+    const sizes = ['icon', 'sm', 'md', 'lg', 'xl'];
+    const states = [
+      'disconnected',
+      'connecting',
+      'initializing',
+      'listening',
+      'thinking',
+      'speaking',
+    ] as AgentState[];
+
+    const [size, setSize] = useState<audioShaderVisualizerVariantsSizeType>('lg');
+    const [state, setState] = useState<AgentState>(states[0]);
 
     const {
       // state,
       audioTrack,
     } = useVoiceAssistant();
 
-    useMicrophone();
+    useEffect(() => {
+      if (state === 'speaking') {
+        startSession();
+        localParticipant.setMicrophoneEnabled(true, undefined);
+      } else {
+        endSession();
+        localParticipant.setMicrophoneEnabled(false, undefined);
+      }
+    }, [startSession, endSession, state, localParticipant]);
 
     const fields = [
-      ['speed', a, setA, 0, 250, 10],
-      ['color position', i, setI, 0, 1, 0.01],
-      ['color scale', h, setH, 0, 1, 0.01],
-      ['blur', f, setF, 0, 2, 0.01],
-      ['shape', g, setG, 1, 5, 1],
+      ['color position', colorPosition, setColorPosition, 0, 1, 0.01],
+      ['color scale', colorScale, setColorScale, 0, 1, 0.01],
     ] as const;
 
     return (
       <Container componentName="AudioShaderVisualizer">
         <StartAudio label="Start Audio" />
         <RoomAudioRenderer />
-        <div className="grid grid-cols-2 gap-4">
-          <AudioShaderVisualizer
-            speed={a}
-            blur={f}
-            shape={g}
-            colorScale={h}
-            colorPosition={i}
-            audioTrack={audioTrack}
-            presetIndex={presetIndex}
-            // className="bg-amber-100"
-          />
-          <div>
-            <div className="mb-4">
-              <StoryTitle>Preset</StoryTitle>
-              <Select
-                value={String(presetIndex)}
-                onValueChange={(value) => setPresetIndex(parseInt(value))}
-              >
-                <SelectTrigger id="presetIndex" className="w-full">
-                  <SelectValue placeholder="Select a preset" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">Preset 1</SelectItem>
-                  <SelectItem value="1">Preset 2</SelectItem>
-                  <SelectItem value="2">Preset 3</SelectItem>
-                  <SelectItem value="3">Preset 4</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
 
-            {fields.map(([name, value, setValue, min = 0.1, max = 10, step = 0.1]) => {
-              // Use 0-1 range for color phase channels
-              const isColorPhase = name.toString().startsWith('colorPhase');
-
-              return (
-                <div key={name}>
-                  <div className="flex items-center justify-between">
-                    <StoryTitle>{name}</StoryTitle>
-                    <div className="text-muted-foreground mb-2 text-xs">
-                      {isColorPhase ? Number(value).toFixed(2) : String(value)}
-                    </div>
-                  </div>
-                  <input
-                    type="range"
-                    value={String(value)}
-                    min={min}
-                    max={max}
-                    step={step}
-                    onChange={(e) => setValue(parseFloat(e.target.value))}
-                    className="w-full"
-                  />
-                </div>
-              );
-            })}
+        <div className="flex gap-4">
+          <div className="flex-1">
+            <label className="font-mono text-xs uppercase" htmlFor="state">
+              State
+            </label>
+            <Select value={state} onValueChange={(value) => setState(value as AgentState)}>
+              <SelectTrigger id="state" className="w-full">
+                <SelectValue placeholder="Select a state" />
+              </SelectTrigger>
+              <SelectContent>
+                {states.map((state) => (
+                  <SelectItem key={state} value={state}>
+                    {state}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+
+          <div className="flex-1">
+            <label className="font-mono text-xs uppercase" htmlFor="size">
+              Size
+            </label>
+            <Select
+              value={size as string}
+              onValueChange={(value) => setSize(value as audioShaderVisualizerVariantsSizeType)}
+            >
+              <SelectTrigger id="size" className="w-full">
+                <SelectValue placeholder="Select a size" />
+              </SelectTrigger>
+              <SelectContent>
+                {sizes.map((size) => (
+                  <SelectItem key={size} value={size as string}>
+                    {size.toUpperCase()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex-1">
+            <label className="font-mono text-xs uppercase" htmlFor="shape">
+              Shape
+            </label>
+            <Select value={shape.toString()} onValueChange={(value) => setShape(parseInt(value))}>
+              <SelectTrigger id="shape" className="w-full">
+                <SelectValue placeholder="Select a shape" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">Circle</SelectItem>
+                <SelectItem value="2">Line</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="py-12">
+          <AudioShaderVisualizer
+            size={size}
+            state={state}
+            shape={shape}
+            colorScale={colorScale}
+            colorPosition={colorPosition}
+            audioTrack={audioTrack as TrackReferenceOrPlaceholder}
+            className="mx-auto bg-black"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          {fields.map(([name, value, setValue, min = 0.1, max = 10, step = 0.1]) => {
+            return (
+              <div key={name}>
+                <div className="flex items-center justify-between">
+                  <StoryTitle>{name}</StoryTitle>
+                  <div className="text-muted-foreground mb-2 text-xs">{String(value)}</div>
+                </div>
+                <input
+                  type="range"
+                  value={String(value)}
+                  min={min}
+                  max={max}
+                  step={step}
+                  onChange={(e) => setValue(parseFloat(e.target.value))}
+                  className="w-full"
+                />
+              </div>
+            );
+          })}
         </div>
       </Container>
     );

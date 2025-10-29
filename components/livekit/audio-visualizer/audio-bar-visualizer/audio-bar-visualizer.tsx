@@ -84,7 +84,7 @@ export function AudioBarVisualizer({
       case 'connecting':
         return 2000 / _barCount;
       case 'initializing':
-        return 500;
+        return 2000;
       case 'listening':
         return 500;
       case 'thinking':

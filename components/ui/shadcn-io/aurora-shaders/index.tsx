@@ -1,8 +1,7 @@
 'use client';
 
 import React, { forwardRef } from 'react';
-import { Shader } from 'react-shaders';
-import { cn } from '@/lib/utils';
+import { Shader } from '../../../livekit/react-shader/react-shader';
 
 const auroraShaderSource = `
 const float TAU = 6.28318530718;
@@ -35,12 +34,6 @@ float sdCircle(vec2 st, float r) {
   return length(st) - r;
 }
 
-float sdEllipse(vec2 st, float r) {
-  float a = length(st + vec2(0, r * 0.8)) - r;
-  float b = length(st + vec2(0, -r * 0.8)) - r;
-  return (a + b);
-}
-
 float sdLine(vec2 p, float r) {
   float halfLen = r * 2.0;
   vec2 a = vec2(-halfLen, 0.0);
@@ -51,27 +44,10 @@ float sdLine(vec2 p, float r) {
   return length(pa - ba * h);
 }
 
-float sdBox(vec2 p, float r) {
-  vec2 q = abs(p) - vec2(r);
-  return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r * mix(0.0, 0.3333, uAmplitude);
-}
-
-float sdEquilateralTriangle(vec2 p, float r) {
-  const float k = sqrt(3.0);
-  p.x = abs(p.x) - r;
-  p.y = p.y + r / k;
-  if(p.x + k * p.y > 0.0) p = vec2(p.x - k * p.y, -k * p.x - p.y) / 2.0;
-  p.x -= clamp(p.x, -2.0 * r, 0.0);
-  return -length(p) * sign(p.y) - r * mix(0.0, 0.3333, uAmplitude);
-}
-
 float getSdf(vec2 st) {
-  if(uShape == 1) return sdCircle(st, uScale);
-  else if(uShape == 2) return sdEllipse(st, uScale);
-  else if(uShape == 3) return sdLine(st, uScale);
-  else if(uShape == 4) return sdBox(st, uScale);
-  else if(uShape == 5) return sdEquilateralTriangle(st, uScale);
-  else return sdCircle(st, uScale);
+  if(uShape == 1.0) return sdCircle(st, uScale);
+  else if(uShape == 2.0) return sdLine(st, uScale);
+  return sdCircle(st, uScale); // Default
 }
 
 vec2 turb(vec2 pos, float t, float it) {
@@ -79,7 +55,7 @@ vec2 turb(vec2 pos, float t, float it) {
   float freq = mix(2.0, 15.0, uFrequency);
   float amp = uAmplitude;
   float xp = 1.4;
-  float time = t * 0.1 * uSpeed + uPhase;
+  float time = t * 0.1 * uSpeed;
   
   for(float i = 0.0; i < 4.0; i++) {
     vec2 s = sin(freq * (pos * rot) + i * time + it);
@@ -99,7 +75,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
   
   vec3 pp = vec3(0.0);
   vec3 bloom = vec3(0.0);
-  float t = iTime * 0.5 + uPhase;
+  float t = iTime * 0.5;
   vec2 pos = uv - 0.5;
       
   vec2 prevPos = turb(pos, t, 0.0 - 1.0 / ITERATIONS);
@@ -138,8 +114,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
   
   float alpha = luma(color) * uMix;
   fragColor = vec4(color * uMix, alpha);
-}
-`;
+}`;
 
 export interface AuroraShadersProps extends React.HTMLAttributes<HTMLDivElement> {
   /**
@@ -147,12 +122,6 @@ export interface AuroraShadersProps extends React.HTMLAttributes<HTMLDivElement>
    * @default 1.0
    */
   speed?: number;
-
-  /**
-   * Light intensity (bloom)
-   * @default 2.0
-   */
-  intensity?: number;
 
   /**
    * Turbulence amplitude
@@ -173,16 +142,16 @@ export interface AuroraShadersProps extends React.HTMLAttributes<HTMLDivElement>
   scale?: number;
 
   /**
+   * Shape type: 1=circle, 2=line
+   * @default 1
+   */
+  shape?: number;
+
+  /**
    * Edge blur/softness
    * @default 1.0
    */
   blur?: number;
-
-  /**
-   * Shape type: 1=circle, 2=ellipse, 3=line, 4=box, 5=triangle
-   * @default 1
-   */
-  shape?: number;
 
   /**
    * Color palette offset - shifts colors along the gradient (0-1)
@@ -215,13 +184,12 @@ export const AuroraShaders = forwardRef<HTMLDivElement, AuroraShadersProps>(
   (
     {
       className,
+      shape = 1.0,
       speed = 1.0,
-      intensity = 0.1,
       amplitude = 0.5,
       frequency = 0.5,
-      scale = 0.3,
+      scale = 0.2,
       blur = 1.0,
-      shape = 1,
       colorPosition = 1.0,
       colorScale = 1.0,
       brightness = 1.0,
@@ -230,24 +198,43 @@ export const AuroraShaders = forwardRef<HTMLDivElement, AuroraShadersProps>(
     ref
   ) => {
     return (
-      <div ref={ref} className={cn('h-full w-full', className)} {...props}>
+      <div ref={ref} className={className} {...props}>
         <Shader
           fs={auroraShaderSource}
+          // devicePixelRatio={typeof window !== 'undefined' ? window.devicePixelRatio : 1}
           uniforms={{
+            // Aurora wave speed
             uSpeed: { type: '1f', value: speed },
+            // Edge blur/softness
             uBlur: { type: '1f', value: blur },
+            // Shape scale
             uScale: { type: '1f', value: scale },
+            // Shape type: 1=circle, 2=line
+            uShape: { type: '1f', value: shape },
+            // Wave frequency and complexity
             uFrequency: { type: '1f', value: frequency },
+            // Turbulence amplitude
             uAmplitude: { type: '1f', value: amplitude },
-            uBloom: { type: '1f', value: intensity },
+            // Light intensity (bloom)
+            uBloom: { type: '1f', value: 0.0 },
+            // Brightness of the aurora (0-1)
             uMix: { type: '1f', value: brightness },
+            // Color variation across layers (0-1)
             uSpacing: { type: '1f', value: 0.5 },
-            uShape: { type: '1i', value: shape },
+            // Color palette offset - shifts colors along the gradient (0-1)
             uColorScale: { type: '1f', value: colorScale },
+            // Color palette offset - shifts colors along the gradient (0-1)
             uColorPosition: { type: '1f', value: colorPosition },
-            uVariance: { type: '1f', value: 0.5 },
-            uSmoothing: { type: '1f', value: 1 },
-            uPhase: { type: '1f', value: 0 },
+            // Color variation across layers (0-1)
+            uVariance: { type: '1f', value: 0.1 },
+            // Smoothing of the aurora (0-1)
+            uSmoothing: { type: '1f', value: 1.0 },
+          }}
+          onError={(error) => {
+            console.log('error', error);
+          }}
+          onWarning={(warning) => {
+            console.log('warning', warning);
           }}
           style={{ width: '100%', height: '100%' } as CSSStyleDeclaration}
         />
