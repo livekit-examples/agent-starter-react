@@ -246,24 +246,6 @@ export const COMPONENTS = {
       <Container componentName="AudioVisualizer">
         <div className="flex items-center gap-2">
           <div className="flex-1">
-            <label className="font-mono text-xs uppercase" htmlFor="state">
-              State
-            </label>
-            <Select value={state} onValueChange={(value) => setState(value as AgentState)}>
-              <SelectTrigger id="state" className="w-full">
-                <SelectValue placeholder="Select a state" />
-              </SelectTrigger>
-              <SelectContent>
-                {states.map((state) => (
-                  <SelectItem key={state} value={state}>
-                    {state}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex-1">
             <label className="font-mono text-xs uppercase" htmlFor="size">
               Size
             </label>
@@ -313,16 +295,34 @@ export const COMPONENTS = {
               className="mx-auto"
             />
           </div>
-          <div className="text-center">Original BarVisualizer</div>
-          <div className="border-border grid place-items-center rounded-xl border p-4 py-8">
-            <BarVisualizer
-              size={size as audioBarVisualizerVariantsSizeType}
-              state={state}
-              audioTrack={micTrackRef!}
-              barCount={parseInt(barCount) || undefined}
-              className="mx-auto"
-            />
-          </div>
+          <details>
+            <summary className="text-muted-foreground font-mono text-xs uppercase">
+              <span className="inline-block cursor-pointer p-1">Original BarVisualizer</span>
+            </summary>
+            <div className="border-border grid place-items-center rounded-xl border p-4 py-8">
+              <BarVisualizer
+                size={size as audioBarVisualizerVariantsSizeType}
+                state={state}
+                audioTrack={micTrackRef!}
+                barCount={parseInt(barCount) || undefined}
+                className="mx-auto"
+              />
+            </div>
+          </details>
+        </div>
+
+        <div className="flex flex-wrap gap-4">
+          {states.map((stateType) => (
+            <Button
+              key={stateType}
+              size="sm"
+              variant={state === stateType ? 'primary' : 'default'}
+              onClick={() => setState(stateType)}
+              className={'flex-1'}
+            >
+              {stateType}
+            </Button>
+          ))}
         </div>
       </Container>
     );
@@ -363,24 +363,6 @@ export const COMPONENTS = {
     return (
       <Container componentName="AudioVisualizer">
         <div className="flex items-center gap-2">
-          <div className="flex-1">
-            <label className="font-mono text-xs uppercase" htmlFor="state">
-              State
-            </label>
-            <Select value={state} onValueChange={(value) => setState(value as AgentState)}>
-              <SelectTrigger id="state" className="w-full">
-                <SelectValue placeholder="Select a state" />
-              </SelectTrigger>
-              <SelectContent>
-                {states.map((state) => (
-                  <SelectItem key={state} value={state}>
-                    {state}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
           <div className="flex-1">
             <label className="font-mono text-xs uppercase" htmlFor="size">
               Size
@@ -432,6 +414,20 @@ export const COMPONENTS = {
             />
           </div>
         </div>
+
+        <div className="flex flex-wrap gap-4">
+          {states.map((stateType) => (
+            <Button
+              key={stateType}
+              size="sm"
+              variant={state === stateType ? 'primary' : 'default'}
+              onClick={() => setState(stateType)}
+              className={'flex-1'}
+            >
+              {stateType}
+            </Button>
+          ))}
+        </div>
       </Container>
     );
   },
@@ -476,24 +472,6 @@ export const COMPONENTS = {
     return (
       <Container componentName="AudioVisualizer">
         <div className="flex items-center gap-2">
-          <div className="flex-1">
-            <label className="font-mono text-xs uppercase" htmlFor="state">
-              State
-            </label>
-            <Select value={state} onValueChange={(value) => setState(value as AgentState)}>
-              <SelectTrigger id="state" className="w-full">
-                <SelectValue placeholder="Select a state" />
-              </SelectTrigger>
-              <SelectContent>
-                {states.map((state) => (
-                  <SelectItem key={state} value={state}>
-                    {state}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
           <div className="flex-1">
             <label className="font-mono text-xs uppercase" htmlFor="rowCount">
               Row count
@@ -560,19 +538,34 @@ export const COMPONENTS = {
             options={demoOptions}
           />
         </div>
-        <div className="border-border bg-muted overflow-x-auto rounded-xl border p-8">
-          <pre className="text-muted-foreground text-sm">
-            <code>{JSON.stringify(demoOptions, null, 2)}</code>
-          </pre>
+
+        <div className="flex flex-wrap gap-4">
+          {states.map((stateType) => (
+            <Button
+              key={stateType}
+              size="sm"
+              variant={state === stateType ? 'primary' : 'default'}
+              onClick={() => setState(stateType)}
+              className={'flex-1'}
+            >
+              {stateType}
+            </Button>
+          ))}
+        </div>
+
+        <div>
+          <StoryTitle>Demo options</StoryTitle>
+          <div className="border-border bg-muted overflow-x-auto rounded-xl border p-8">
+            <pre className="text-muted-foreground text-sm">
+              <code>{JSON.stringify(demoOptions, null, 2)}</code>
+            </pre>
+          </div>
         </div>
       </Container>
     );
   },
 
   AudioShaderVisualizer: () => {
-    const { startSession, endSession } = useSession();
-    const { localParticipant } = useLocalParticipant();
-
     // shape
     const [shape, setShape] = useState(1.0);
     // color scale
@@ -593,20 +586,18 @@ export const COMPONENTS = {
     const [size, setSize] = useState<audioShaderVisualizerVariantsSizeType>('lg');
     const [state, setState] = useState<AgentState>(states[0]);
 
-    const {
-      // state,
-      audioTrack,
-    } = useVoiceAssistant();
+    const { microphoneTrack, localParticipant } = useLocalParticipant();
+    const micTrackRef = useMemo<TrackReferenceOrPlaceholder | undefined>(() => {
+      return state === 'speaking'
+        ? ({
+            participant: localParticipant,
+            source: Track.Source.Microphone,
+            publication: microphoneTrack,
+          } as TrackReference)
+        : undefined;
+    }, [state, localParticipant, microphoneTrack]);
 
-    useEffect(() => {
-      if (state === 'speaking') {
-        startSession();
-        localParticipant.setMicrophoneEnabled(true, undefined);
-      } else {
-        endSession();
-        localParticipant.setMicrophoneEnabled(false, undefined);
-      }
-    }, [startSession, endSession, state, localParticipant]);
+    useMicrophone();
 
     const fields = [
       ['color position', colorPosition, setColorPosition, 0, 1, 0.01],
@@ -615,28 +606,7 @@ export const COMPONENTS = {
 
     return (
       <Container componentName="AudioShaderVisualizer">
-        <StartAudio label="Start Audio" />
-        <RoomAudioRenderer />
-
         <div className="flex gap-4">
-          <div className="flex-1">
-            <label className="font-mono text-xs uppercase" htmlFor="state">
-              State
-            </label>
-            <Select value={state} onValueChange={(value) => setState(value as AgentState)}>
-              <SelectTrigger id="state" className="w-full">
-                <SelectValue placeholder="Select a state" />
-              </SelectTrigger>
-              <SelectContent>
-                {states.map((state) => (
-                  <SelectItem key={state} value={state}>
-                    {state}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
           <div className="flex-1">
             <label className="font-mono text-xs uppercase" htmlFor="size">
               Size
@@ -681,9 +651,23 @@ export const COMPONENTS = {
             shape={shape}
             colorScale={colorScale}
             colorPosition={colorPosition}
-            audioTrack={audioTrack as TrackReferenceOrPlaceholder}
+            audioTrack={micTrackRef!}
             className="mx-auto bg-black"
           />
+        </div>
+
+        <div className="flex flex-wrap gap-4">
+          {states.map((stateType) => (
+            <Button
+              key={stateType}
+              size="sm"
+              variant={state === stateType ? 'primary' : 'default'}
+              onClick={() => setState(stateType)}
+              className={'flex-1'}
+            >
+              {stateType}
+            </Button>
+          ))}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
