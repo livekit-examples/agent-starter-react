@@ -3,13 +3,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { type VariantProps } from 'class-variance-authority';
 import { Track } from 'livekit-client';
-import { RoomAudioRenderer, StartAudio } from '@livekit/components-react';
+// import { RoomAudioRenderer, StartAudio } from '@livekit/components-react';
 import {
   type AgentState,
   type TrackReference,
   type TrackReferenceOrPlaceholder,
   useLocalParticipant,
-  useVoiceAssistant,
+  // useVoiceAssistant,
 } from '@livekit/components-react';
 import { MicrophoneIcon } from '@phosphor-icons/react/dist/ssr';
 import { useSession } from '@/components/app/session-provider';
@@ -26,6 +26,7 @@ import {
 } from '@/components/livekit/audio-visualizer/audio-bar-visualizer/audio-bar-visualizer';
 import { AudioGridVisualizer } from '@/components/livekit/audio-visualizer/audio-grid-visualizer/audio-grid-visualizer';
 import { gridVariants } from '@/components/livekit/audio-visualizer/audio-grid-visualizer/demos';
+import { AudioOscilloscopeVisualizer } from '@/components/livekit/audio-visualizer/audio-oscilloscope-visualizer/audio-oscilloscope-visualizer';
 import {
   AudioRadialVisualizer,
   audioRadialVisualizerVariants,
@@ -705,6 +706,102 @@ export const COMPONENTS = {
               </div>
             );
           })}
+        </div>
+      </Container>
+    );
+  },
+
+  AudioOscilloscopeVisualizer: () => {
+    // shape
+    const [shape, setShape] = useState(1.0);
+
+    const sizes = ['icon', 'sm', 'md', 'lg', 'xl'];
+    const states = [
+      'disconnected',
+      'connecting',
+      'initializing',
+      'listening',
+      'thinking',
+      'speaking',
+    ] as AgentState[];
+
+    const [size, setSize] = useState<audioShaderVisualizerVariantsSizeType>('lg');
+    const [state, setState] = useState<AgentState>(states[0]);
+
+    const { microphoneTrack, localParticipant } = useLocalParticipant();
+    const micTrackRef = useMemo<TrackReferenceOrPlaceholder | undefined>(() => {
+      return state === 'speaking'
+        ? ({
+            participant: localParticipant,
+            source: Track.Source.Microphone,
+            publication: microphoneTrack,
+          } as TrackReference)
+        : undefined;
+    }, [state, localParticipant, microphoneTrack]);
+
+    useMicrophone();
+
+    return (
+      <Container componentName="AudioShaderVisualizer">
+        <div className="flex gap-4">
+          <div className="flex-1">
+            <label className="font-mono text-xs uppercase" htmlFor="size">
+              Size
+            </label>
+            <Select
+              value={size as string}
+              onValueChange={(value) => setSize(value as audioShaderVisualizerVariantsSizeType)}
+            >
+              <SelectTrigger id="size" className="w-full">
+                <SelectValue placeholder="Select a size" />
+              </SelectTrigger>
+              <SelectContent>
+                {sizes.map((size) => (
+                  <SelectItem key={size} value={size as string}>
+                    {size.toUpperCase()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex-1">
+            <label className="font-mono text-xs uppercase" htmlFor="shape">
+              Shape
+            </label>
+            <Select value={shape.toString()} onValueChange={(value) => setShape(parseInt(value))}>
+              <SelectTrigger id="shape" className="w-full">
+                <SelectValue placeholder="Select a shape" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">Circle</SelectItem>
+                <SelectItem value="2">Line</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="py-12">
+          <AudioOscilloscopeVisualizer
+            size={size}
+            state={state}
+            audioTrack={micTrackRef!}
+            className="mx-auto"
+          />
+        </div>
+
+        <div className="flex flex-wrap gap-4">
+          {states.map((stateType) => (
+            <Button
+              key={stateType}
+              size="sm"
+              variant={state === stateType ? 'primary' : 'default'}
+              onClick={() => setState(stateType)}
+              className={'flex-1'}
+            >
+              {stateType}
+            </Button>
+          ))}
         </div>
       </Container>
     );
