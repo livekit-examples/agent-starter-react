@@ -27,7 +27,7 @@ const DEFAULT_SCALE = 0.2;
 const DEFAULT_BRIGHTNESS = 1.5;
 const DEFAULT_TRANSITION: ValueAnimationTransition = { duration: 0.5, ease: 'easeOut' };
 const DEFAULT_PULSE_TRANSITION: ValueAnimationTransition = {
-  duration: 0.5,
+  duration: 0.35,
   ease: 'easeOut',
   repeat: Infinity,
   repeatType: 'mirror',
@@ -72,9 +72,10 @@ interface AudioShaderVisualizerProps {
 export function AudioShaderVisualizer({
   size = 'md',
   state = 'speaking',
+  mode,
+  rgbColor,
   shape = 1,
-  colorScale = 0.05,
-  colorPosition = 0.18,
+  colorShift = 0.05,
   audioTrack,
   className,
 }: AudioShaderVisualizerProps &
@@ -107,12 +108,12 @@ export function AudioShaderVisualizer({
       case 'listening':
       case 'connecting':
         setSpeed(20);
-        animateScale(0.35, DEFAULT_TRANSITION);
-        animateAmplitude(1, DEFAULT_TRANSITION);
+        animateScale(0.3, { type: 'spring', duration: 1.0, bounce: 0.35 });
+        animateAmplitude(1.0, DEFAULT_TRANSITION);
         animateFrequency(0.7, DEFAULT_TRANSITION);
-        // animateBrightness(2.0, DEFAULT_TRANSITION);
         animateBrightness([1.5, 2.0], DEFAULT_PULSE_TRANSITION);
         return;
+      case 'thinking':
       case 'initializing':
         setSpeed(30);
         animateScale(0.3, DEFAULT_TRANSITION);
@@ -120,37 +121,19 @@ export function AudioShaderVisualizer({
         animateFrequency(1, DEFAULT_TRANSITION);
         animateBrightness([0.5, 2.5], DEFAULT_PULSE_TRANSITION);
         return;
-      case 'thinking':
-        setSpeed(30);
-        animateScale(0.1, DEFAULT_TRANSITION);
-        animateAmplitude(1.0, DEFAULT_TRANSITION);
-        animateFrequency(3.0, DEFAULT_TRANSITION);
-        animateBrightness([1.0, 2.0], DEFAULT_PULSE_TRANSITION);
-        return;
       case 'speaking':
-        setSpeed(50);
+        setSpeed(70);
         animateScale(0.3, DEFAULT_TRANSITION);
-        animateAmplitude(1.0, DEFAULT_TRANSITION);
-        animateFrequency(0.7, DEFAULT_TRANSITION);
-        animateBrightness(1.5, DEFAULT_TRANSITION);
+        animateAmplitude(0.75, DEFAULT_TRANSITION);
+        animateFrequency(1.25, DEFAULT_TRANSITION);
+        animateBrightness([0.2, 2.5], DEFAULT_PULSE_TRANSITION);
         return;
     }
-  }, [
-    state,
-    shape,
-    colorScale,
-    animateScale,
-    animateAmplitude,
-    animateFrequency,
-    animateBrightness,
-  ]);
+  }, [state, shape, animateScale, animateAmplitude, animateFrequency, animateBrightness]);
 
   useEffect(() => {
     if (state === 'speaking' && volume > 0 && !scaleMotionValue.isAnimating()) {
-      animateScale(0.3 - 0.1 * volume, { duration: 0 });
-      animateAmplitude(1.0 + 0.2 * volume, { duration: 0 });
-      animateFrequency(0.7 - 0.3 * volume, { duration: 0 });
-      animateBrightness(1.5 + 1.0 * volume, { duration: 0 });
+      animateScale(0.2 + 0.2 * volume, { duration: 0 });
     }
   }, [
     state,
@@ -166,10 +149,11 @@ export function AudioShaderVisualizer({
     <AuroraShaders
       blur={0.2}
       shape={shape}
-      colorScale={colorScale}
-      colorPosition={colorPosition}
+      rgbColor={rgbColor}
+      colorShift={colorShift}
       speed={speed}
       scale={scale}
+      mode={mode}
       amplitude={amplitude}
       frequency={frequency}
       brightness={brightness}

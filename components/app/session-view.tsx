@@ -108,7 +108,7 @@ export const SessionView = ({
       </div>
 
       {/* Tile Layout */}
-      <TileLayout chatOpen={chatOpen} />
+      <TileLayout chatOpen={chatOpen} appConfig={appConfig} />
 
       {/* Bottom */}
       <MotionBottom

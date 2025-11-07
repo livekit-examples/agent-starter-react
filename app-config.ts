@@ -13,6 +13,7 @@ export interface AppConfig {
   accent?: string;
   logoDark?: string;
   accentDark?: string;
+  audioVisualizer?: 'bar' | 'radial' | 'aura' | 'wave';
 
   // for LiveKit Cloud Sandbox
   sandboxId?: string;
@@ -34,6 +35,7 @@ export const APP_CONFIG_DEFAULTS: AppConfig = {
   logoDark: '/lk-logo-dark.svg',
   accentDark: '#1fd5f9',
   startButtonText: 'Start call',
+  audioVisualizer: 'aura',
 
   // for LiveKit Cloud Sandbox
   sandboxId: undefined,

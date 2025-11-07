@@ -12,7 +12,6 @@ import {
   // useVoiceAssistant,
 } from '@livekit/components-react';
 import { MicrophoneIcon } from '@phosphor-icons/react/dist/ssr';
-import { useSession } from '@/components/app/session-provider';
 import { AgentControlBar } from '@/components/livekit/agent-control-bar/agent-control-bar';
 import { TrackControl } from '@/components/livekit/agent-control-bar/track-control';
 // import { TrackDeviceSelect } from '@/components/livekit/agent-control-bar/track-device-select';
@@ -46,6 +45,8 @@ import {
 } from '@/components/livekit/select';
 import { ShimmerText } from '@/components/livekit/shimmer-text';
 import { Toggle, toggleVariants } from '@/components/livekit/toggle';
+import { useConnection } from '@/hooks/useConnection';
+import { cn } from '@/lib/utils';
 
 type toggleVariantsType = VariantProps<typeof toggleVariants>['variant'];
 type toggleVariantsSizeType = VariantProps<typeof toggleVariants>['size'];
@@ -61,13 +62,13 @@ type audioShaderVisualizerVariantsSizeType = VariantProps<
 >['size'];
 
 export function useMicrophone() {
-  const { startSession } = useSession();
+  const { connect } = useConnection();
   const { localParticipant } = useLocalParticipant();
 
   useEffect(() => {
-    startSession();
+    connect();
     localParticipant.setMicrophoneEnabled(true, undefined);
-  }, [startSession, localParticipant]);
+  }, [connect, localParticipant]);
 }
 
 interface ContainerProps {
@@ -569,9 +570,7 @@ export const COMPONENTS = {
     // shape
     const [shape, setShape] = useState(1.0);
     // color scale
-    const [colorScale, setColorScale] = useState(0.1);
-    // color position
-    const [colorPosition, setColorPosition] = useState(0.15);
+    const [colorShift, setColorShift] = useState(0.3);
 
     const sizes = ['icon', 'sm', 'md', 'lg', 'xl'];
     const states = [
@@ -582,9 +581,17 @@ export const COMPONENTS = {
       'thinking',
       'speaking',
     ] as AgentState[];
+    const colors: [number, number, number][] = [
+      [31.0 / 255, 213.0 / 255, 249.0 / 255], // LiveKit Blue
+      [0.0, 0.0, 1.0], // Blue
+      [0.0, 1.0, 0.0], // Green
+      [1.0, 0.0, 0.0], // Red
+      [1.0, 0.0, 1.0], // Purple
+    ];
 
+    const [rgbColor, setRgbColor] = useState<[number, number, number]>(colors[0]);
     const [size, setSize] = useState<audioShaderVisualizerVariantsSizeType>('lg');
-    const [state, setState] = useState<AgentState>(states[0]);
+    const [state, setState] = useState<AgentState>(states[1]);
 
     const { microphoneTrack, localParticipant } = useLocalParticipant();
     const micTrackRef = useMemo<TrackReferenceOrPlaceholder | undefined>(() => {
@@ -599,10 +606,24 @@ export const COMPONENTS = {
 
     useMicrophone();
 
-    const fields = [
-      ['color position', colorPosition, setColorPosition, 0, 1, 0.01],
-      ['color scale', colorScale, setColorScale, 0, 1, 0.01],
-    ] as const;
+    const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const hexColor = e.target.value;
+
+      try {
+        const rgbColor = hexColor.match(/^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/);
+
+        if (rgbColor) {
+          const [, r, g, b] = rgbColor;
+          const color = [r, g, b].map((c) => parseInt(c, 16) / 255);
+
+          setRgbColor(color as [number, number, number]);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    const fields = [['color shift', colorShift, setColorShift, 0, 1, 0.01]] as const;
 
     return (
       <Container componentName="AudioShaderVisualizer">
@@ -649,10 +670,10 @@ export const COMPONENTS = {
             size={size}
             state={state}
             shape={shape}
-            colorScale={colorScale}
-            colorPosition={colorPosition}
+            rgbColor={rgbColor}
+            colorShift={colorShift}
             audioTrack={micTrackRef!}
-            className="mx-auto bg-black"
+            className="mx-auto"
           />
         </div>
 
@@ -671,6 +692,42 @@ export const COMPONENTS = {
         </div>
 
         <div className="grid grid-cols-2 gap-4">
+          <div>
+            <StoryTitle>Color</StoryTitle>
+            <div className="flex items-center gap-2">
+              {colors.map((color) => (
+                <div
+                  key={color.join(',')}
+                  onClick={() => setRgbColor(color)}
+                  style={{ backgroundColor: `rgb(${color.map((c) => c * 255).join(',')})` }}
+                  className={cn(
+                    'h-4 w-4 cursor-pointer rounded-full',
+                    rgbColor.toString() === color.toString() &&
+                      'ring-muted-foreground ring-offset-background ring-1 ring-offset-2'
+                  )}
+                />
+              ))}
+
+              <Button
+                type="button"
+                size="sm"
+                className="relative"
+                onClick={() => setRgbColor(colors[0])}
+              >
+                <span className="text-muted-foreground text-xs">Pick a color</span>
+                <span
+                  className="inline-block size-4 rounded-full"
+                  style={{ backgroundColor: `rgb(${rgbColor.map((c) => c * 255).join(',')})` }}
+                />
+                <input
+                  type="color"
+                  onChange={handleColorChange}
+                  className="absolute inset-0 m-0 block h-full w-full opacity-0"
+                />
+              </Button>
+            </div>
+          </div>
+
           {fields.map(([name, value, setValue, min = 0.1, max = 10, step = 0.1]) => {
             return (
               <div key={name}>
@@ -698,6 +755,10 @@ export const COMPONENTS = {
   AudioOscilloscopeVisualizer: () => {
     // shape
     const [shape, setShape] = useState(1.0);
+    // line width
+    const [lineWidth, setLineWidth] = useState(2.5);
+    // smoothing
+    const [smoothing, setSmoothing] = useState(0.0);
 
     const sizes = ['icon', 'sm', 'md', 'lg', 'xl'];
     const states = [
@@ -708,9 +769,18 @@ export const COMPONENTS = {
       'thinking',
       'speaking',
     ] as AgentState[];
+    const colors: [number, number, number][] = [
+      [31.0 / 255, 213.0 / 255, 249.0 / 255], // LiveKit Blue
+      [0.0, 0.0, 1.0], // Blue
+      [0.0, 1.0, 0.0], // Green
+      [1.0, 0.0, 0.0], // Red
+      [1.0, 0.0, 1.0], // Purple
+    ];
 
-    const [size, setSize] = useState<audioShaderVisualizerVariantsSizeType>('lg');
-    const [state, setState] = useState<AgentState>(states[0]);
+    const [rgbColor, setRgbColor] = useState<[number, number, number]>(colors[0]);
+
+    const [size, setSize] = useState<audioShaderVisualizerVariantsSizeType>('xl');
+    const [state, setState] = useState<AgentState>(states[1]);
 
     const { microphoneTrack, localParticipant } = useLocalParticipant();
     const micTrackRef = useMemo<TrackReferenceOrPlaceholder | undefined>(() => {
@@ -724,6 +794,28 @@ export const COMPONENTS = {
     }, [state, localParticipant, microphoneTrack]);
 
     useMicrophone();
+
+    const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const hexColor = e.target.value;
+
+      try {
+        const rgbColor = hexColor.match(/^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/);
+
+        if (rgbColor) {
+          const [, r, g, b] = rgbColor;
+          const color = [r, g, b].map((c) => parseInt(c, 16) / 255);
+
+          setRgbColor(color as [number, number, number]);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    const fields = [
+      ['line width', lineWidth, setLineWidth, 1, 10, 1],
+      ['smoothing', smoothing, setSmoothing, 0, 10, 0.1],
+    ] as const;
 
     return (
       <Container componentName="AudioShaderVisualizer">
@@ -769,6 +861,9 @@ export const COMPONENTS = {
           <AudioOscilloscopeVisualizer
             size={size}
             state={state}
+            rgbColor={rgbColor}
+            lineWidth={lineWidth}
+            smoothing={smoothing}
             audioTrack={micTrackRef!}
             className="mx-auto"
           />
@@ -786,6 +881,66 @@ export const COMPONENTS = {
               {stateType}
             </Button>
           ))}
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <StoryTitle>Color</StoryTitle>
+            <div className="flex items-center gap-2">
+              {colors.map((color) => (
+                <div
+                  key={color.join(',')}
+                  onClick={() => setRgbColor(color)}
+                  style={{ backgroundColor: `rgb(${color.map((c) => c * 255).join(',')})` }}
+                  className={cn(
+                    'h-4 w-4 cursor-pointer rounded-full',
+                    rgbColor.toString() === color.toString() &&
+                      'ring-muted-foreground ring-offset-background ring-1 ring-offset-2'
+                  )}
+                />
+              ))}
+
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setRgbColor(colors[0])}
+                className="relative"
+              >
+                <span className="text-muted-foreground text-xs">Pick a color</span>
+                <span
+                  className="inline-block size-4 rounded-full"
+                  style={{ backgroundColor: `rgb(${rgbColor.map((c) => c * 255).join(',')})` }}
+                />
+                <input
+                  type="color"
+                  onChange={handleColorChange}
+                  className="absolute inset-0 m-0 block h-full w-full opacity-0"
+                />
+              </Button>
+            </div>
+          </div>
+
+          <div>
+            {fields.map(([name, value, setValue, min = 0.1, max = 10, step = 0.1]) => {
+              return (
+                <div key={name}>
+                  <div className="flex items-center justify-between">
+                    <StoryTitle>{name}</StoryTitle>
+                    <div className="text-muted-foreground mb-2 text-xs">{String(value)}</div>
+                  </div>
+                  <input
+                    type="range"
+                    value={String(value)}
+                    min={min}
+                    max={max}
+                    step={step}
+                    onChange={(e) => setValue(parseFloat(e.target.value))}
+                    className="w-full"
+                  />
+                </div>
+              );
+            })}
+          </div>
         </div>
       </Container>
     );

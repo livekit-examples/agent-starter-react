@@ -65,15 +65,31 @@ interface AudioOscilloscopeVisualizerProps {
 export function AudioOscilloscopeVisualizer({
   size = 'lg',
   state = 'speaking',
-  speed = DEFAULT_SPEED,
+  rgbColor,
+  lineWidth,
+  smoothing,
   audioTrack,
   className,
 }: AudioOscilloscopeVisualizerProps &
   OscilliscopeShadersProps &
   VariantProps<typeof audioShaderVisualizerVariants>) {
+  const [speed, setSpeed] = useState(DEFAULT_SPEED);
   const { value: amplitude, animate: animateAmplitude } = useAnimatedValue(DEFAULT_AMPLITUDE);
   const { value: frequency, animate: animateFrequency } = useAnimatedValue(DEFAULT_FREQUENCY);
   const { value: opacity, animate: animateOpacity } = useAnimatedValue(1.0);
+
+  const _lineWidth = useMemo(() => {
+    if (lineWidth) {
+      return lineWidth;
+    }
+    switch (size) {
+      case 'icon':
+      case 'sm':
+        return 2;
+      default:
+        return 1;
+    }
+  }, [lineWidth, size]);
 
   const volume = useTrackVolume(audioTrack as TrackReference, {
     fftSize: 512,
@@ -83,15 +99,17 @@ export function AudioOscilloscopeVisualizer({
   useEffect(() => {
     switch (state) {
       case 'disconnected':
+        setSpeed(DEFAULT_SPEED);
         animateAmplitude(0, DEFAULT_TRANSITION);
         animateFrequency(0, DEFAULT_TRANSITION);
         animateOpacity(1.0, DEFAULT_TRANSITION);
         return;
       case 'listening':
       case 'connecting':
+        setSpeed(DEFAULT_SPEED);
         animateAmplitude(DEFAULT_AMPLITUDE, DEFAULT_TRANSITION);
         animateFrequency(DEFAULT_FREQUENCY, DEFAULT_TRANSITION);
-        animateOpacity([1.0, 0.2], {
+        animateOpacity([1.0, 0.3], {
           duration: 0.75,
           repeat: Infinity,
           repeatType: 'mirror',
@@ -99,26 +117,28 @@ export function AudioOscilloscopeVisualizer({
         return;
       case 'thinking':
       case 'initializing':
-        animateAmplitude(DEFAULT_AMPLITUDE, DEFAULT_TRANSITION);
-        animateFrequency(DEFAULT_FREQUENCY, DEFAULT_TRANSITION);
-        animateOpacity([1.0, 0.2], {
-          duration: 0.2,
+        setSpeed(DEFAULT_SPEED * 4);
+        animateAmplitude(DEFAULT_AMPLITUDE / 4, DEFAULT_TRANSITION);
+        animateFrequency(DEFAULT_FREQUENCY * 4, DEFAULT_TRANSITION);
+        animateOpacity([1.0, 0.3], {
+          duration: 0.4,
           repeat: Infinity,
           repeatType: 'mirror',
         });
         return;
       case 'speaking':
       default:
+        setSpeed(DEFAULT_SPEED * 2);
         animateAmplitude(DEFAULT_AMPLITUDE, DEFAULT_TRANSITION);
         animateFrequency(DEFAULT_FREQUENCY, DEFAULT_TRANSITION);
         animateOpacity(1.0, DEFAULT_TRANSITION);
         return;
     }
-  }, [state, animateAmplitude, animateFrequency, animateOpacity]);
+  }, [state, setSpeed, animateAmplitude, animateFrequency, animateOpacity]);
 
   useEffect(() => {
     if (state === 'speaking' && volume > 0) {
-      animateAmplitude(0.02 + 0.4 * volume, { duration: 0 });
+      animateAmplitude(0.015 + 0.4 * volume, { duration: 0 });
       animateFrequency(20 + 60 * volume, { duration: 0 });
     }
   }, [state, volume, animateAmplitude, animateFrequency]);
@@ -128,8 +148,9 @@ export function AudioOscilloscopeVisualizer({
       speed={speed}
       amplitude={amplitude}
       frequency={frequency}
-      lineWidth={0.005}
-      smoothing={0.001}
+      rgbColor={rgbColor}
+      lineWidth={_lineWidth}
+      smoothing={smoothing}
       style={{ opacity }}
       className={cn(
         audioShaderVisualizerVariants({ size }),

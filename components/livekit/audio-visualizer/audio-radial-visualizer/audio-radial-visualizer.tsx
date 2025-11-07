@@ -76,7 +76,7 @@ export function AudioRadialVisualizer({
   }, [barCount, size]);
 
   const volumeBands = useMultibandTrackVolume(audioTrack, {
-    bands: Math.floor(_barCount / 2),
+    bands: Math.ceil(_barCount / 2),
     loPass: 100,
     hiPass: 200,
   });
@@ -116,7 +116,9 @@ export function AudioRadialVisualizer({
   }, [size, radius]);
 
   const highlightedIndices = useBarAnimator(state, _barCount, sequencerInterval);
-  const bands = audioTrack ? [...volumeBands, ...volumeBands] : new Array(_barCount).fill(0);
+  const bands = audioTrack
+    ? [...volumeBands, ...volumeBands].slice(0, _barCount)
+    : new Array(_barCount).fill(0);
 
   return (
     <div className={cn(audioRadialVisualizerVariants({ size }), 'relative', className)}>

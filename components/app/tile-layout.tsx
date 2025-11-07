@@ -8,9 +8,12 @@ import {
   useTracks,
   useVoiceAssistant,
 } from '@livekit/components-react';
-// import { AudioBarVisualizer } from '@/components/livekit/audio-visualizer/audio-bar-visualizer/audio-bar-visualizer';
+import { AppConfig } from '@/app-config';
+import { AudioBarVisualizer } from '@/components/livekit/audio-visualizer/audio-bar-visualizer/audio-bar-visualizer';
 import { AudioShaderVisualizer } from '@/components/livekit/audio-visualizer/audio-shader-visualizer/audio-shader-visualizer';
 import { cn } from '@/lib/utils';
+import { AudioOscilloscopeVisualizer } from '../livekit/audio-visualizer/audio-oscilloscope-visualizer/audio-oscilloscope-visualizer';
+import { AudioRadialVisualizer } from '../livekit/audio-visualizer/audio-radial-visualizer/audio-radial-visualizer';
 
 const MotionContainer = motion.create('div');
 
@@ -72,9 +75,10 @@ export function useLocalTrackRef(source: Track.Source) {
 
 interface TileLayoutProps {
   chatOpen: boolean;
+  appConfig: AppConfig;
 }
 
-export function TileLayout({ chatOpen }: TileLayoutProps) {
+export function TileLayout({ chatOpen, appConfig }: TileLayoutProps) {
   const {
     state: agentState,
     audioTrack: agentAudioTrack,
@@ -93,7 +97,7 @@ export function TileLayout({ chatOpen }: TileLayoutProps) {
   const videoHeight = agentVideoTrack?.publication.dimensions?.height ?? 0;
 
   return (
-    <div className="fixed inset-x-0 top-8 bottom-32 z-50 md:top-12 md:bottom-40">
+    <div className="pointer-events-none fixed inset-x-0 top-8 bottom-32 z-50 md:top-12 md:bottom-40">
       <div className="relative mx-auto h-full max-w-2xl px-4 md:px-0">
         <div className={cn(classNames.grid)}>
           {/* Agent */}
@@ -128,18 +132,39 @@ export function TileLayout({ chatOpen }: TileLayoutProps) {
                     chatOpen && 'border-input/50 drop-shadow-lg/10 delay-200'
                   )}
                 >
-                  {/* <AudioBarVisualizer
-                    size="sm"
-                    barCount={5}
-                    state={agentState}
-                    audioTrack={agentAudioTrack!}
-                    className="mx-auto"
-                  /> */}
-                  <AudioShaderVisualizer
-                    size="sm"
-                    state={agentState}
-                    audioTrack={agentAudioTrack!}
-                  />
+                  {appConfig === undefined ||
+                    (appConfig.audioVisualizer === 'bar' && (
+                      <AudioBarVisualizer
+                        size="sm"
+                        barCount={5}
+                        state={agentState}
+                        audioTrack={agentAudioTrack!}
+                        className="mx-auto"
+                      />
+                    ))}
+                  {appConfig.audioVisualizer === 'radial' && (
+                    <AudioRadialVisualizer
+                      size="sm"
+                      state={agentState}
+                      audioTrack={agentAudioTrack!}
+                      className="mx-auto"
+                    />
+                  )}
+                  {appConfig.audioVisualizer === 'aura' && (
+                    <AudioShaderVisualizer
+                      size="sm"
+                      state={agentState}
+                      audioTrack={agentAudioTrack!}
+                      colorShift={0.4}
+                    />
+                  )}
+                  {appConfig.audioVisualizer === 'wave' && (
+                    <AudioOscilloscopeVisualizer
+                      size="sm"
+                      state={agentState}
+                      audioTrack={agentAudioTrack!}
+                    />
+                  )}
                 </MotionContainer>
               )}
 

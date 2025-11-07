@@ -6,11 +6,6 @@ import { Shader } from '@/components/livekit/react-shader/react-shader';
 const oscilliscopeShaderSource = `
 const float TAU = 6.28318530718;
 
-// Cosine palette generator
-vec3 pal(in float t, in vec3 a, in vec3 b, in vec3 c, in vec3 d) {
-  return a + b * cos(TAU * (c * t + d));
-}
-
 // Noise for dithering
 vec2 randFibo(vec2 p) {
   p = fract(p * vec2(443.897, 441.423));
@@ -55,6 +50,12 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
   float x = uv.x;
   float y = uv.y;
   
+  // Convert line width from pixels to UV space
+  // Use the average of width and height to handle aspect ratio
+  float pixelSize = 2.0 / (iResolution.x + iResolution.y);
+  float lineWidthUV = uLineWidth * pixelSize;
+  float smoothingUV = uSmoothing * pixelSize;
+  
   // Find minimum distance to the wave by sampling nearby points
   // This gives us consistent line width without high-frequency artifacts
   const int NUM_SAMPLES = 50; // Must be const for GLSL loop
@@ -74,22 +75,12 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     minDist = min(minDist, dist);
   }
   
-  // Create solid line with anti-aliasing
-  float lineWidth = uLineWidth;
-  float smoothing = uSmoothing;
-  
   // Solid line with smooth edges using minimum distance
-  float line = smoothstep(lineWidth + smoothing, lineWidth - smoothing, minDist);
+  float line = smoothstep(lineWidthUV + smoothingUV, lineWidthUV - smoothingUV, minDist);
   
   // Calculate color position based on x position for gradient effect
   float colorPos = x;
-  vec3 color = pal(
-    colorPos * uColorScale + uColorPosition * 2.0,
-    vec3(0.5),
-    vec3(0.5),
-    vec3(1.0),
-    vec3(0.0, 0.33, 0.67)
-  );
+  vec3 color = uColor;
   
   // Apply line intensity
   color *= line;
@@ -104,14 +95,45 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
 }`;
 
 export interface OscilliscopeShadersProps extends React.HTMLAttributes<HTMLDivElement> {
+  /**
+   * Class name
+   * @default ''
+   */
   className?: string;
+  /**
+   * Speed of the oscilloscope
+   * @default 10
+   */
   speed?: number;
+  /**
+   * Amplitude of the oscilloscope
+   * @default 0.02
+   */
   amplitude?: number;
+  /**
+   * Frequency of the oscilloscope
+   * @default 20.0
+   */
   frequency?: number;
-  colorScale?: number;
-  colorPosition?: number;
+  /**
+   * RGB color of the oscilloscope
+   * @default [31.0 / 255, 213.0 / 255, 249.0 / 255]
+   */
+  rgbColor?: [number, number, number];
+  /**
+   * Mix of the oscilloscope
+   * @default 1.0
+   */
   mix?: number;
+  /**
+   * Line width of the oscilloscope in pixels
+   * @default 2.0
+   */
   lineWidth?: number;
+  /**
+   * Smoothing of the oscilloscope in pixels
+   * @default 0.5
+   */
   smoothing?: number;
 }
 
@@ -122,18 +144,15 @@ export const OscilliscopeShaders = forwardRef<HTMLDivElement, OscilliscopeShader
       speed = 10,
       amplitude = 0.02,
       frequency = 20.0,
-      colorScale = 0.12,
-      colorPosition = 0.18,
+      rgbColor = [31.0 / 255, 213.0 / 255, 249.0 / 255], // LiveKit Blue
       mix = 1.0,
-      lineWidth = 0.01,
-      smoothing = 0.0,
+      lineWidth = 2.0,
+      smoothing = 0.5,
       ...props
     },
     ref
   ) => {
     const globalThis = typeof window !== 'undefined' ? window : global;
-
-    console.log('OscilliscopeShaders rendering');
 
     return (
       <div ref={ref} className={className} {...props}>
@@ -144,11 +163,10 @@ export const OscilliscopeShaders = forwardRef<HTMLDivElement, OscilliscopeShader
             uSpeed: { type: '1f', value: speed },
             uAmplitude: { type: '1f', value: amplitude },
             uFrequency: { type: '1f', value: frequency },
-            uColorScale: { type: '1f', value: colorScale },
-            uColorPosition: { type: '1f', value: colorPosition },
             uMix: { type: '1f', value: mix },
             uLineWidth: { type: '1f', value: lineWidth },
             uSmoothing: { type: '1f', value: smoothing },
+            uColor: { type: '3fv', value: rgbColor },
           }}
           onError={(error) => {
             console.error('Shader error:', error);
