@@ -113,6 +113,55 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
   color += (randFibo(fragCoord).x - 0.5) / 255.0;
   color = Tonemap_Reinhard(color);
   
+  // // Add sphere in center
+  // float sphereRadius = uScale * 0.5;
+  // float distToCenter = length(pos);
+  
+  // if(distToCenter < sphereRadius) {
+  //   // Generate sphere color using same palette as aurora
+  //   vec3 sphereColor = pal(
+  //     0.5 * mix(0.0, 3.0, uColorScale) + uColorPosition * 2.0, 
+  //     vec3(0.5), 
+  //     vec3(0.5), 
+  //     vec3(1.0), 
+  //     vec3(0.0, 0.33, 0.67)
+  //   );
+    
+  //   // Calculate 3D sphere normal for lighting
+  //   float z = sqrt(max(0.0, sphereRadius * sphereRadius - distToCenter * distToCenter));
+  //   vec3 normal = normalize(vec3(pos.x, pos.y, z));
+    
+  //   // Light direction from above (slightly in front)
+  //   vec3 lightDir = normalize(vec3(0.0, 0.3, 1.0));
+    
+  //   // View direction (looking straight at the sphere)
+  //   vec3 viewDir = vec3(0.0, 1.0, 0.5);
+    
+  //   // Diffuse lighting
+  //   float diffuse = max(dot(normal, lightDir), 0.0);
+    
+  //   // Specular lighting (Blinn-Phong)
+  //   vec3 halfDir = normalize(lightDir + viewDir);
+  //   float specular = pow(max(dot(normal, halfDir), 0.0), 32.0);
+    
+  //   // Ambient lighting
+  //   float ambient = 0.3;
+    
+  //   // Combine lighting
+  //   float lighting = ambient + diffuse * 0.7 + specular * 1.5;
+  //   vec3 litSphereColor = sphereColor * lighting;
+    
+  //   // Make sphere twice as bright as the aurora
+  //   litSphereColor *= 2.0;
+    
+  //   // Smooth edge for the sphere
+  //   float sphereEdge = smoothstep(sphereRadius, sphereRadius - 0.02, distToCenter);
+    
+  //   // Blend sphere with existing color (semitransparent)
+  //   float sphereAlpha = 0.5 * sphereEdge;
+  //   color = mix(color, litSphereColor, sphereAlpha);
+  }
+  
   float alpha = luma(color) * uMix;
   fragColor = vec4(color * uMix, alpha);
 }`;
