@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { ChatInput } from './chat-input';
 import { UseInputControlsProps, useInputControls } from './hooks/use-input-controls';
 import { usePublishPermissions } from './hooks/use-publish-permissions';
-import { TrackSelector } from './track-selector';
+import { TrackControl } from './track-control';
 
 export interface ControlBarControls {
   leave?: boolean;
@@ -107,7 +107,7 @@ export function AgentControlBar({
         <div className="flex grow gap-1">
           {/* Toggle Microphone */}
           {visibleControls.microphone && (
-            <TrackSelector
+            <TrackControl
               kind="audioinput"
               aria-label="Toggle microphone"
               source={Track.Source.Microphone}
@@ -122,7 +122,7 @@ export function AgentControlBar({
 
           {/* Toggle Camera */}
           {visibleControls.camera && (
-            <TrackSelector
+            <TrackControl
               kind="videoinput"
               aria-label="Toggle camera"
               source={Track.Source.Camera}
