@@ -1,20 +1,23 @@
-import * as React from 'react';
 import { headers } from 'next/headers';
-import { SessionProvider } from '@/components/app/session-provider';
+import { AppSessionProvider } from '@/hooks/useAppSession';
 import { getAppConfig } from '@/lib/utils';
 
-export default async function ComponentsLayout({ children }: { children: React.ReactNode }) {
+interface LayoutProps {
+  children: React.ReactNode;
+}
+
+export default async function Layout({ children }: LayoutProps) {
   const hdrs = await headers();
   const appConfig = await getAppConfig(hdrs);
 
   return (
-    <SessionProvider appConfig={appConfig}>
+    <AppSessionProvider appConfig={appConfig}>
       <div className="bg-muted/20 min-h-svh p-8">
         <div className="mx-auto max-w-3xl space-y-8">
           <header className="space-y-2">
             <h1 className="text-5xl font-bold tracking-tight">LiveKit UI</h1>
             <p className="text-muted-foreground max-w-80 leading-tight text-pretty">
-              A set of UI components for building LiveKit-powered voice experiences.
+              A set of UI Layouts for building LiveKit-powered voice experiences.
             </p>
             <p className="text-muted-foreground max-w-prose text-balance">
               Built with{' '}
@@ -37,6 +40,6 @@ export default async function ComponentsLayout({ children }: { children: React.R
           <main className="space-y-20">{children}</main>
         </div>
       </div>
-    </SessionProvider>
+    </AppSessionProvider>
   );
 }

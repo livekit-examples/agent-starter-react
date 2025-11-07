@@ -1,13 +1,14 @@
 import { useEffect } from 'react';
-import { type AgentState, useRoomContext, useVoiceAssistant } from '@livekit/components-react';
+import { type AgentState, useVoiceAssistant } from '@livekit/components-react';
 import { toastAlert } from '@/components/livekit/alert-toast';
+import { useAppSession } from '@/hooks/useAppSession';
 
 function isAgentAvailable(agentState: AgentState) {
   return agentState == 'listening' || agentState == 'thinking' || agentState == 'speaking';
 }
 
 export function useConnectionTimeout(timout = 20_000) {
-  const room = useRoomContext();
+  const { endSession } = useAppSession();
   const { state: agentState } = useVoiceAssistant();
 
   useEffect(() => {
@@ -36,10 +37,10 @@ export function useConnectionTimeout(timout = 20_000) {
           ),
         });
 
-        room.disconnect();
+        endSession();
       }
     }, timout);
 
     return () => clearTimeout(timeout);
-  }, [agentState, room, timout]);
+  }, [agentState, endSession, timout]);
 }

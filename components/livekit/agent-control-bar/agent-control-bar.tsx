@@ -4,7 +4,6 @@ import { type HTMLAttributes, useCallback, useState } from 'react';
 import { Track } from 'livekit-client';
 import { useChat, useRemoteParticipants } from '@livekit/components-react';
 import { ChatTextIcon, PhoneDisconnectIcon } from '@phosphor-icons/react/dist/ssr';
-import { useSession } from '@/components/app/session-provider';
 import { TrackToggle } from '@/components/livekit/agent-control-bar/track-toggle';
 import { Button } from '@/components/livekit/button';
 import { Toggle } from '@/components/livekit/toggle';
@@ -23,8 +22,8 @@ export interface ControlBarControls {
 }
 
 export interface AgentControlBarProps extends UseInputControlsProps {
+  isSessionActive?: boolean;
   controls?: ControlBarControls;
-  onDisconnect?: () => void;
   onChatOpenChange?: (open: boolean) => void;
   onDeviceError?: (error: { source: Track.Source; error: Error }) => void;
 }
@@ -36,6 +35,7 @@ export function AgentControlBar({
   controls,
   saveUserChoices = true,
   className,
+  isSessionActive = false,
   onDisconnect,
   onDeviceError,
   onChatOpenChange,
@@ -45,8 +45,6 @@ export function AgentControlBar({
   const participants = useRemoteParticipants();
   const [chatOpen, setChatOpen] = useState(false);
   const publishPermissions = usePublishPermissions();
-  const { isSessionActive, endSession } = useSession();
-
   const {
     micTrackRef,
     cameraToggle,
@@ -69,11 +67,6 @@ export function AgentControlBar({
     },
     [onChatOpenChange, setChatOpen]
   );
-
-  const handleDisconnect = useCallback(async () => {
-    endSession();
-    onDisconnect?.();
-  }, [endSession, onDisconnect]);
 
   const visibleControls = {
     leave: controls?.leave ?? true,
@@ -164,7 +157,7 @@ export function AgentControlBar({
         {visibleControls.leave && (
           <Button
             variant="destructive"
-            onClick={handleDisconnect}
+            onClick={onDisconnect}
             disabled={!isSessionActive}
             className="font-mono"
           >

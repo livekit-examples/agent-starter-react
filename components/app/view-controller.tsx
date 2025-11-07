@@ -1,11 +1,12 @@
 'use client';
 
-import { useRef } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
-import { useRoomContext } from '@livekit/components-react';
-import { useSession } from '@/components/app/session-provider';
+import { useCallback } from 'react';
+import { AnimatePresence, type AnimationDefinition, motion } from 'motion/react';
+import { useSessionContext } from '@livekit/components-react';
+import { AppConfig } from '@/app-config';
 import { SessionView } from '@/components/app/session-view';
 import { WelcomeView } from '@/components/app/welcome-view';
+import { useAppSession } from '@/hooks/useAppSession';
 
 const MotionWelcomeView = motion.create(WelcomeView);
 const MotionSessionView = motion.create(SessionView);
@@ -28,20 +29,23 @@ const VIEW_MOTION_PROPS = {
   },
 };
 
-export function ViewController() {
-  const room = useRoomContext();
-  const isSessionActiveRef = useRef(false);
-  const { appConfig, isSessionActive, startSession } = useSession();
+interface ViewControllerProps {
+  appConfig: AppConfig;
+}
 
-  // animation handler holds a reference to stale isSessionActive value
-  isSessionActiveRef.current = isSessionActive;
+export function ViewController({ appConfig }: ViewControllerProps) {
+  const session = useSessionContext();
+  const { isSessionActive, startSession } = useAppSession();
 
-  // disconnect room after animation completes
-  const handleAnimationComplete = () => {
-    if (!isSessionActiveRef.current && room.state !== 'disconnected') {
-      room.disconnect();
-    }
-  };
+  const handleAnimationComplete = useCallback(
+    (definition: AnimationDefinition) => {
+      // manually end the session when the exit animation completes
+      if (definition === 'hidden') {
+        session.end();
+      }
+    },
+    [session]
+  );
 
   return (
     <AnimatePresence mode="wait">
@@ -50,7 +54,7 @@ export function ViewController() {
         <MotionWelcomeView
           key="welcome"
           {...VIEW_MOTION_PROPS}
-          startButtonText={appConfig.startButtonText}
+          startButtonText={appConfig?.startButtonText ?? ''}
           onStartCall={startSession}
         />
       )}
