@@ -6,7 +6,11 @@ import { useSessionContext } from '@livekit/components-react';
 import { AppConfig } from '@/app-config';
 import { SessionView } from '@/components/app/session-view';
 import { WelcomeView } from '@/components/app/welcome-view';
+import { useAgentErrors } from '@/hooks/useAgentErrors';
 import { useAppSession } from '@/hooks/useAppSession';
+import { useDebugMode } from '@/hooks/useDebug';
+
+const IN_DEVELOPMENT = process.env.NODE_ENV !== 'production';
 
 const MotionWelcomeView = motion.create(WelcomeView);
 const MotionSessionView = motion.create(SessionView);
@@ -36,6 +40,9 @@ interface ViewControllerProps {
 export function ViewController({ appConfig }: ViewControllerProps) {
   const session = useSessionContext();
   const { isSessionActive, startSession } = useAppSession();
+
+  useDebugMode({ enabled: IN_DEVELOPMENT });
+  useAgentErrors();
 
   const handleAnimationComplete = useCallback(
     (definition: AnimationDefinition) => {

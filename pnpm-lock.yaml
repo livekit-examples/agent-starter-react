@@ -63,7 +63,7 @@ importers:
         specifier: ^19.0.0
         version: 19.1.1(react@19.1.1)
       sonner:
-        specifier: ^2.0.3
+        specifier: ^2.0.7
         version: 2.0.7(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       tailwind-merge:
         specifier: ^3.3.0

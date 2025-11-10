@@ -12,14 +12,11 @@ import {
   type ControlBarControls,
 } from '@/components/livekit/agent-control-bar/agent-control-bar';
 import { useAppSession } from '@/hooks/useAppSession';
-import { useConnectionTimeout } from '@/hooks/useConnectionTimout';
-import { useDebugMode } from '@/hooks/useDebug';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../livekit/scroll-area/scroll-area';
 
 const MotionBottom = motion.create('div');
 
-const IN_DEVELOPMENT = process.env.NODE_ENV !== 'production';
 const BOTTOM_VIEW_MOTION_PROPS = {
   variants: {
     visible: {
@@ -68,9 +65,6 @@ export const SessionView = ({
   appConfig,
   ...props
 }: React.ComponentProps<'section'> & SessionViewProps) => {
-  useConnectionTimeout(20_000);
-  useDebugMode({ enabled: IN_DEVELOPMENT });
-
   const { session, isSessionActive, endSession } = useAppSession();
   const { messages } = useSessionMessages(session);
   const [chatOpen, setChatOpen] = useState(false);

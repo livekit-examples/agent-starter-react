@@ -76,12 +76,24 @@ export function AppSessionProvider({ appConfig, children }: AppSessionProviderPr
   const value = useMemo(
     () => ({
       isSessionActive,
+      /**
+       * Start the application session and optionally start the agent session.
+       *
+       * @param startSession - Whether to start the agent session automatically. Default is true.
+       * If startSession is passed in asfalse, you are opting to manually start the session.
+       */
       startSession: (startSession = true) => {
         setIsSessionActive(true);
         if (startSession) {
           session.start();
         }
       },
+      /**
+       * End the application session and optionally end the agent session.
+       *
+       * @param endSession - Whether to end the agent session automatically. Default is true.
+       * If endSession is passed in as false, you are opting to manually end the session.
+       */
       endSession: (endSession = true) => {
         setIsSessionActive(false);
         if (endSession) {
