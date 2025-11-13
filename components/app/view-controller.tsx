@@ -5,11 +5,7 @@ import { AnimatePresence, type AnimationDefinition, motion } from 'motion/react'
 import type { AppConfig } from '@/app-config';
 import { SessionView } from '@/components/app/session-view';
 import { WelcomeView } from '@/components/app/welcome-view';
-import { useAgentErrors } from '@/hooks/useAgentErrors';
 import { useConnection } from '@/hooks/useConnection';
-import { useDebugMode } from '@/hooks/useDebug';
-
-const IN_DEVELOPMENT = process.env.NODE_ENV !== 'production';
 
 const MotionWelcomeView = motion.create(WelcomeView);
 const MotionSessionView = motion.create(SessionView);
@@ -38,9 +34,6 @@ interface ViewControllerProps {
 
 export function ViewController({ appConfig }: ViewControllerProps) {
   const { isConnectionActive, connect, onDisconnectTransitionComplete } = useConnection();
-
-  useDebugMode({ enabled: IN_DEVELOPMENT });
-  useAgentErrors();
 
   const handleAnimationComplete = useCallback(
     (definition: AnimationDefinition) => {

@@ -5,7 +5,7 @@ import { useConnection } from './useConnection';
 
 export function useAgentErrors() {
   const agent = useAgent();
-  const { isConnectionActive, disconnect } = useConnection();
+  const { isConnectionActive, startDisconnectTransition } = useConnection();
 
   useEffect(() => {
     if (isConnectionActive && agent.state === 'failed') {
@@ -38,7 +38,7 @@ export function useAgentErrors() {
         ),
       });
 
-      disconnect();
+      startDisconnectTransition();
     }
-  }, [agent, isConnectionActive, disconnect]);
+  }, [agent, isConnectionActive, startDisconnectTransition]);
 }

@@ -66,32 +66,28 @@ export function ConnectionProvider({ appConfig, children }: ConnectionProviderPr
     return TokenSource.endpoint('/api/connection-details');
   }, [appConfig]);
 
-  const sessionOptions = useMemo(
-    () => (appConfig.agentName ? { agentName: appConfig.agentName } : undefined),
-    [appConfig]
+  const session = useSession(
+    tokenSource,
+    appConfig.agentName ? { agentName: appConfig.agentName } : undefined
   );
 
-  const session = useSession(tokenSource, sessionOptions);
+  const { start: startSession, end: endSession } = session;
 
-  const value = useMemo(
-    () => ({
+  const value = useMemo(() => {
+    return {
       isConnectionActive,
       connect: () => {
         setIsConnectionActive(true);
-        session.start();
+        startSession();
       },
       startDisconnectTransition: () => {
         setIsConnectionActive(false);
       },
       onDisconnectTransitionComplete: () => {
-        session.end();
+        endSession();
       },
-    }),
-    // session object is not a stable reference
-    // TODO: add session object to dependencies
-    /* eslint-disable-next-line react-hooks/exhaustive-deps */
-    [isConnectionActive]
-  );
+    };
+  }, [startSession, endSession, isConnectionActive]);
 
   return (
     <SessionProvider session={session}>
