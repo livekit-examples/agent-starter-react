@@ -7,7 +7,7 @@ import { AppConfig } from '@/app-config';
 import { SessionView } from '@/components/app/session-view';
 import { WelcomeView } from '@/components/app/welcome-view';
 import { useAgentErrors } from '@/hooks/useAgentErrors';
-import { useAppSession } from '@/hooks/useAppSession';
+import { useConnection } from '@/hooks/useConnection';
 import { useDebugMode } from '@/hooks/useDebug';
 
 const IN_DEVELOPMENT = process.env.NODE_ENV !== 'production';
@@ -39,7 +39,7 @@ interface ViewControllerProps {
 
 export function ViewController({ appConfig }: ViewControllerProps) {
   const session = useSessionContext();
-  const { isSessionActive, startSession } = useAppSession();
+  const { isConnectionActive, connect } = useConnection();
 
   useDebugMode({ enabled: IN_DEVELOPMENT });
   useAgentErrors();
@@ -56,17 +56,17 @@ export function ViewController({ appConfig }: ViewControllerProps) {
 
   return (
     <AnimatePresence mode="wait">
-      {/* Welcome screen */}
-      {!isSessionActive && (
+      {/* Welcome view */}
+      {!isConnectionActive && (
         <MotionWelcomeView
           key="welcome"
           {...VIEW_MOTION_PROPS}
           startButtonText={appConfig?.startButtonText ?? ''}
-          onStartCall={startSession}
+          onStartCall={connect}
         />
       )}
       {/* Session view */}
-      {isSessionActive && (
+      {isConnectionActive && (
         <MotionSessionView
           key="session-view"
           {...VIEW_MOTION_PROPS}

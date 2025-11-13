@@ -1,5 +1,5 @@
 import { headers } from 'next/headers';
-import { AppSessionProvider } from '@/hooks/useAppSession';
+import { ConnectionProvider } from '@/hooks/useConnection';
 import { getAppConfig } from '@/lib/utils';
 
 interface LayoutProps {
@@ -11,7 +11,7 @@ export default async function Layout({ children }: LayoutProps) {
   const appConfig = await getAppConfig(hdrs);
 
   return (
-    <AppSessionProvider appConfig={appConfig}>
+    <ConnectionProvider appConfig={appConfig}>
       <div className="bg-muted/20 min-h-svh p-8">
         <div className="mx-auto max-w-3xl space-y-8">
           <header className="space-y-2">
@@ -40,6 +40,6 @@ export default async function Layout({ children }: LayoutProps) {
           <main className="space-y-20">{children}</main>
         </div>
       </div>
-    </AppSessionProvider>
+    </ConnectionProvider>
   );
 }

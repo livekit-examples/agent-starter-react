@@ -5,35 +5,35 @@ import { TokenSource } from 'livekit-client';
 import { SessionProvider, type UseSessionReturn, useSession } from '@livekit/components-react';
 import type { AppConfig } from '@/app-config';
 
-interface AppSessionContextType {
+interface ConnectionContextType {
   session?: UseSessionReturn;
-  isSessionActive: boolean;
-  startSession: (startSession?: boolean) => void;
-  endSession: (endSession?: boolean) => void;
+  isConnectionActive: boolean;
+  connect: (startSession?: boolean) => void;
+  disconnect: (endSession?: boolean) => void;
 }
 
-const AppSessionContext = createContext<AppSessionContextType>({
+const ConnectionContext = createContext<ConnectionContextType>({
   session: undefined,
-  isSessionActive: false,
-  startSession: () => {},
-  endSession: () => {},
+  isConnectionActive: false,
+  connect: () => {},
+  disconnect: () => {},
 });
 
-export function useAppSession() {
-  const ctx = useContext(AppSessionContext);
+export function useConnection() {
+  const ctx = useContext(ConnectionContext);
   if (!ctx) {
-    throw new Error('useAppSession must be used within a AppSessionProvider');
+    throw new Error('useConnection must be used within a ConnectionProvider');
   }
   return ctx;
 }
 
-interface AppSessionProviderProps {
+interface ConnectionProviderProps {
   appConfig: AppConfig;
   children: React.ReactNode;
 }
 
-export function AppSessionProvider({ appConfig, children }: AppSessionProviderProps) {
-  const [isSessionActive, setIsSessionActive] = useState(false);
+export function ConnectionProvider({ appConfig, children }: ConnectionProviderProps) {
+  const [isConnectionActive, setIsConnectionActive] = useState(false);
 
   const tokenSource = useMemo(() => {
     if (typeof process.env.NEXT_PUBLIC_CONN_DETAILS_ENDPOINT === 'string') {
@@ -75,15 +75,15 @@ export function AppSessionProvider({ appConfig, children }: AppSessionProviderPr
 
   const value = useMemo(
     () => ({
-      isSessionActive,
+      isConnectionActive,
       /**
        * Start the application session and optionally start the agent session.
        *
        * @param startSession - Whether to start the agent session automatically. Default is true.
        * If startSession is passed in asfalse, you are opting to manually start the session.
        */
-      startSession: (startSession = true) => {
-        setIsSessionActive(true);
+      connect: (startSession = true) => {
+        setIsConnectionActive(true);
         if (startSession) {
           session.start();
         }
@@ -94,8 +94,8 @@ export function AppSessionProvider({ appConfig, children }: AppSessionProviderPr
        * @param endSession - Whether to end the agent session automatically. Default is true.
        * If endSession is passed in as false, you are opting to manually end the session.
        */
-      endSession: (endSession = true) => {
-        setIsSessionActive(false);
+      disconnect: (endSession = true) => {
+        setIsConnectionActive(false);
         if (endSession) {
           session.end();
         }
@@ -104,12 +104,12 @@ export function AppSessionProvider({ appConfig, children }: AppSessionProviderPr
     // session object is not a stable reference
     // TODO: add session object to dependencies
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
-    [isSessionActive]
+    [isConnectionActive]
   );
 
   return (
     <SessionProvider session={session}>
-      <AppSessionContext.Provider value={value}>{children}</AppSessionContext.Provider>
+      <ConnectionContext.Provider value={value}>{children}</ConnectionContext.Provider>
     </SessionProvider>
   );
 }

@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
-import { useSessionMessages } from '@livekit/components-react';
+import { useSessionContext, useSessionMessages } from '@livekit/components-react';
 import type { AppConfig } from '@/app-config';
 import { ChatTranscript } from '@/components/app/chat-transcript';
 import { PreConnectMessage } from '@/components/app/preconnect-message';
@@ -11,7 +11,7 @@ import {
   AgentControlBar,
   type ControlBarControls,
 } from '@/components/livekit/agent-control-bar/agent-control-bar';
-import { useAppSession } from '@/hooks/useAppSession';
+import { useConnection } from '@/hooks/useConnection';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../livekit/scroll-area/scroll-area';
 
@@ -65,9 +65,10 @@ export const SessionView = ({
   appConfig,
   ...props
 }: React.ComponentProps<'section'> & SessionViewProps) => {
-  const { session, isSessionActive, endSession } = useAppSession();
+  const session = useSessionContext();
   const { messages } = useSessionMessages(session);
   const [chatOpen, setChatOpen] = useState(false);
+  const { isConnectionActive, disconnect } = useConnection();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const controls: ControlBarControls = {
@@ -87,10 +88,9 @@ export const SessionView = ({
     }
   }, [messages]);
 
-  const handleDisconnect = () => {
-    // pass false so we can manually end the session when the exit animation completes
-    endSession(false);
-  };
+  const handleDisconnect = useCallback(() => {
+    disconnect(false);
+  }, [disconnect]);
 
   return (
     <section className="bg-background relative z-10 h-full w-full overflow-hidden" {...props}>
@@ -126,7 +126,7 @@ export const SessionView = ({
           <Fade bottom className="absolute inset-x-0 top-0 h-4 -translate-y-full" />
           <AgentControlBar
             controls={controls}
-            isSessionActive={isSessionActive}
+            isConnectionActive={isConnectionActive}
             onDisconnect={handleDisconnect}
             onChatOpenChange={setChatOpen}
           />
