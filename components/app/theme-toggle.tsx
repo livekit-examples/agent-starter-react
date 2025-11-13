@@ -52,16 +52,17 @@ export function ApplyThemeScript() {
 export function ThemeToggle({ className }: ThemeToggleProps) {
   const [theme, setTheme] = useState<ThemeMode | undefined>(undefined);
 
-  useEffect(() => {
-    const storedTheme = (localStorage.getItem(THEME_STORAGE_KEY) as ThemeMode) ?? 'system';
-
-    setTheme(storedTheme);
-  }, []);
-
   function handleThemeChange(theme: ThemeMode) {
     applyTheme(theme);
     setTheme(theme);
   }
+  
+  useEffect(() => {
+    const storedTheme = (localStorage.getItem(THEME_STORAGE_KEY) as ThemeMode) ?? 'system';
+
+    handleThemeChange(storedTheme);
+  }, []);
+
 
   return (
     <div
