@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { useSessionContext, useSessionMessages } from '@livekit/components-react';
 import type { AppConfig } from '@/app-config';
@@ -68,7 +68,7 @@ export const SessionView = ({
   const session = useSessionContext();
   const { messages } = useSessionMessages(session);
   const [chatOpen, setChatOpen] = useState(false);
-  const { isConnectionActive, disconnect } = useConnection();
+  const { isConnectionActive, startDisconnectTransition } = useConnection();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const controls: ControlBarControls = {
@@ -87,10 +87,6 @@ export const SessionView = ({
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
   }, [messages]);
-
-  const handleDisconnect = useCallback(() => {
-    disconnect(false);
-  }, [disconnect]);
 
   return (
     <section className="bg-background relative z-10 h-full w-full overflow-hidden" {...props}>
@@ -127,7 +123,7 @@ export const SessionView = ({
           <AgentControlBar
             controls={controls}
             isConnectionActive={isConnectionActive}
-            onDisconnect={handleDisconnect}
+            onDisconnect={startDisconnectTransition}
             onChatOpenChange={setChatOpen}
           />
         </div>

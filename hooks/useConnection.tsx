@@ -2,21 +2,21 @@
 
 import { createContext, useContext, useMemo, useState } from 'react';
 import { TokenSource } from 'livekit-client';
-import { SessionProvider, type UseSessionReturn, useSession } from '@livekit/components-react';
+import { SessionProvider, useSession } from '@livekit/components-react';
 import type { AppConfig } from '@/app-config';
 
 interface ConnectionContextType {
-  session?: UseSessionReturn;
   isConnectionActive: boolean;
   connect: (startSession?: boolean) => void;
-  disconnect: (endSession?: boolean) => void;
+  startDisconnectTransition: () => void;
+  onDisconnectTransitionComplete: () => void;
 }
 
 const ConnectionContext = createContext<ConnectionContextType>({
-  session: undefined,
   isConnectionActive: false,
   connect: () => {},
-  disconnect: () => {},
+  startDisconnectTransition: () => {},
+  onDisconnectTransitionComplete: () => {},
 });
 
 export function useConnection() {
@@ -76,29 +76,15 @@ export function ConnectionProvider({ appConfig, children }: ConnectionProviderPr
   const value = useMemo(
     () => ({
       isConnectionActive,
-      /**
-       * Start the application session and optionally start the agent session.
-       *
-       * @param startSession - Whether to start the agent session automatically. Default is true.
-       * If startSession is passed in asfalse, you are opting to manually start the session.
-       */
-      connect: (startSession = true) => {
+      connect: () => {
         setIsConnectionActive(true);
-        if (startSession) {
-          session.start();
-        }
+        session.start();
       },
-      /**
-       * End the application session and optionally end the agent session.
-       *
-       * @param endSession - Whether to end the agent session automatically. Default is true.
-       * If endSession is passed in as false, you are opting to manually end the session.
-       */
-      disconnect: (endSession = true) => {
+      startDisconnectTransition: () => {
         setIsConnectionActive(false);
-        if (endSession) {
-          session.end();
-        }
+      },
+      onDisconnectTransitionComplete: () => {
+        session.end();
       },
     }),
     // session object is not a stable reference

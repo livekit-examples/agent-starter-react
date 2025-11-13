@@ -2,8 +2,7 @@
 
 import { useCallback } from 'react';
 import { AnimatePresence, type AnimationDefinition, motion } from 'motion/react';
-import { useSessionContext } from '@livekit/components-react';
-import { AppConfig } from '@/app-config';
+import type { AppConfig } from '@/app-config';
 import { SessionView } from '@/components/app/session-view';
 import { WelcomeView } from '@/components/app/welcome-view';
 import { useAgentErrors } from '@/hooks/useAgentErrors';
@@ -38,8 +37,7 @@ interface ViewControllerProps {
 }
 
 export function ViewController({ appConfig }: ViewControllerProps) {
-  const session = useSessionContext();
-  const { isConnectionActive, connect } = useConnection();
+  const { isConnectionActive, connect, onDisconnectTransitionComplete } = useConnection();
 
   useDebugMode({ enabled: IN_DEVELOPMENT });
   useAgentErrors();
@@ -48,10 +46,10 @@ export function ViewController({ appConfig }: ViewControllerProps) {
     (definition: AnimationDefinition) => {
       // manually end the session when the exit animation completes
       if (definition === 'hidden') {
-        session.end();
+        onDisconnectTransitionComplete();
       }
     },
-    [session]
+    [onDisconnectTransitionComplete]
   );
 
   return (
