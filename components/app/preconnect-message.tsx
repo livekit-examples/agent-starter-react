@@ -1,7 +1,7 @@
 'use client';
 
 import { AnimatePresence, motion } from 'motion/react';
-import { type ReceivedChatMessage } from '@livekit/components-react';
+import { type ReceivedMessage } from '@livekit/components-react';
 import { ShimmerText } from '@/components/livekit/shimmer-text';
 import { cn } from '@/lib/utils';
 
@@ -32,7 +32,7 @@ const VIEW_MOTION_PROPS = {
 };
 
 interface PreConnectMessageProps {
-  messages?: ReceivedChatMessage[];
+  messages?: ReceivedMessage[];
   className?: string;
 }
 
