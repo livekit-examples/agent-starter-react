@@ -52,7 +52,7 @@ export function ViewController({ appConfig }: ViewControllerProps) {
         <MotionWelcomeView
           key="welcome"
           {...VIEW_MOTION_PROPS}
-          startButtonText={appConfig?.startButtonText ?? ''}
+          startButtonText={appConfig.startButtonText}
           onStartCall={connect}
         />
       )}

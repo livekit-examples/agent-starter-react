@@ -62,12 +62,12 @@ export function ChatTranscript({
     <AnimatePresence>
       {!hidden && (
         <MotionContainer {...CONTAINER_MOTION_PROPS} {...props}>
-          {messages.map((recievedMessage) => {
-            const { id, timestamp, from, message } = recievedMessage;
+          {messages.map((receivedMessage) => {
+            const { id, timestamp, from, message } = receivedMessage;
             const locale = navigator?.language ?? 'en-US';
             const messageOrigin = from?.isLocal ? 'local' : 'remote';
             const hasBeenEdited =
-              recievedMessage.type === 'chatMessage' && !!recievedMessage.editTimestamp;
+              receivedMessage.type === 'chatMessage' && !!receivedMessage.editTimestamp;
 
             return (
               <MotionChatEntry
