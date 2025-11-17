@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
+import { useSessionContext, useSessionMessages } from '@livekit/components-react';
 import type { AppConfig } from '@/app-config';
 import { ChatTranscript } from '@/components/app/chat-transcript';
 import { PreConnectMessage } from '@/components/app/preconnect-message';
@@ -10,15 +11,12 @@ import {
   AgentControlBar,
   type ControlBarControls,
 } from '@/components/livekit/agent-control-bar/agent-control-bar';
-import { useChatMessages } from '@/hooks/useChatMessages';
-import { useConnectionTimeout } from '@/hooks/useConnectionTimout';
-import { useDebugMode } from '@/hooks/useDebug';
+import { useConnection } from '@/hooks/useConnection';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../livekit/scroll-area/scroll-area';
 
 const MotionBottom = motion.create('div');
 
-const IN_DEVELOPMENT = process.env.NODE_ENV !== 'production';
 const BOTTOM_VIEW_MOTION_PROPS = {
   variants: {
     visible: {
@@ -58,6 +56,7 @@ export function Fade({ top = false, bottom = false, className }: FadeProps) {
     />
   );
 }
+
 interface SessionViewProps {
   appConfig: AppConfig;
 }
@@ -66,11 +65,10 @@ export const SessionView = ({
   appConfig,
   ...props
 }: React.ComponentProps<'section'> & SessionViewProps) => {
-  useConnectionTimeout(200_000);
-  useDebugMode({ enabled: IN_DEVELOPMENT });
-
-  const messages = useChatMessages();
+  const session = useSessionContext();
+  const { messages } = useSessionMessages(session);
   const [chatOpen, setChatOpen] = useState(false);
+  const { isConnectionActive, startDisconnectTransition } = useConnection();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const controls: ControlBarControls = {
@@ -100,7 +98,7 @@ export const SessionView = ({
         )}
       >
         <Fade top className="absolute inset-x-4 top-0 h-40" />
-        <ScrollArea ref={scrollAreaRef} className="px-4 pt-40 pb-[150px] md:px-6 md:pb-[180px]">
+        <ScrollArea ref={scrollAreaRef} className="px-4 pt-40 pb-[150px] md:px-6 md:pb-[200px]">
           <ChatTranscript
             hidden={!chatOpen}
             messages={messages}
@@ -122,7 +120,12 @@ export const SessionView = ({
         )}
         <div className="bg-background relative mx-auto max-w-2xl pb-3 md:pb-12">
           <Fade bottom className="absolute inset-x-0 top-0 h-4 -translate-y-full" />
-          <AgentControlBar controls={controls} onChatOpenChange={setChatOpen} />
+          <AgentControlBar
+            controls={controls}
+            isConnectionActive={isConnectionActive}
+            onDisconnect={startDisconnectTransition}
+            onChatOpenChange={setChatOpen}
+          />
         </div>
       </MotionBottom>
     </section>

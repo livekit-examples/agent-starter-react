@@ -1,11 +1,11 @@
 'use client';
 
-import { useRef } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
-import { useRoomContext } from '@livekit/components-react';
-import { useSession } from '@/components/app/session-provider';
+import { useCallback } from 'react';
+import { AnimatePresence, type AnimationDefinition, motion } from 'motion/react';
+import type { AppConfig } from '@/app-config';
 import { SessionView } from '@/components/app/session-view';
 import { WelcomeView } from '@/components/app/welcome-view';
+import { useConnection } from '@/hooks/useConnection';
 
 const MotionWelcomeView = motion.create(WelcomeView);
 const MotionSessionView = motion.create(SessionView);
@@ -28,34 +28,36 @@ const VIEW_MOTION_PROPS = {
   },
 };
 
-export function ViewController() {
-  const room = useRoomContext();
-  const isSessionActiveRef = useRef(false);
-  const { appConfig, isSessionActive, startSession } = useSession();
+interface ViewControllerProps {
+  appConfig: AppConfig;
+}
 
-  // animation handler holds a reference to stale isSessionActive value
-  isSessionActiveRef.current = isSessionActive;
+export function ViewController({ appConfig }: ViewControllerProps) {
+  const { isConnectionActive, connect, onDisconnectTransitionComplete } = useConnection();
 
-  // disconnect room after animation completes
-  const handleAnimationComplete = () => {
-    if (!isSessionActiveRef.current && room.state !== 'disconnected') {
-      room.disconnect();
-    }
-  };
+  const handleAnimationComplete = useCallback(
+    (definition: AnimationDefinition) => {
+      // manually end the session when the exit animation completes
+      if (definition === 'hidden') {
+        onDisconnectTransitionComplete();
+      }
+    },
+    [onDisconnectTransitionComplete]
+  );
 
   return (
     <AnimatePresence mode="wait">
-      {/* Welcome screen */}
-      {!isSessionActive && (
+      {/* Welcome view */}
+      {!isConnectionActive && (
         <MotionWelcomeView
           key="welcome"
           {...VIEW_MOTION_PROPS}
           startButtonText={appConfig.startButtonText}
-          onStartCall={startSession}
+          onStartCall={connect}
         />
       )}
       {/* Session view */}
-      {isSessionActive && (
+      {isConnectionActive && (
         <MotionSessionView
           key="session-view"
           {...VIEW_MOTION_PROPS}
