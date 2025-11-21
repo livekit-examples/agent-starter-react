@@ -158,17 +158,11 @@ export function TileLayout({ chatOpen, appConfig }: TileLayoutProps) {
                     <AudioGridVisualizer
                       state={agentState}
                       audioTrack={agentAudioTrack!}
-                      options={{
-                        columnCount: 11,
-                        rowCount: 11,
-                        radius: 6,
-                        interval: 75,
-                        className: 'gap-1',
-                        baseClassName: 'size-0.75 rounded-full',
-                        offClassName: 'bg-foreground/10 scale-100',
-                        onClassName:
-                          'bg-foreground scale-125 shadow-[0px_0px_2px_1px_rgba(255,255,255,0.2)]',
-                      }}
+                      size="sm"
+                      columnCount={9}
+                      rowCount={9}
+                      radius={6}
+                      interval={75}
                     />
                   )}
                   {appConfig.audioVisualizer === 'aura' && (
