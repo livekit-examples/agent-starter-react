@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTheme } from 'next-themes';
 import { Track } from 'livekit-client';
 import { AnimatePresence, motion } from 'motion/react';
 import {
@@ -12,6 +13,7 @@ import { AppConfig } from '@/app-config';
 import { AudioBarVisualizer } from '@/components/livekit/audio-visualizer/audio-bar-visualizer/audio-bar-visualizer';
 import { AudioShaderVisualizer } from '@/components/livekit/audio-visualizer/audio-shader-visualizer/audio-shader-visualizer';
 import { cn } from '@/lib/utils';
+import { AudioGridVisualizer } from '../livekit/audio-visualizer/audio-grid-visualizer/audio-grid-visualizer';
 import { AudioOscilloscopeVisualizer } from '../livekit/audio-visualizer/audio-oscilloscope-visualizer/audio-oscilloscope-visualizer';
 import { AudioRadialVisualizer } from '../livekit/audio-visualizer/audio-radial-visualizer/audio-radial-visualizer';
 
@@ -79,6 +81,7 @@ interface TileLayoutProps {
 }
 
 export function TileLayout({ chatOpen, appConfig }: TileLayoutProps) {
+  const { theme } = useTheme();
   const {
     state: agentState,
     audioTrack: agentAudioTrack,
@@ -145,9 +148,27 @@ export function TileLayout({ chatOpen, appConfig }: TileLayoutProps) {
                   {appConfig.audioVisualizer === 'radial' && (
                     <AudioRadialVisualizer
                       size="sm"
+                      barCount={12}
                       state={agentState}
                       audioTrack={agentAudioTrack!}
                       className="mx-auto"
+                    />
+                  )}
+                  {appConfig.audioVisualizer === 'grid' && (
+                    <AudioGridVisualizer
+                      state={agentState}
+                      audioTrack={agentAudioTrack!}
+                      options={{
+                        columnCount: 11,
+                        rowCount: 11,
+                        radius: 6,
+                        interval: 75,
+                        className: 'gap-1',
+                        baseClassName: 'size-0.75 rounded-full',
+                        offClassName: 'bg-foreground/10 scale-100',
+                        onClassName:
+                          'bg-foreground scale-125 shadow-[0px_0px_2px_1px_rgba(255,255,255,0.2)]',
+                      }}
                     />
                   )}
                   {appConfig.audioVisualizer === 'aura' && (
@@ -155,7 +176,12 @@ export function TileLayout({ chatOpen, appConfig }: TileLayoutProps) {
                       size="sm"
                       state={agentState}
                       audioTrack={agentAudioTrack!}
-                      colorShift={0.4}
+                      colorShift={theme === 'dark' ? 0.4 : 0.0}
+                      rgbColor={
+                        theme === 'dark'
+                          ? [0.12156862745098039, 0.8352941176470589, 0.9764705882352941]
+                          : [0.0, 0.0, 0.9]
+                      }
                     />
                   )}
                   {appConfig.audioVisualizer === 'wave' && (
@@ -163,6 +189,12 @@ export function TileLayout({ chatOpen, appConfig }: TileLayoutProps) {
                       size="sm"
                       state={agentState}
                       audioTrack={agentAudioTrack!}
+                      lineWidth={3}
+                      rgbColor={
+                        theme === 'dark'
+                          ? [0.12156862745098039, 0.8352941176470589, 0.9764705882352941]
+                          : [0.0, 0.0, 0.9]
+                      }
                     />
                   )}
                 </MotionContainer>

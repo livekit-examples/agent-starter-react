@@ -69,7 +69,7 @@ export function AudioRadialVisualizer({
     switch (size) {
       case 'icon':
       case 'sm':
-        return 9;
+        return 8;
       default:
         return 12;
     }

@@ -13,7 +13,7 @@ export interface AppConfig {
   accent?: string;
   logoDark?: string;
   accentDark?: string;
-  audioVisualizer?: 'bar' | 'radial' | 'aura' | 'wave';
+  audioVisualizer?: 'bar' | 'radial' | 'grid' | 'aura' | 'wave';
 
   // for LiveKit Cloud Sandbox
   sandboxId?: string;

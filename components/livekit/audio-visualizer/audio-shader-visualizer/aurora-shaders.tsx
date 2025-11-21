@@ -240,7 +240,7 @@ export const AuroraShaders = forwardRef<HTMLDivElement, AuroraShadersProps>(
       frequency = 0.5,
       scale = 0.2,
       blur = 1.0,
-      rgbColor = [31.0 / 255, 213.0 / 255, 249.0 / 255], // LiveKit Blue,
+      rgbColor = [0.12156862745098039, 0.8352941176470589, 0.9764705882352941], // LiveKit Blue,
       colorShift = 1.0,
       brightness = 1.0,
       mode = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
