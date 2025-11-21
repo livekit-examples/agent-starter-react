@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { ReactNode, useMemo } from 'react';
 import { type VariantProps, cva } from 'class-variance-authority';
 import { type LocalAudioTrack, type RemoteAudioTrack } from 'livekit-client';
 import {
@@ -6,36 +6,32 @@ import {
   type TrackReferenceOrPlaceholder,
   useMultibandTrackVolume,
 } from '@livekit/components-react';
-import { cn } from '@/lib/utils';
+import { cloneSingleChild, cn } from '@/lib/utils';
 import { useBarAnimator } from './hooks/useBarAnimator';
 
-export const audioRadialVisualizerVariants = cva(['relative flex items-center justify-center'], {
-  variants: {
-    size: {
-      icon: 'h-[24px] gap-[2px]',
-      sm: 'h-[56px] gap-[4px]',
-      md: 'h-[112px] gap-[8px]',
-      lg: 'h-[224px] gap-[16px]',
-      xl: 'h-[448px] gap-[32px]',
-    },
-  },
-  defaultVariants: {
-    size: 'md',
-  },
-});
-
-export const audioRadialVisualizerBarVariants = cva(
+export const audioRadialVisualizerVariants = cva(
   [
-    'rounded-full transition-colors duration-250 ease-linear bg-(--audio-visualizer-idle) data-[lk-highlighted=true]:bg-(--audio-visualizer-active)',
+    'relative flex items-center justify-center',
+    '[&_[data-lk-index]]:absolute [&_[data-lk-index]]:top-1/2 [&_[data-lk-index]]:left-1/2 [&_[data-lk-index]]:origin-bottom [&_[data-lk-index]]:-translate-x-1/2',
+    '[&_[data-lk-index]]:rounded-full [&_[data-lk-index]]:transition-colors [&_[data-lk-index]]:duration-250 [&_[data-lk-index]]:ease-linear [&_[data-lk-index]]:bg-(--audio-visualizer-idle) [&_[data-lk-index]]:data-[lk-highlighted=true]:bg-(--audio-visualizer-active)',
   ],
   {
     variants: {
       size: {
-        icon: 'w-[4px] min-h-[4px]',
-        sm: 'w-[8px] min-h-[8px]',
-        md: 'w-[16px] min-h-[16px]',
-        lg: 'w-[32px] min-h-[32px]',
-        xl: 'w-[64px] min-h-[64px]',
+        icon: ['h-[24px] gap-[2px]', '[&_[data-lk-index]]:w-[4px] [&_[data-lk-index]]:min-h-[4px]'],
+        sm: ['h-[56px] gap-[4px]', '[&_[data-lk-index]]:w-[8px] [&_[data-lk-index]]:min-h-[8px]'],
+        md: [
+          'h-[112px] gap-[8px]',
+          '[&_[data-lk-index]]:w-[16px] [&_[data-lk-index]]:min-h-[16px]',
+        ],
+        lg: [
+          'h-[224px] gap-[16px]',
+          '[&_[data-lk-index]]:w-[32px] [&_[data-lk-index]]:min-h-[32px]',
+        ],
+        xl: [
+          'h-[448px] gap-[32px]',
+          '[&_[data-lk-index]]:w-[64px] [&_[data-lk-index]]:min-h-[64px]',
+        ],
       },
     },
     defaultVariants: {
@@ -50,7 +46,7 @@ interface AudioRadialVisualizerProps {
   barCount?: number;
   audioTrack?: LocalAudioTrack | RemoteAudioTrack | TrackReferenceOrPlaceholder;
   className?: string;
-  barClassName?: string;
+  children?: ReactNode;
 }
 
 export function AudioRadialVisualizer({
@@ -60,7 +56,7 @@ export function AudioRadialVisualizer({
   barCount,
   audioTrack,
   className,
-  barClassName,
+  children,
 }: AudioRadialVisualizerProps & VariantProps<typeof audioRadialVisualizerVariants>) {
   const _barCount = useMemo(() => {
     if (barCount) {
@@ -128,22 +124,25 @@ export function AudioRadialVisualizer({
         return (
           <div
             key={idx}
-            className={cn('absolute top-1/2 left-1/2 h-1 w-1 -translate-x-1/2 -translate-y-1/2')}
+            className="absolute top-1/2 left-1/2 h-1 w-1 -translate-x-1/2 -translate-y-1/2"
             style={{
               transformOrigin: 'center',
               transform: `rotate(${angle}rad) translateY(${distanceFromCenter}px)`,
             }}
           >
-            <div
-              data-lk-index={idx}
-              data-lk-highlighted={highlightedIndices.includes(idx)}
-              className={cn(
-                audioRadialVisualizerBarVariants({ size }),
-                'absolute top-1/2 left-1/2 origin-bottom -translate-x-1/2',
-                barClassName
-              )}
-              style={{ height: `${band * distanceFromCenter * 2}px` }}
-            />
+            {children ? (
+              cloneSingleChild(children, {
+                key: idx,
+                'data-lk-index': idx,
+                'data-lk-highlighted': highlightedIndices.includes(idx),
+              })
+            ) : (
+              <div
+                data-lk-index={idx}
+                data-lk-highlighted={highlightedIndices.includes(idx)}
+                style={{ height: `${band * distanceFromCenter * 2}px` }}
+              />
+            )}
           </div>
         );
       })}
