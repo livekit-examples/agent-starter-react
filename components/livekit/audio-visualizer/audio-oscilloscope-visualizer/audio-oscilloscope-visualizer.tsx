@@ -105,7 +105,6 @@ export function AudioOscilloscopeVisualizer({
         animateOpacity(1.0, DEFAULT_TRANSITION);
         return;
       case 'listening':
-      case 'connecting':
         setSpeed(DEFAULT_SPEED);
         animateAmplitude(DEFAULT_AMPLITUDE, DEFAULT_TRANSITION);
         animateFrequency(DEFAULT_FREQUENCY, DEFAULT_TRANSITION);
@@ -116,6 +115,7 @@ export function AudioOscilloscopeVisualizer({
         });
         return;
       case 'thinking':
+      case 'connecting':
       case 'initializing':
         setSpeed(DEFAULT_SPEED * 4);
         animateAmplitude(DEFAULT_AMPLITUDE / 4, DEFAULT_TRANSITION);

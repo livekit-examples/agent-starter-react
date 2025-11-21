@@ -106,7 +106,6 @@ export function AudioShaderVisualizer({
         animateBrightness(1.0, DEFAULT_TRANSITION);
         return;
       case 'listening':
-      case 'connecting':
         setSpeed(20);
         animateScale(0.3, { type: 'spring', duration: 1.0, bounce: 0.35 });
         animateAmplitude(1.0, DEFAULT_TRANSITION);
@@ -114,6 +113,7 @@ export function AudioShaderVisualizer({
         animateBrightness([1.5, 2.0], DEFAULT_PULSE_TRANSITION);
         return;
       case 'thinking':
+      case 'connecting':
       case 'initializing':
         setSpeed(30);
         animateScale(0.3, DEFAULT_TRANSITION);
