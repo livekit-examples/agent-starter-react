@@ -23,7 +23,10 @@ import {
   AudioBarVisualizer,
   audioBarVisualizerVariants,
 } from '@/components/livekit/audio-visualizer/audio-bar-visualizer/audio-bar-visualizer';
-import { AudioGridVisualizer } from '@/components/livekit/audio-visualizer/audio-grid-visualizer/audio-grid-visualizer';
+import {
+  AudioGridVisualizer,
+  type GridOptions,
+} from '@/components/livekit/audio-visualizer/audio-grid-visualizer/audio-grid-visualizer';
 import { gridVariants } from '@/components/livekit/audio-visualizer/audio-grid-visualizer/demos';
 import { AudioOscilloscopeVisualizer } from '@/components/livekit/audio-visualizer/audio-oscilloscope-visualizer/audio-oscilloscope-visualizer';
 import {
@@ -294,7 +297,9 @@ export const COMPONENTS = {
               audioTrack={micTrackRef!}
               barCount={parseInt(barCount) || undefined}
               className="mx-auto"
-            />
+            >
+              <div className="data-[lk-highlighted=true]:!bg-primary rounded-full" />
+            </AudioBarVisualizer>
           </div>
           <details>
             <summary className="text-muted-foreground font-mono text-xs uppercase">
@@ -536,7 +541,7 @@ export const COMPONENTS = {
             key={`${demoIndex}-${rowCount}-${columnCount}`}
             state={state}
             audioTrack={micTrackRef!}
-            options={demoOptions}
+            {...(demoOptions as GridOptions)}
           />
         </div>
 
