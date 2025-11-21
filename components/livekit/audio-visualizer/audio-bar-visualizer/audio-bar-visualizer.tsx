@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { type ReactNode, useMemo } from 'react';
 import { type VariantProps, cva } from 'class-variance-authority';
 import { type LocalAudioTrack, type RemoteAudioTrack } from 'livekit-client';
 import {
@@ -6,36 +6,23 @@ import {
   type TrackReferenceOrPlaceholder,
   useMultibandTrackVolume,
 } from '@livekit/components-react';
-import { cn } from '@/lib/utils';
+import { cloneSingleChild, cn } from '@/lib/utils';
 import { useBarAnimator } from './hooks/useBarAnimator';
 
-export const audioBarVisualizerVariants = cva(['relative flex items-center justify-center'], {
-  variants: {
-    size: {
-      icon: 'h-[24px] gap-[2px]',
-      sm: 'h-[56px] gap-[4px]',
-      md: 'h-[112px] gap-[8px]',
-      lg: 'h-[224px] gap-[16px]',
-      xl: 'h-[448px] gap-[32px]',
-    },
-  },
-  defaultVariants: {
-    size: 'md',
-  },
-});
-
-export const audioBarVisualizerBarVariants = cva(
+export const audioBarVisualizerVariants = cva(
   [
-    'rounded-full transition-colors duration-250 ease-linear bg-(--audio-visualizer-idle) data-[lk-highlighted=true]:bg-(--audio-visualizer-active)',
+    'relative flex items-center justify-center',
+    '[&_>_*]:rounded-full [&_>_*]:transition-colors [&_>_*]:duration-250 [&_>_*]:ease-linear',
+    '[&_>_*]:bg-(--audio-visualizer-idle) [&_>_*]:data-[lk-highlighted=true]:bg-(--audio-visualizer-active)',
   ],
   {
     variants: {
       size: {
-        icon: 'w-[4px] min-h-[4px]',
-        sm: 'w-[8px] min-h-[8px]',
-        md: 'w-[16px] min-h-[16px]',
-        lg: 'w-[32px] min-h-[32px]',
-        xl: 'w-[64px] min-h-[64px]',
+        icon: ['h-[24px] gap-[2px]', '[&_>_*]:w-[4px] [&_>_*]:min-h-[4px]'],
+        sm: ['h-[56px] gap-[4px]', '[&_>_*]:w-[8px] [&_>_*]:min-h-[8px]'],
+        md: ['h-[112px] gap-[8px]', '[&_>_*]:w-[16px] [&_>_*]:min-h-[16px]'],
+        lg: ['h-[224px] gap-[16px]', '[&_>_*]:w-[32px] [&_>_*]:min-h-[32px]'],
+        xl: ['h-[448px] gap-[32px]', '[&_>_*]:w-[64px] [&_>_*]:min-h-[64px]'],
       },
     },
     defaultVariants: {
@@ -49,7 +36,7 @@ interface AudioBarVisualizerProps {
   barCount?: number;
   audioTrack?: LocalAudioTrack | RemoteAudioTrack | TrackReferenceOrPlaceholder;
   className?: string;
-  barClassName?: string;
+  children?: ReactNode | ReactNode[];
 }
 
 export function AudioBarVisualizer({
@@ -58,7 +45,7 @@ export function AudioBarVisualizer({
   barCount,
   audioTrack,
   className,
-  barClassName,
+  children,
 }: AudioBarVisualizerProps & VariantProps<typeof audioBarVisualizerVariants>) {
   const _barCount = useMemo(() => {
     if (barCount) {
@@ -95,19 +82,27 @@ export function AudioBarVisualizer({
   }, [state, _barCount]);
 
   const highlightedIndices = useBarAnimator(state, _barCount, sequencerInterval);
-
   const bands = audioTrack ? volumeBands : new Array(_barCount).fill(0);
+
   return (
     <div className={cn(audioBarVisualizerVariants({ size }), className)}>
-      {bands.map((band, idx) => (
-        <div
-          key={idx}
-          data-lk-index={idx}
-          data-lk-highlighted={highlightedIndices.includes(idx)}
-          className={cn(audioBarVisualizerBarVariants({ size }), barClassName)}
-          style={{ height: `${band * 100}%` }}
-        />
-      ))}
+      {bands.map((band, idx) =>
+        children ? (
+          cloneSingleChild(children, {
+            key: idx,
+            'data-lk-index': idx,
+            'data-lk-highlighted': highlightedIndices.includes(idx),
+            style: { height: `${band * 100}%` },
+          })
+        ) : (
+          <div
+            key={idx}
+            data-lk-index={idx}
+            data-lk-highlighted={highlightedIndices.includes(idx)}
+            style={{ height: `${band * 100}%` }}
+          />
+        )
+      )}
     </div>
   );
 }
