@@ -1,21 +1,21 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { redirect, useParams } from 'next/navigation';
-import { COMPONENTS } from '../../_components';
 
 export default function Page() {
   const { slug = [] } = useParams();
   const [componentName] = slug;
-  const component = COMPONENTS[componentName as keyof typeof COMPONENTS];
+  const ComponentDemo = dynamic(() => import(`@/components/demos/${componentName}`));
 
-  if (!component) {
+  if (!ComponentDemo) {
     return redirect('/ui');
   }
 
   return (
     <>
       <h1 className="text-foreground mb-8 text-5xl font-bold">{componentName}</h1>
-      {component()}
+      <ComponentDemo />
     </>
   );
 }

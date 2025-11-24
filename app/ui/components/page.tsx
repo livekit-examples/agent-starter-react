@@ -1,9 +1,9 @@
-'use client';
-
 import Link from 'next/link';
-import { COMPONENTS } from '../_components';
+import { getComponentNames } from '@/lib/components';
 
 export default function Page() {
+  const componentNames = getComponentNames();
+
   return (
     <>
       <h2 id="components" className="mb-8 text-4xl font-bold tracking-tighter">
@@ -14,9 +14,9 @@ export default function Page() {
       </p>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {Object.entries(COMPONENTS)
-          .sort(([a], [b]) => a.localeCompare(b))
-          .map(([componentName]) => (
+        {componentNames
+          .sort((a, b) => a.localeCompare(b))
+          .map((componentName) => (
             <Link
               href={`/ui/components/${componentName}`}
               key={componentName}
@@ -25,15 +25,6 @@ export default function Page() {
               {componentName}
             </Link>
           ))}
-      </div>
-
-      <div className="space-y-20 py-20">
-        {Object.entries(COMPONENTS).map(([componentName, component]) => (
-          <div key={componentName}>
-            <h2 className="text-foreground mb-8 text-3xl font-bold">{componentName}</h2>
-            {component()}
-          </div>
-        ))}
       </div>
     </>
   );

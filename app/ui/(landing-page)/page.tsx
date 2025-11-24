@@ -6,7 +6,7 @@ import { AgentControlBar } from '@/components/livekit/agent-control-bar/agent-co
 import { AudioBarVisualizer } from '@/components/livekit/audio-visualizer/audio-bar-visualizer/audio-bar-visualizer';
 import { Button } from '@/components/livekit/button';
 import { ChatEntry } from '@/components/livekit/chat-entry';
-import { useMicrophone } from '../_components';
+import { useMicrophone } from '@/hooks/useMicrophone';
 
 export default function Page() {
   const { state, audioTrack } = useVoiceAssistant();

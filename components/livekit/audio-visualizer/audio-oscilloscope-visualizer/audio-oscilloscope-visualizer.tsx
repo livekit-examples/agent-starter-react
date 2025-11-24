@@ -40,7 +40,7 @@ function useAnimatedValue<T>(initialValue: T) {
   return { value, controls: controlsRef, animate: animateFn };
 }
 
-export const audioShaderVisualizerVariants = cva(['aspect-square'], {
+export const audioOscilloscopeVisualizerVariants = cva(['aspect-square'], {
   variants: {
     size: {
       icon: 'h-[24px] gap-[2px]',
@@ -72,7 +72,7 @@ export function AudioOscilloscopeVisualizer({
   className,
 }: AudioOscilloscopeVisualizerProps &
   OscilliscopeShadersProps &
-  VariantProps<typeof audioShaderVisualizerVariants>) {
+  VariantProps<typeof audioOscilloscopeVisualizerVariants>) {
   const [speed, setSpeed] = useState(DEFAULT_SPEED);
   const { value: amplitude, animate: animateAmplitude } = useAnimatedValue(DEFAULT_AMPLITUDE);
   const { value: frequency, animate: animateFrequency } = useAnimatedValue(DEFAULT_FREQUENCY);
@@ -153,7 +153,7 @@ export function AudioOscilloscopeVisualizer({
       smoothing={smoothing}
       style={{ opacity }}
       className={cn(
-        audioShaderVisualizerVariants({ size }),
+        audioOscilloscopeVisualizerVariants({ size }),
         '[mask-image:linear-gradient(90deg,rgba(0,0,0,0)_0%,rgba(0,0,0,1)_20%,rgba(0,0,0,1)_80%,rgba(0,0,0,0)_100%)]',
         'overflow-hidden rounded-full',
         className
