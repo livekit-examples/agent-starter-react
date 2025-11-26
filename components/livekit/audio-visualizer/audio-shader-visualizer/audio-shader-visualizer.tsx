@@ -18,7 +18,7 @@ import {
   useTrackVolume,
 } from '@livekit/components-react';
 import { cn } from '@/lib/utils';
-import { AuroraShaders, type AuroraShadersProps } from './aurora-shaders';
+import { AuroraShaders, type AuroraShadersProps } from './shader';
 
 const DEFAULT_SPEED = 10;
 const DEFAULT_AMPLITUDE = 2;

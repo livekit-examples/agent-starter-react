@@ -3,7 +3,7 @@
 import React, { forwardRef } from 'react';
 import { Shader } from '@/components/livekit/react-shader/react-shader';
 
-const auroraShaderSource = `
+const shaderSource = `
 const float TAU = 6.28318530718;
 
 // Noise for dithering
@@ -254,7 +254,7 @@ export const AuroraShaders = forwardRef<HTMLDivElement, AuroraShadersProps>(
     return (
       <div ref={ref} className={className} {...props}>
         <Shader
-          fs={auroraShaderSource}
+          fs={shaderSource}
           devicePixelRatio={globalThis.devicePixelRatio ?? 1}
           uniforms={{
             // Aurora wave speed

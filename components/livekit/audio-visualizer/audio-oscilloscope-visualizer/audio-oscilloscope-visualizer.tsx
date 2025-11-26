@@ -17,7 +17,7 @@ import {
   useTrackVolume,
 } from '@livekit/components-react';
 import { cn } from '@/lib/utils';
-import { OscilliscopeShaders, type OscilliscopeShadersProps } from './oscilliscope-shaders';
+import { OscilliscopeShader, type OscilliscopeShaderProps } from './shader';
 
 const DEFAULT_SPEED = 5;
 const DEFAULT_AMPLITUDE = 0.025;
@@ -71,7 +71,7 @@ export function AudioOscilloscopeVisualizer({
   audioTrack,
   className,
 }: AudioOscilloscopeVisualizerProps &
-  OscilliscopeShadersProps &
+  OscilliscopeShaderProps &
   VariantProps<typeof audioOscilloscopeVisualizerVariants>) {
   const [speed, setSpeed] = useState(DEFAULT_SPEED);
   const { value: amplitude, animate: animateAmplitude } = useAnimatedValue(DEFAULT_AMPLITUDE);
@@ -144,7 +144,7 @@ export function AudioOscilloscopeVisualizer({
   }, [state, volume, animateAmplitude, animateFrequency]);
 
   return (
-    <OscilliscopeShaders
+    <OscilliscopeShader
       speed={speed}
       amplitude={amplitude}
       frequency={frequency}

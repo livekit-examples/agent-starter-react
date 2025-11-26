@@ -3,7 +3,7 @@
 import React, { forwardRef } from 'react';
 import { Shader } from '@/components/livekit/react-shader/react-shader';
 
-const oscilliscopeShaderSource = `
+const shaderSource = `
 const float TAU = 6.28318530718;
 
 // Noise for dithering
@@ -94,7 +94,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
   fragColor = vec4(color * uMix, alpha);
 }`;
 
-export interface OscilliscopeShadersProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface OscilliscopeShaderProps extends React.HTMLAttributes<HTMLDivElement> {
   /**
    * Class name
    * @default ''
@@ -137,7 +137,7 @@ export interface OscilliscopeShadersProps extends React.HTMLAttributes<HTMLDivEl
   smoothing?: number;
 }
 
-export const OscilliscopeShaders = forwardRef<HTMLDivElement, OscilliscopeShadersProps>(
+export const OscilliscopeShader = forwardRef<HTMLDivElement, OscilliscopeShaderProps>(
   (
     {
       className,
@@ -157,7 +157,7 @@ export const OscilliscopeShaders = forwardRef<HTMLDivElement, OscilliscopeShader
     return (
       <div ref={ref} className={className} {...props}>
         <Shader
-          fs={oscilliscopeShaderSource}
+          fs={shaderSource}
           devicePixelRatio={globalThis.devicePixelRatio ?? 1}
           uniforms={{
             uSpeed: { type: '1f', value: speed },
@@ -181,6 +181,6 @@ export const OscilliscopeShaders = forwardRef<HTMLDivElement, OscilliscopeShader
   }
 );
 
-OscilliscopeShaders.displayName = 'OscilliscopeShaders';
+OscilliscopeShader.displayName = 'OscilliscopeShader';
 
-export default OscilliscopeShaders;
+export default OscilliscopeShader;
