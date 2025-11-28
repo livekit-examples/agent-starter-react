@@ -1,15 +1,21 @@
 import React, { useMemo } from 'react';
+import { useTheme } from 'next-themes';
 import { Track } from 'livekit-client';
 import { AnimatePresence, motion } from 'motion/react';
 import {
-  BarVisualizer,
   type TrackReference,
   VideoTrack,
   useLocalParticipant,
   useTracks,
   useVoiceAssistant,
 } from '@livekit/components-react';
+import { AppConfig } from '@/app-config';
+import { AudioBarVisualizer } from '@/components/livekit/audio-visualizer/audio-bar-visualizer/audio-bar-visualizer';
+import { AudioShaderVisualizer } from '@/components/livekit/audio-visualizer/audio-shader-visualizer/audio-shader-visualizer';
 import { cn } from '@/lib/utils';
+import { AudioGridVisualizer } from '../livekit/audio-visualizer/audio-grid-visualizer/audio-grid-visualizer';
+import { AudioOscilloscopeVisualizer } from '../livekit/audio-visualizer/audio-oscilloscope-visualizer/audio-oscilloscope-visualizer';
+import { AudioRadialVisualizer } from '../livekit/audio-visualizer/audio-radial-visualizer/audio-radial-visualizer';
 
 const MotionContainer = motion.create('div');
 
@@ -71,9 +77,11 @@ export function useLocalTrackRef(source: Track.Source) {
 
 interface TileLayoutProps {
   chatOpen: boolean;
+  appConfig: AppConfig;
 }
 
-export function TileLayout({ chatOpen }: TileLayoutProps) {
+export function TileLayout({ chatOpen, appConfig }: TileLayoutProps) {
+  const { theme } = useTheme();
   const {
     state: agentState,
     audioTrack: agentAudioTrack,
@@ -112,36 +120,77 @@ export function TileLayout({ chatOpen }: TileLayoutProps) {
                   layoutId="agent"
                   initial={{
                     opacity: 0,
-                    scale: 0,
+                    scale: chatOpen ? 1 : 6,
                   }}
                   animate={{
                     opacity: 1,
-                    scale: chatOpen ? 1 : 5,
+                    scale: chatOpen ? 1 : 6,
                   }}
                   transition={{
                     ...ANIMATION_TRANSITION,
                     delay: animationDelay,
                   }}
                   className={cn(
-                    'bg-background aspect-square h-[90px] rounded-md border border-transparent transition-[border,drop-shadow]',
+                    'bg-background flex aspect-square h-[90px] items-center justify-center rounded-md border border-transparent transition-[border,drop-shadow]',
                     chatOpen && 'border-input/50 drop-shadow-lg/10 delay-200'
                   )}
                 >
-                  <BarVisualizer
-                    barCount={5}
-                    state={agentState}
-                    options={{ minHeight: 5 }}
-                    trackRef={agentAudioTrack}
-                    className={cn('flex h-full items-center justify-center gap-1')}
-                  >
-                    <span
-                      className={cn([
-                        'bg-muted min-h-2.5 w-2.5 rounded-full',
-                        'origin-center transition-colors duration-250 ease-linear',
-                        'data-[lk-highlighted=true]:bg-foreground data-[lk-muted=true]:bg-muted',
-                      ])}
+                  {appConfig === undefined ||
+                    (appConfig.audioVisualizer === 'bar' && (
+                      <AudioBarVisualizer
+                        size="sm"
+                        barCount={5}
+                        state={agentState}
+                        audioTrack={agentAudioTrack!}
+                        className="mx-auto"
+                      />
+                    ))}
+                  {appConfig.audioVisualizer === 'radial' && (
+                    <AudioRadialVisualizer
+                      size="sm"
+                      barCount={12}
+                      state={agentState}
+                      audioTrack={agentAudioTrack!}
+                      className="mx-auto"
                     />
-                  </BarVisualizer>
+                  )}
+                  {appConfig.audioVisualizer === 'grid' && (
+                    <AudioGridVisualizer
+                      state={agentState}
+                      audioTrack={agentAudioTrack!}
+                      size="sm"
+                      columnCount={9}
+                      rowCount={9}
+                      radius={6}
+                      interval={75}
+                    />
+                  )}
+                  {appConfig.audioVisualizer === 'aura' && (
+                    <AudioShaderVisualizer
+                      size="sm"
+                      state={agentState}
+                      audioTrack={agentAudioTrack!}
+                      colorShift={theme === 'dark' ? 0.4 : 0.0}
+                      rgbColor={
+                        theme === 'dark'
+                          ? [0.12156862745098039, 0.8352941176470589, 0.9764705882352941]
+                          : [0.0, 0.0, 0.9]
+                      }
+                    />
+                  )}
+                  {appConfig.audioVisualizer === 'wave' && (
+                    <AudioOscilloscopeVisualizer
+                      size="sm"
+                      state={agentState}
+                      audioTrack={agentAudioTrack!}
+                      lineWidth={3}
+                      rgbColor={
+                        theme === 'dark'
+                          ? [0.12156862745098039, 0.8352941176470589, 0.9764705882352941]
+                          : [0.0, 0.0, 0.9]
+                      }
+                    />
+                  )}
                 </MotionContainer>
               )}
 
