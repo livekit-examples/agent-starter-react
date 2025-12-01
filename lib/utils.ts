@@ -20,8 +20,14 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// https://react.dev/reference/react/cache#caveats
-// > React will invalidate the cache for all memoized functions for each server request.
+/**
+ * Get the app configuration
+ * @param headers - The headers of the request
+ * @returns The app configuration
+ *
+ * @note React will invalidate the cache for all memoized functions for each server request.
+ * https://react.dev/reference/react/cache#caveats
+ */
 export const getAppConfig = cache(async (headers: Headers): Promise<AppConfig> => {
   if (CONFIG_ENDPOINT) {
     const sandboxId = SANDBOX_ID ?? headers.get('x-sandbox-id') ?? '';
@@ -70,9 +76,11 @@ export const getAppConfig = cache(async (headers: Headers): Promise<AppConfig> =
   return APP_CONFIG_DEFAULTS;
 });
 
-// check provided accent colors against defaults
-// apply styles if they differ (or in development mode)
-// generate a hover color for the accent color by mixing it with 20% black
+/**
+ * Get styles for the app
+ * @param appConfig - The app configuration
+ * @returns A string of styles
+ */
 export function getStyles(appConfig: AppConfig) {
   const { accent, accentDark } = appConfig;
 
