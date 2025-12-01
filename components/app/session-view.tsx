@@ -11,7 +11,6 @@ import {
   AgentControlBar,
   type ControlBarControls,
 } from '@/components/livekit/agent-control-bar/agent-control-bar';
-import { useConnection } from '@/hooks/useConnection';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../livekit/scroll-area/scroll-area';
 
@@ -68,7 +67,6 @@ export const SessionView = ({
   const session = useSessionContext();
   const { messages } = useSessionMessages(session);
   const [chatOpen, setChatOpen] = useState(false);
-  const { isConnectionActive, startDisconnectTransition } = useConnection();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const controls: ControlBarControls = {
@@ -122,8 +120,8 @@ export const SessionView = ({
           <Fade bottom className="absolute inset-x-0 top-0 h-4 -translate-y-full" />
           <AgentControlBar
             controls={controls}
-            isConnectionActive={isConnectionActive}
-            onDisconnect={startDisconnectTransition}
+            isConnected={session.isConnected}
+            onDisconnect={session.end}
             onChatOpenChange={setChatOpen}
           />
         </div>

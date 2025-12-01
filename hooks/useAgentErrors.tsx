@@ -1,14 +1,13 @@
 import { useEffect } from 'react';
-import { useAgent } from '@livekit/components-react';
+import { useAgent, useSessionContext } from '@livekit/components-react';
 import { toastAlert } from '@/components/livekit/alert-toast';
-import { useConnection } from './useConnection';
 
 export function useAgentErrors() {
   const agent = useAgent();
-  const { isConnectionActive, startDisconnectTransition } = useConnection();
+  const { isConnected, end } = useSessionContext();
 
   useEffect(() => {
-    if (isConnectionActive && agent.state === 'failed') {
+    if (isConnected && agent.state === 'failed') {
       const reasons = agent.failureReasons;
 
       toastAlert({
@@ -38,7 +37,7 @@ export function useAgentErrors() {
         ),
       });
 
-      startDisconnectTransition();
+      end();
     }
-  }, [agent, isConnectionActive, startDisconnectTransition]);
+  }, [agent, isConnected, end]);
 }
