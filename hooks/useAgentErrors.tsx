@@ -1,6 +1,28 @@
-import { useEffect } from 'react';
+import { ReactNode, useEffect } from 'react';
+import { toast as sonnerToast } from 'sonner';
 import { useAgent, useSessionContext } from '@livekit/components-react';
-import { toastAlert } from '@/components/livekit/alert-toast';
+import { WarningIcon } from '@phosphor-icons/react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+
+interface ToastProps {
+  title: ReactNode;
+  description: ReactNode;
+}
+
+function toastAlert(toast: ToastProps) {
+  const { title, description } = toast;
+
+  return sonnerToast.custom(
+    (id) => (
+      <Alert onClick={() => sonnerToast.dismiss(id)} className="bg-accent w-full md:w-[364px]">
+        <WarningIcon weight="bold" />
+        <AlertTitle>{title}</AlertTitle>
+        {description && <AlertDescription>{description}</AlertDescription>}
+      </Alert>
+    ),
+    { duration: 10_000 }
+  );
+}
 
 export function useAgentErrors() {
   const agent = useAgent();
