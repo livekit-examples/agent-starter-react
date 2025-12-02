@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { PaperPlaneRightIcon, SpinnerIcon } from '@phosphor-icons/react/dist/ssr';
-import { Button } from '@/components/livekit/button';
+import { Button } from '@/components/ui/button';
 
 const MOTION_PROPS = {
   variants: {
@@ -85,9 +85,9 @@ export function ChatInput({
           size="icon"
           type="submit"
           disabled={isDisabled}
-          variant={isDisabled ? 'secondary' : 'primary'}
+          variant={isDisabled ? 'secondary' : 'default'}
           title={isSending ? 'Sending...' : 'Send'}
-          className="self-start"
+          className="self-start rounded-full"
         >
           {isSending ? (
             <SpinnerIcon className="animate-spin" weight="bold" />
