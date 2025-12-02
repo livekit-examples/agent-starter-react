@@ -1,14 +1,12 @@
 import { cache } from 'react';
 import { type ClassValue, clsx } from 'clsx';
+import { TokenSource } from 'livekit-client';
 import { twMerge } from 'tailwind-merge';
 import { APP_CONFIG_DEFAULTS } from '@/app-config';
 import type { AppConfig } from '@/app-config';
 
 export const CONFIG_ENDPOINT = process.env.NEXT_PUBLIC_APP_CONFIG_ENDPOINT;
 export const SANDBOX_ID = process.env.SANDBOX_ID;
-
-export const THEME_STORAGE_KEY = 'theme-mode';
-export const THEME_MEDIA_QUERY = '(prefers-color-scheme: dark)';
 
 export interface SandboxConfig {
   [key: string]:
@@ -22,8 +20,14 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// https://react.dev/reference/react/cache#caveats
-// > React will invalidate the cache for all memoized functions for each server request.
+/**
+ * Get the app configuration
+ * @param headers - The headers of the request
+ * @returns The app configuration
+ *
+ * @note React will invalidate the cache for all memoized functions for each server request.
+ * https://react.dev/reference/react/cache#caveats
+ */
 export const getAppConfig = cache(async (headers: Headers): Promise<AppConfig> => {
   if (CONFIG_ENDPOINT) {
     const sandboxId = SANDBOX_ID ?? headers.get('x-sandbox-id') ?? '';
@@ -72,9 +76,11 @@ export const getAppConfig = cache(async (headers: Headers): Promise<AppConfig> =
   return APP_CONFIG_DEFAULTS;
 });
 
-// check provided accent colors against defaults
-// apply styles if they differ (or in development mode)
-// generate a hover color for the accent color by mixing it with 20% black
+/**
+ * Get styles for the app
+ * @param appConfig - The app configuration
+ * @returns A string of styles
+ */
 export function getStyles(appConfig: AppConfig) {
   const { accent, accentDark } = appConfig;
 
@@ -88,4 +94,38 @@ export function getStyles(appConfig: AppConfig) {
   ]
     .filter(Boolean)
     .join('\n');
+}
+
+/**
+ * Get a token source for a sandboxed LiveKit session
+ * @param appConfig - The app configuration
+ * @returns A token source for a sandboxed LiveKit session
+ */
+export function getSandboxTokenSource(appConfig: AppConfig) {
+  return TokenSource.custom(async () => {
+    const url = new URL(process.env.NEXT_PUBLIC_CONN_DETAILS_ENDPOINT!, window.location.origin);
+    const sandboxId = appConfig.sandboxId ?? '';
+    const roomConfig = appConfig.agentName
+      ? {
+          agents: [{ agent_name: appConfig.agentName }],
+        }
+      : undefined;
+
+    try {
+      const res = await fetch(url.toString(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Sandbox-Id': sandboxId,
+        },
+        body: JSON.stringify({
+          room_config: roomConfig,
+        }),
+      });
+      return await res.json();
+    } catch (error) {
+      console.error('Error fetching connection details:', error);
+      throw new Error('Error fetching connection details!');
+    }
+  });
 }

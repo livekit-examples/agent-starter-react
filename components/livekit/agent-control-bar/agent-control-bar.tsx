@@ -22,8 +22,8 @@ export interface ControlBarControls {
 }
 
 export interface AgentControlBarProps extends UseInputControlsProps {
-  isConnectionActive?: boolean;
   controls?: ControlBarControls;
+  isConnected?: boolean;
   onChatOpenChange?: (open: boolean) => void;
   onDeviceError?: (error: { source: Track.Source; error: Error }) => void;
 }
@@ -35,7 +35,7 @@ export function AgentControlBar({
   controls,
   saveUserChoices = true,
   className,
-  isConnectionActive = false,
+  isConnected = false,
   onDisconnect,
   onDeviceError,
   onChatOpenChange,
@@ -158,7 +158,7 @@ export function AgentControlBar({
           <Button
             variant="destructive"
             onClick={onDisconnect}
-            disabled={!isConnectionActive}
+            disabled={!isConnected}
             className="font-mono"
           >
             <PhoneDisconnectIcon weight="bold" />
