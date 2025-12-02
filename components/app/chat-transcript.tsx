@@ -2,10 +2,16 @@
 
 import { AnimatePresence, type HTMLMotionProps, motion } from 'motion/react';
 import { type ReceivedMessage } from '@livekit/components-react';
-import { ChatEntry } from '@/components/livekit/chat-entry';
+import {
+  Conversation,
+  ConversationContent,
+  ConversationScrollButton,
+} from '@/components/ai-elements/conversation';
+import { Message, MessageContent, MessageResponse } from '@/components/ai-elements/message';
+import { cn } from '@/lib/utils';
 
 const MotionContainer = motion.create('div');
-const MotionChatEntry = motion.create(ChatEntry);
+const MotionMessage = motion.create(Message);
 
 const CONTAINER_MOTION_PROPS = {
   variants: {
@@ -14,8 +20,6 @@ const CONTAINER_MOTION_PROPS = {
       transition: {
         ease: 'easeOut',
         duration: 0.3,
-        staggerChildren: 0.1,
-        staggerDirection: -1,
       },
     },
     visible: {
@@ -24,9 +28,6 @@ const CONTAINER_MOTION_PROPS = {
         delay: 0.2,
         ease: 'easeOut',
         duration: 0.3,
-        stagerDelay: 0.2,
-        staggerChildren: 0.1,
-        staggerDirection: 1,
       },
     },
   },
@@ -46,6 +47,8 @@ const MESSAGE_MOTION_PROPS = {
       translateY: 0,
     },
   },
+  initial: 'hidden',
+  whileInView: 'visible',
 };
 
 interface ChatTranscriptProps {
@@ -56,33 +59,46 @@ interface ChatTranscriptProps {
 export function ChatTranscript({
   hidden = false,
   messages = [],
+  className,
   ...props
 }: ChatTranscriptProps & Omit<HTMLMotionProps<'div'>, 'ref'>) {
   return (
-    <AnimatePresence>
-      {!hidden && (
-        <MotionContainer {...CONTAINER_MOTION_PROPS} {...props}>
-          {messages.map((receivedMessage) => {
-            const { id, timestamp, from, message } = receivedMessage;
-            const locale = navigator?.language ?? 'en-US';
-            const messageOrigin = from?.isLocal ? 'local' : 'remote';
-            const hasBeenEdited =
-              receivedMessage.type === 'chatMessage' && !!receivedMessage.editTimestamp;
+    <div className="absolute top-0 flex h-full w-full flex-col">
+      <AnimatePresence>
+        {!hidden && (
+          <MotionContainer
+            {...props}
+            {...CONTAINER_MOTION_PROPS}
+            className={cn('flex h-full w-full flex-col gap-4', className)}
+          >
+            <Conversation>
+              <ConversationContent className="mx-auto w-full max-w-2xl px-4 pt-40 pb-[150px] md:px-6 md:pb-[200px]">
+                {messages.map((receivedMessage) => {
+                  const { id, timestamp, from, message } = receivedMessage;
+                  const locale = navigator?.language ?? 'en-US';
+                  const messageOrigin = from?.isLocal ? 'user' : 'assistant';
+                  const time = new Date(timestamp);
+                  const title = time.toLocaleTimeString(locale, { timeStyle: 'full' });
 
-            return (
-              <MotionChatEntry
-                key={id}
-                locale={locale}
-                timestamp={timestamp}
-                message={message}
-                messageOrigin={messageOrigin}
-                hasBeenEdited={hasBeenEdited}
-                {...MESSAGE_MOTION_PROPS}
-              />
-            );
-          })}
-        </MotionContainer>
-      )}
-    </AnimatePresence>
+                  return (
+                    <MotionMessage
+                      key={id}
+                      title={title}
+                      from={messageOrigin}
+                      {...MESSAGE_MOTION_PROPS}
+                    >
+                      <MessageContent className="group-[.is-user]:rounded-4xl">
+                        <MessageResponse>{message}</MessageResponse>
+                      </MessageContent>
+                    </MotionMessage>
+                  );
+                })}
+              </ConversationContent>
+              <ConversationScrollButton className="bottom-48" />
+            </Conversation>
+          </MotionContainer>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
