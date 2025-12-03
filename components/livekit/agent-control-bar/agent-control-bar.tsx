@@ -2,6 +2,7 @@
 
 import { type HTMLAttributes, useCallback, useState } from 'react';
 import { Track } from 'livekit-client';
+import { motion } from 'motion/react';
 import { useChat, useRemoteParticipants } from '@livekit/components-react';
 import { ChatTextIcon, PhoneDisconnectIcon } from '@phosphor-icons/react/dist/ssr';
 import { AgentTrackControl } from '@/components/livekit/agent-track-control';
@@ -9,9 +10,29 @@ import { AgentTrackToggle, toggleVariants } from '@/components/livekit/agent-tra
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
 import { cn } from '@/lib/utils';
-import { ChatInput } from './chat-input';
+import { AgentChatInput } from './agent-chat-input';
 import { UseInputControlsProps, useInputControls } from './hooks/use-input-controls';
 import { usePublishPermissions } from './hooks/use-publish-permissions';
+
+const MOTION_PROPS = {
+  variants: {
+    hidden: {
+      height: 0,
+      opacity: 0,
+      marginBottom: 0,
+    },
+    visible: {
+      height: 'auto',
+      opacity: 1,
+      marginBottom: 12,
+    },
+  },
+  initial: 'hidden',
+  transition: {
+    duration: 0.3,
+    ease: 'easeOut',
+  },
+};
 
 export interface ControlBarControls {
   leave?: boolean;
@@ -89,11 +110,18 @@ export function AgentControlBar({
     >
       {/* Chat Input */}
       {visibleControls.chat && (
-        <ChatInput
-          chatOpen={chatOpen}
-          isAgentAvailable={isAgentAvailable}
-          onSend={handleSendMessage}
-        />
+        <motion.div
+          {...MOTION_PROPS}
+          inert={!chatOpen}
+          animate={chatOpen ? 'visible' : 'hidden'}
+          className="border-input/50 flex w-full items-start overflow-hidden border-b"
+        >
+          <AgentChatInput
+            chatOpen={chatOpen}
+            isAgentAvailable={isAgentAvailable}
+            onSend={handleSendMessage}
+          />
+        </motion.div>
       )}
 
       <div className="flex gap-1">
