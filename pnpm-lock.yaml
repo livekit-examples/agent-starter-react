@@ -10,7 +10,7 @@ importers:
     dependencies:
       '@livekit/components-react':
         specifier: ^2.9.15
-        version: 2.9.16(@livekit/krisp-noise-filter@0.2.16(livekit-client@2.15.15(@types/dom-mediacapture-record@1.0.22)))(livekit-client@2.15.15(@types/dom-mediacapture-record@1.0.22))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(tslib@2.8.1)
+        version: 2.9.16(@livekit/krisp-noise-filter@0.2.16(livekit-client@2.16.0(@types/dom-mediacapture-record@1.0.22)))(livekit-client@2.16.0(@types/dom-mediacapture-record@1.0.22))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(tslib@2.8.1)
       '@livekit/protocol':
         specifier: ^1.40.0
         version: 1.41.0
@@ -40,7 +40,7 @@ importers:
         version: 6.1.0
       livekit-client:
         specifier: ^2.15.15
-        version: 2.15.15(@types/dom-mediacapture-record@1.0.22)
+        version: 2.16.0(@types/dom-mediacapture-record@1.0.22)
       livekit-server-sdk:
         specifier: ^2.13.2
         version: 2.13.3
@@ -1876,8 +1876,8 @@ packages:
     resolution: {integrity: sha512-xi6IyHML+c9+Q3W0S4fCQJOym42pyurFiJUHEcEyHS0CeKzia4yZDEsLlqOFykxOdHpNy0NmvVO31vcSqAxJCg==}
     engines: {node: '>= 12.0.0'}
 
-  livekit-client@2.15.15:
-    resolution: {integrity: sha512-z1mrGIyn6BZhCf4VDFcIuvHkbWftihwO6Y9+Kicr4VWQ2TH8pb1PIF97OsS1TiLD2QlhIFp2HNYfuvv6Kz2fVA==}
+  livekit-client@2.16.0:
+    resolution: {integrity: sha512-2iYJ4dok17yV5CGeaY1yaFvz7rMuNUmXN1+nXvhUrkxTS/RcuteWTpxwrgLG/Vl1yxkf/YquVQ7bbRwFye20CA==}
     peerDependencies:
       '@types/dom-mediacapture-record': ^1
 
@@ -2002,6 +2002,7 @@ packages:
   next@15.5.2:
     resolution: {integrity: sha512-H8Otr7abj1glFhbGnvUt3gz++0AF1+QoCXEBmd/6aKbfdFwrn0LpA836Ed5+00va/7HQSDD+mOoVhn3tNy3e/Q==}
     engines: {node: ^18.18.0 || ^19.8.0 || >= 20.0.0}
+    deprecated: This version has a security vulnerability. Please upgrade to a patched version. See https://nextjs.org/blog/CVE-2025-66478 for more details.
     hasBin: true
     peerDependencies:
       '@opentelemetry/api': ^1.1.0
@@ -2833,31 +2834,31 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@livekit/components-core@0.12.11(livekit-client@2.15.15(@types/dom-mediacapture-record@1.0.22))(tslib@2.8.1)':
+  '@livekit/components-core@0.12.11(livekit-client@2.16.0(@types/dom-mediacapture-record@1.0.22))(tslib@2.8.1)':
     dependencies:
       '@floating-ui/dom': 1.6.13
-      livekit-client: 2.15.15(@types/dom-mediacapture-record@1.0.22)
+      livekit-client: 2.16.0(@types/dom-mediacapture-record@1.0.22)
       loglevel: 1.9.1
       rxjs: 7.8.2
       tslib: 2.8.1
 
-  '@livekit/components-react@2.9.16(@livekit/krisp-noise-filter@0.2.16(livekit-client@2.15.15(@types/dom-mediacapture-record@1.0.22)))(livekit-client@2.15.15(@types/dom-mediacapture-record@1.0.22))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(tslib@2.8.1)':
+  '@livekit/components-react@2.9.16(@livekit/krisp-noise-filter@0.2.16(livekit-client@2.16.0(@types/dom-mediacapture-record@1.0.22)))(livekit-client@2.16.0(@types/dom-mediacapture-record@1.0.22))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(tslib@2.8.1)':
     dependencies:
-      '@livekit/components-core': 0.12.11(livekit-client@2.15.15(@types/dom-mediacapture-record@1.0.22))(tslib@2.8.1)
+      '@livekit/components-core': 0.12.11(livekit-client@2.16.0(@types/dom-mediacapture-record@1.0.22))(tslib@2.8.1)
       clsx: 2.1.1
       events: 3.3.0
       jose: 6.1.0
-      livekit-client: 2.15.15(@types/dom-mediacapture-record@1.0.22)
+      livekit-client: 2.16.0(@types/dom-mediacapture-record@1.0.22)
       react: 19.1.1
       react-dom: 19.1.1(react@19.1.1)
       tslib: 2.8.1
       usehooks-ts: 3.1.1(react@19.1.1)
     optionalDependencies:
-      '@livekit/krisp-noise-filter': 0.2.16(livekit-client@2.15.15(@types/dom-mediacapture-record@1.0.22))
+      '@livekit/krisp-noise-filter': 0.2.16(livekit-client@2.16.0(@types/dom-mediacapture-record@1.0.22))
 
-  '@livekit/krisp-noise-filter@0.2.16(livekit-client@2.15.15(@types/dom-mediacapture-record@1.0.22))':
+  '@livekit/krisp-noise-filter@0.2.16(livekit-client@2.16.0(@types/dom-mediacapture-record@1.0.22))':
     dependencies:
-      livekit-client: 2.15.15(@types/dom-mediacapture-record@1.0.22)
+      livekit-client: 2.16.0(@types/dom-mediacapture-record@1.0.22)
     optional: true
 
   '@livekit/mutex@1.1.1': {}
@@ -4380,7 +4381,7 @@ snapshots:
       lightningcss-win32-arm64-msvc: 1.30.1
       lightningcss-win32-x64-msvc: 1.30.1
 
-  livekit-client@2.15.15(@types/dom-mediacapture-record@1.0.22):
+  livekit-client@2.16.0(@types/dom-mediacapture-record@1.0.22):
     dependencies:
       '@livekit/mutex': 1.1.1
       '@livekit/protocol': 1.42.2
