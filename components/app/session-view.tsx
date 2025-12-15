@@ -4,12 +4,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useSessionContext, useSessionMessages } from '@livekit/components-react';
 import type { AppConfig } from '@/app-config';
+import { AgentControlBar, type ControlBarControls } from '@/components/agents-ui/agent-control-bar';
 import { ChatTranscript } from '@/components/app/chat-transcript';
 import { TileLayout } from '@/components/app/tile-layout';
-import {
-  AgentControlBar,
-  type ControlBarControls,
-} from '@/components/livekit/agent-control-bar/agent-control-bar';
 import { cn } from '@/lib/utils';
 import { Shimmer } from '../ai-elements/shimmer';
 
@@ -146,10 +143,12 @@ export const SessionView = ({
         <div className="bg-background relative mx-auto max-w-2xl pb-3 md:pb-12">
           <Fade bottom className="absolute inset-x-0 top-0 h-4 -translate-y-full" />
           <AgentControlBar
+            variant="livekit"
             controls={controls}
+            isChatOpen={chatOpen}
             isConnected={session.isConnected}
             onDisconnect={session.end}
-            onChatOpenChange={setChatOpen}
+            onIsChatOpenChange={setChatOpen}
           />
         </div>
       </MotionBottom>

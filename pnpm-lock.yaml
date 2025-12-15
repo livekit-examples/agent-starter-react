@@ -9,7 +9,7 @@ importers:
   .:
     dependencies:
       '@livekit/components-react':
-        specifier: ^2.9.15
+        specifier: ^2.9.16
         version: 2.9.16(@livekit/krisp-noise-filter@0.2.16(livekit-client@2.15.15(@types/dom-mediacapture-record@1.0.22)))(livekit-client@2.15.15(@types/dom-mediacapture-record@1.0.22))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(tslib@2.8.1)
       '@livekit/protocol':
         specifier: ^1.40.0
