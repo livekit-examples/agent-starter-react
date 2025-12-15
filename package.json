@@ -35,7 +35,7 @@
     "react-dom": "^19.0.0",
     "sonner": "^2.0.7",
     "streamdown": "^1.6.9",
-    "tailwind-merge": "^3.3.0",
+    "tailwind-merge": "^3.3.1",
     "use-stick-to-bottom": "^1.1.1"
   },
   "devDependencies": {

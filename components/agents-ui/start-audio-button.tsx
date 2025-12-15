@@ -1,6 +1,6 @@
+import { Room } from 'livekit-client';
 import { useEnsureRoom, useStartAudio } from '@livekit/components-react';
 import { Button } from '@/components/ui/button';
-import { Room } from 'livekit-client';
 
 export interface StartAudioButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   room?: Room;

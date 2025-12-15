@@ -1,14 +1,14 @@
 'use client';
 
+import { AnimatePresence } from 'motion/react';
 import { type AgentState, type ReceivedMessage } from '@livekit/components-react';
+import { AgentChatIndicator } from '@/components/agents-ui/agent-chat-indicator';
 import {
   Conversation,
   ConversationContent,
   ConversationScrollButton,
 } from '@/components/ai-elements/conversation';
 import { Message, MessageContent, MessageResponse } from '@/components/ai-elements/message';
-import { AgentChatIndicator } from '@/components/agents-ui/agent-chat-indicator';
-import { AnimatePresence } from 'motion/react';
 
 export interface AgentChatTranscriptProps {
   agentState?: AgentState;

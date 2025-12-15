@@ -1,22 +1,22 @@
 'use client';
 
-import { useEffect, useRef, type HTMLAttributes, useState } from 'react';
+import { type HTMLAttributes, useEffect, useRef, useState } from 'react';
 import { Track } from 'livekit-client';
+import { Loader, MessageSquareTextIcon, SendHorizontal } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useChat } from '@livekit/components-react';
-import { Loader, MessageSquareTextIcon, SendHorizontal } from 'lucide-react';
-import { Toggle } from '@/components/ui/toggle';
-import { Button } from '@/components/ui/button';
+import { AgentDisconnectButton } from '@/components/agents-ui/agent-disconnect-button';
+import { AgentTrackControl } from '@/components/agents-ui/agent-track-control';
 import {
   AgentTrackToggle,
   agentTrackToggleVariants,
 } from '@/components/agents-ui/agent-track-toggle';
-import { AgentTrackControl } from '@/components/agents-ui/agent-track-control';
-import { AgentDisconnectButton } from '@/components/agents-ui/agent-disconnect-button';
+import { Button } from '@/components/ui/button';
+import { Toggle } from '@/components/ui/toggle';
 import {
+  type UseInputControlsProps,
   useInputControls,
   usePublishPermissions,
-  type UseInputControlsProps,
 } from '@/hooks/agents-ui/use-agent-control-bar';
 import { cn } from '@/lib/utils';
 
@@ -195,15 +195,14 @@ export function AgentControlBar({
     <div
       aria-label="Voice assistant controls"
       className={cn(
-        'bg-background border-input/50 dark:border-muted flex flex-col border drop-shadow-md/3  p-3',
+        'bg-background border-input/50 dark:border-muted flex flex-col border p-3 drop-shadow-md/3',
         variant === 'livekit' ? 'rounded-[31px]' : 'rounded-lg',
-        className,
+        className
       )}
       {...props}
     >
       <motion.div
         {...MOTION_PROPS}
-        // @ts-ignore
         inert={!(isChatOpen || isChatOpenUncontrolled)}
         animate={isChatOpen || isChatOpenUncontrolled ? 'visible' : 'hidden'}
         className="border-input/50 flex w-full items-start overflow-hidden border-b"
@@ -234,7 +233,7 @@ export function AgentControlBar({
                 variant === 'livekit' && [
                   TOGGLE_VARIANT_1,
                   'rounded-full [&_button:first-child]:rounded-l-full [&_button:last-child]:rounded-r-full',
-                ],
+                ]
               )}
             />
           )}
@@ -256,7 +255,7 @@ export function AgentControlBar({
                 variant === 'livekit' && [
                   TOGGLE_VARIANT_1,
                   'rounded-full [&_button:first-child]:rounded-l-full [&_button:last-child]:rounded-r-full',
-                ],
+                ]
               )}
             />
           )}
@@ -301,7 +300,7 @@ export function AgentControlBar({
             disabled={!isConnected}
             className={cn(
               variant === 'livekit' &&
-                'rounded-full bg-destructive/10 dark:bg-destructive/10 text-destructive hover:bg-destructive/20 dark:hover:bg-destructive/20 focus:bg-destructive/20 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/4 font-mono text-xs font-bold tracking-wider',
+                'bg-destructive/10 dark:bg-destructive/10 text-destructive hover:bg-destructive/20 dark:hover:bg-destructive/20 focus:bg-destructive/20 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/4 rounded-full font-mono text-xs font-bold tracking-wider'
             )}
           >
             <span className="hidden md:inline">END CALL</span>

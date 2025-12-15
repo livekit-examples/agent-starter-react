@@ -1,8 +1,8 @@
 import {
-  SessionProvider,
   RoomAudioRenderer,
-  type SessionProviderProps,
   type RoomAudioRendererProps,
+  SessionProvider,
+  type SessionProviderProps,
 } from '@livekit/components-react';
 
 export type AgentSessionProviderProps = SessionProviderProps & RoomAudioRendererProps;

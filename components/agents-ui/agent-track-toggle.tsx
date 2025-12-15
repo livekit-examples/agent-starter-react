@@ -1,16 +1,16 @@
 import * as React from 'react';
 import { cva } from 'class-variance-authority';
 import { Track } from 'livekit-client';
-import { useTrackToggle } from '@livekit/components-react';
 import {
+  LoaderIcon,
   MicIcon,
   MicOffIcon,
-  MonitorUpIcon,
   MonitorOffIcon,
-  LoaderIcon,
+  MonitorUpIcon,
   VideoIcon,
   VideoOffIcon,
 } from 'lucide-react';
+import { useTrackToggle } from '@livekit/components-react';
 import { Toggle } from '@/components/ui/toggle';
 import { cn } from '@/lib/utils';
 
@@ -80,7 +80,7 @@ export function AgentTrackToggle({
         agentTrackToggleVariants({
           variant: variant ?? 'default',
           className,
-        }),
+        })
       )}
       {...props}
     >
