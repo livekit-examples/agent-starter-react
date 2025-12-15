@@ -2,14 +2,11 @@
 
 import { useMemo } from 'react';
 import { TokenSource } from 'livekit-client';
-import {
-  RoomAudioRenderer,
-  SessionProvider,
-  StartAudio,
-  useSession,
-} from '@livekit/components-react';
+import { useSession } from '@livekit/components-react';
 import { WarningIcon } from '@phosphor-icons/react/dist/ssr';
 import type { AppConfig } from '@/app-config';
+import { AgentSessionProvider } from '@/components/agents-ui/agent-session-provider';
+import { StartAudioButton } from '@/components/agents-ui/start-audio-button';
 import { ViewController } from '@/components/app/view-controller';
 import { Toaster } from '@/components/ui/sonner';
 import { useAgentErrors } from '@/hooks/useAgentErrors';
@@ -42,13 +39,12 @@ export function App({ appConfig }: AppProps) {
   );
 
   return (
-    <SessionProvider session={session}>
+    <AgentSessionProvider session={session}>
       <AppSetup />
       <main className="grid h-svh grid-cols-1 place-content-center">
         <ViewController appConfig={appConfig} />
       </main>
-      <StartAudio label="Start Audio" />
-      <RoomAudioRenderer />
+      <StartAudioButton label="Start Audio" />
       <Toaster
         icons={{
           warning: <WarningIcon weight="bold" />,
@@ -63,6 +59,6 @@ export function App({ appConfig }: AppProps) {
           } as React.CSSProperties
         }
       />
-    </SessionProvider>
+    </AgentSessionProvider>
   );
 }

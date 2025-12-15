@@ -1,15 +1,17 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { type VariantProps, cva } from 'class-variance-authority';
 import { LocalAudioTrack, LocalVideoTrack } from 'livekit-client';
 import {
-  BarVisualizer,
   type TrackReferenceOrPlaceholder,
   useTrackToggle,
+  useMaybeRoomContext,
+  useMediaDeviceSelect,
 } from '@livekit/components-react';
-import { useMaybeRoomContext, useMediaDeviceSelect } from '@livekit/components-react';
-import { AgentTrackToggle, type toggleVariants } from '@/components/livekit/agent-track-toggle';
+
+import { AgentAudioVisualizerBar } from '@/components/agents-ui/agent-audio-visualizer-bar';
+import { AgentTrackToggle } from '@/components/agents-ui/agent-track-toggle';
 import {
   Select,
   SelectContent,
@@ -18,26 +20,43 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { toggleVariants } from '../ui/toggle';
 
 const selectVariants = cva(
   [
-    'border-none pl-2 shadow-none !text-foreground',
-    'bg-muted data-[state=on]:bg-muted hover:text-foreground',
-    'peer-data-[state=off]/track:text-destructive peer-data-[state=off]/track:[&_svg]:!text-destructive',
-    '[&_svg]:!opacity-100',
+    'rounded-l-none shadow-none pl-2 ',
+    'text-foreground hover:text-muted-foreground',
+    'peer-data-[state=on]/track:bg-muted peer-data-[state=on]/track:hover:bg-foreground/10',
+    'peer-data-[state=off]/track:text-destructive',
+    'peer-data-[state=off]/track:focus-visible:border-destructive peer-data-[state=off]/track:focus-visible:ring-destructive/30',
+    '[&_svg]:opacity-100',
   ],
   {
     variants: {
       variant: {
-        primary: [
-          'text-destructive hover:text-foreground hover:bg-foreground/10 hover:data-[state=on]:bg-foreground/10',
-          'dark:bg-muted dark:hover:bg-foreground/10 dark:hover:data-[state=on]:bg-foreground/10',
-          '[&_svg]:!text-foreground hover:data-[state=on]:[&_svg]:!text-destructive',
+        default: [
+          'border-none',
+          'peer-data-[state=off]/track:bg-destructive/10',
+          'peer-data-[state=off]/track:hover:bg-destructive/15',
+          'peer-data-[state=off]/track:[&_svg]:!text-destructive',
+
+          'dark:peer-data-[state=on]/track:bg-accent',
+          'dark:peer-data-[state=on]/track:hover:bg-foreground/10',
+          'dark:peer-data-[state=off]/track:bg-destructive/10',
+          'dark:peer-data-[state=off]/track:hover:bg-destructive/15',
         ],
-        secondary: [
-          'hover:bg-foreground/10 data-[state=on]:bg-blue-500/20 data-[state=on]:hover:bg-blue-500/30 data-[state=on]:text-blue-700',
-          'dark:text-foreground dark:data-[state=on]:text-blue-300',
-          '[&_svg]:!text-foreground',
+        outline: [
+          'border border-l-0',
+          'peer-data-[state=off]/track:border-destructive/20',
+          'peer-data-[state=off]/track:bg-destructive/10',
+          'peer-data-[state=off]/track:hover:bg-destructive/15',
+          'peer-data-[state=off]/track:[&_svg]:!text-destructive',
+          'peer-data-[state=on]/track:hover:border-foreground/12',
+
+          'dark:peer-data-[state=off]/track:bg-destructive/10',
+          'dark:peer-data-[state=off]/track:hover:bg-destructive/15',
+          'dark:peer-data-[state=on]/track:bg-accent',
+          'dark:peer-data-[state=on]/track:hover:bg-foreground/10',
         ],
       },
       size: {
@@ -46,10 +65,10 @@ const selectVariants = cva(
       },
     },
     defaultVariants: {
-      variant: 'primary',
+      variant: 'default',
       size: 'default',
     },
-  }
+  },
 );
 
 type DeviceSelectProps = React.ComponentProps<typeof SelectTrigger> &
@@ -66,7 +85,7 @@ export function TrackDeviceSelect({
   kind,
   track,
   size = 'default',
-  variant = 'primary',
+  variant = 'default',
   requestPermissions = false,
   onMediaDeviceError,
   onDeviceListChange,
@@ -88,13 +107,12 @@ export function TrackDeviceSelect({
     onDeviceListChange?.(devices);
   }, [devices, onDeviceListChange]);
 
-  // When the select opens, ensure that media devices are re-requested in case when they were last
-  // requested, permissions were not granted
-  useLayoutEffect(() => {
+  const handleOpenChange = (open: boolean) => {
+    setOpen(open);
     if (open) {
       setRequestPermissionsState(true);
     }
-  }, [open]);
+  };
 
   const handleActiveDeviceChange = (deviceId: string) => {
     setActiveMediaDevice(deviceId);
@@ -111,7 +129,7 @@ export function TrackDeviceSelect({
     <Select
       open={open}
       value={activeDeviceId}
-      onOpenChange={setOpen}
+      onOpenChange={handleOpenChange}
       onValueChange={handleActiveDeviceChange}
     >
       <SelectTrigger className={cn(selectVariants({ size, variant }), props.className)}>
@@ -130,48 +148,54 @@ export function TrackDeviceSelect({
   );
 }
 
-interface AgentTrackControlProps extends VariantProps<typeof toggleVariants> {
+export type AgentTrackControlProps = VariantProps<typeof toggleVariants> & {
   kind: MediaDeviceKind;
   source: Parameters<typeof useTrackToggle>[0]['source'];
   pressed?: boolean;
   pending?: boolean;
   disabled?: boolean;
   className?: string;
-  audioTrackRef?: TrackReferenceOrPlaceholder;
+  audioTrack?: TrackReferenceOrPlaceholder;
   onPressedChange?: (pressed: boolean) => void;
   onMediaDeviceError?: (error: Error) => void;
   onActiveDeviceChange?: (deviceId: string) => void;
-}
+};
 
 export function AgentTrackControl({
   kind,
-  variant,
+  variant = 'default',
   source,
   pressed,
   pending,
   disabled,
   className,
-  audioTrackRef,
+  audioTrack,
   onPressedChange,
   onMediaDeviceError,
   onActiveDeviceChange,
 }: AgentTrackControlProps) {
   return (
-    <div className={cn('flex items-center gap-0', className)}>
+    <div
+      className={cn(
+        'flex items-center gap-0 rounded-md',
+        variant === 'outline' && 'shadow-xs [&_button]:shadow-none',
+        className,
+      )}
+    >
       <AgentTrackToggle
-        variant={variant}
+        variant={variant ?? 'default'}
         source={source}
         pressed={pressed}
         pending={pending}
         disabled={disabled}
         onPressedChange={onPressedChange}
-        className="peer/track group/track has-[.audiovisualizer]:w-auto has-[.audiovisualizer]:px-3 has-[~_button]:rounded-r-none has-[~_button]:pr-2 has-[~_button]:pl-3"
+        className="peer/track group/track has-[.audiovisualizer]:w-auto has-[.audiovisualizer]:px-3 has-[~_button]:rounded-r-none has-[~_button]:pr-2 has-[~_button]:pl-3 has-[~_button]:border-r-0 focus:z-10"
       >
-        {audioTrackRef && (
-          <BarVisualizer
+        {audioTrack && (
+          <AgentAudioVisualizerBar
+            size="icon"
             barCount={3}
-            track={audioTrackRef}
-            options={{ minHeight: 5 }}
+            audioTrack={audioTrack}
             className="audiovisualizer flex h-6 w-auto items-center justify-center gap-0.5"
           >
             <span
@@ -181,23 +205,24 @@ export function AgentTrackControl({
                 'data-lk-muted:bg-muted',
               ])}
             />
-          </BarVisualizer>
+          </AgentAudioVisualizerBar>
         )}
       </AgentTrackToggle>
-
-      <TrackDeviceSelect
-        size="sm"
-        kind={kind}
-        variant={variant}
-        requestPermissions={false}
-        onMediaDeviceError={onMediaDeviceError}
-        onActiveDeviceChange={onActiveDeviceChange}
-        className={cn([
-          'relative',
-          'before:bg-border before:absolute before:inset-y-0 before:-left-px before:my-2.5 before:w-px has-[~_button]:before:content-[""]',
-          !pressed && 'before:bg-destructive/20',
-        ])}
-      />
+      {kind && (
+        <TrackDeviceSelect
+          size="sm"
+          kind={kind}
+          variant={variant}
+          requestPermissions={false}
+          onMediaDeviceError={onMediaDeviceError}
+          onActiveDeviceChange={onActiveDeviceChange}
+          className={cn([
+            'relative',
+            'before:bg-border before:absolute before:inset-y-0 before:left-0 before:my-2.5 before:w-px has-[~_button]:before:content-[""]',
+            !pressed && 'before:bg-destructive/20',
+          ])}
+        />
+      )}
     </div>
   );
 }
