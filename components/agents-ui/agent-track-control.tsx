@@ -5,11 +5,10 @@ import { type VariantProps, cva } from 'class-variance-authority';
 import { LocalAudioTrack, LocalVideoTrack } from 'livekit-client';
 import {
   type TrackReferenceOrPlaceholder,
-  useTrackToggle,
   useMaybeRoomContext,
   useMediaDeviceSelect,
+  useTrackToggle,
 } from '@livekit/components-react';
-
 import { AgentAudioVisualizerBar } from '@/components/agents-ui/agent-audio-visualizer-bar';
 import { AgentTrackToggle } from '@/components/agents-ui/agent-track-toggle';
 import {
@@ -68,7 +67,7 @@ const selectVariants = cva(
       variant: 'default',
       size: 'default',
     },
-  },
+  }
 );
 
 type DeviceSelectProps = React.ComponentProps<typeof SelectTrigger> &
@@ -179,7 +178,7 @@ export function AgentTrackControl({
       className={cn(
         'flex items-center gap-0 rounded-md',
         variant === 'outline' && 'shadow-xs [&_button]:shadow-none',
-        className,
+        className
       )}
     >
       <AgentTrackToggle
@@ -189,7 +188,7 @@ export function AgentTrackControl({
         pending={pending}
         disabled={disabled}
         onPressedChange={onPressedChange}
-        className="peer/track group/track has-[.audiovisualizer]:w-auto has-[.audiovisualizer]:px-3 has-[~_button]:rounded-r-none has-[~_button]:pr-2 has-[~_button]:pl-3 has-[~_button]:border-r-0 focus:z-10"
+        className="peer/track group/track focus:z-10 has-[.audiovisualizer]:w-auto has-[.audiovisualizer]:px-3 has-[~_button]:rounded-r-none has-[~_button]:border-r-0 has-[~_button]:pr-2 has-[~_button]:pl-3"
       >
         {audioTrack && (
           <AgentAudioVisualizerBar

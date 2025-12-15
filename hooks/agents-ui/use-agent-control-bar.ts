@@ -2,10 +2,10 @@ import { useCallback, useMemo } from 'react';
 import { Track } from 'livekit-client';
 import {
   type TrackReferenceOrPlaceholder,
-  useTrackToggle,
   useLocalParticipant,
-  usePersistentUserChoices,
   useLocalParticipantPermissions,
+  usePersistentUserChoices,
+  useTrackToggle,
 } from '@livekit/components-react';
 
 const trackSourceToProtocol = (source: Track.Source) => {
@@ -105,14 +105,14 @@ export function useInputControls({
     (deviceId: string) => {
       saveAudioInputDeviceId(deviceId ?? 'default');
     },
-    [saveAudioInputDeviceId],
+    [saveAudioInputDeviceId]
   );
 
   const handleVideoDeviceChange = useCallback(
     (deviceId: string) => {
       saveVideoInputDeviceId(deviceId ?? 'default');
     },
-    [saveVideoInputDeviceId],
+    [saveVideoInputDeviceId]
   );
 
   const handleToggleCamera = useCallback(
@@ -124,7 +124,7 @@ export function useInputControls({
       // persist video input enabled preference
       saveVideoInputEnabled(!cameraToggle.enabled);
     },
-    [cameraToggle, screenShareToggle, saveVideoInputEnabled],
+    [cameraToggle, screenShareToggle, saveVideoInputEnabled]
   );
 
   const handleToggleMicrophone = useCallback(
@@ -133,7 +133,7 @@ export function useInputControls({
       // persist audio input enabled preference
       saveAudioInputEnabled(!microphoneToggle.enabled);
     },
-    [microphoneToggle, saveAudioInputEnabled],
+    [microphoneToggle, saveAudioInputEnabled]
   );
 
   const handleToggleScreenShare = useCallback(
@@ -143,16 +143,16 @@ export function useInputControls({
       }
       await screenShareToggle.toggle(enabled);
     },
-    [cameraToggle, screenShareToggle],
+    [cameraToggle, screenShareToggle]
   );
   const handleMicrophoneDeviceSelectError = useCallback(
     (error: Error) => onDeviceError?.({ source: Track.Source.Microphone, error }),
-    [onDeviceError],
+    [onDeviceError]
   );
 
   const handleCameraDeviceSelectError = useCallback(
     (error: Error) => onDeviceError?.({ source: Track.Source.Camera, error }),
-    [onDeviceError],
+    [onDeviceError]
   );
 
   return {
