@@ -93,17 +93,19 @@ export const APP_CONFIG_DEFAULTS: AppConfig = {
   accentDark: '#1fd5f9',
   startButtonText: 'Start call',
 
-  // for LiveKit Cloud Sandbox
-  sandboxId: undefined,
+  // agent dispatch configuration
   agentName: undefined,
+
+  // LiveKit Cloud Sandbox configuration
+  sandboxId: undefined,
 };
 ```
 
 You can update these values in [`app-config.ts`](./app-config.ts) to customize branding, features, and UI text for your deployment.
 
 > [!NOTE]
-> The `sandboxId` and `agentName` are for the LiveKit Cloud Sandbox environment.
-> They are not used for local development.
+> The `sandboxId` is for the LiveKit Cloud Sandbox environment.
+> It is not used for local development.
 
 #### Environment Variables
 
@@ -113,6 +115,11 @@ You'll also need to configure your LiveKit credentials in `.env.local` (copy `.e
 LIVEKIT_API_KEY=your_livekit_api_key
 LIVEKIT_API_SECRET=your_livekit_api_secret
 LIVEKIT_URL=https://your-livekit-server-url
+
+# Agent dispatch (https://docs.livekit.io/agents/server/agent-dispatch)
+# Leave AGENT_NAME blank to enable automatic dispatch
+# Provide an agent name to enable explicit dispatch
+AGENT_NAME=
 ```
 
 These are required for the voice agent functionality to work with your LiveKit project.
