@@ -74,7 +74,7 @@ export const SessionView = ({
     microphone: true,
     chat: appConfig.supportsChatInput,
     camera: appConfig.supportsVideoInput,
-    screenShare: appConfig.supportsVideoInput,
+    screenShare: appConfig.supportsScreenShare,
   };
 
   useEffect(() => {
