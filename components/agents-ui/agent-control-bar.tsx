@@ -18,7 +18,7 @@ import {
   useInputControls,
   usePublishPermissions,
 } from '@/hooks/agents-ui/use-agent-control-bar';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/shadcn/utils';
 
 const TOGGLE_VARIANT_1 = [
   '[&_[data-state=off]]:bg-accent [&_[data-state=off]]:hover:bg-foreground/10',

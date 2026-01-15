@@ -21,7 +21,7 @@ import {
   type Coordinate,
   useAgentAudioVisualizerGridAnimator,
 } from '@/hooks/agents-ui/use-agent-audio-visualizer-grid';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/shadcn/utils';
 
 function cloneSingleChild(
   children: ReactNode | ReactNode[],

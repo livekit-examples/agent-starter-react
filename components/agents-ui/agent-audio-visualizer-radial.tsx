@@ -9,7 +9,7 @@ import {
   useMultibandTrackVolume,
 } from '@livekit/components-react';
 import { useAgentAudioVisualizerRadialAnimator } from '@/hooks/agents-ui/use-agent-audio-visualizer-radial';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/shadcn/utils';
 
 export const AgentAudioVisualizerRadialVariants = cva(
   [

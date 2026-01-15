@@ -1,7 +1,5 @@
 import { cache } from 'react';
-import { type ClassValue, clsx } from 'clsx';
 import { TokenSource } from 'livekit-client';
-import { twMerge } from 'tailwind-merge';
 import { APP_CONFIG_DEFAULTS } from '@/app-config';
 import type { AppConfig } from '@/app-config';
 
@@ -14,10 +12,6 @@ export interface SandboxConfig {
     | { type: 'number'; value: number }
     | { type: 'boolean'; value: boolean }
     | null;
-}
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
 }
 
 /**

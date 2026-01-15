@@ -17,7 +17,7 @@ import {
   useMultibandTrackVolume,
 } from '@livekit/components-react';
 import { useAgentAudioVisualizerBarAnimator } from '@/hooks/agents-ui/use-agent-audio-visualizer-bar';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/shadcn/utils';
 
 function cloneSingleChild(
   children: ReactNode | ReactNode[],

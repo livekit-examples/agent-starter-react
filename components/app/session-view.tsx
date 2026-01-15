@@ -10,7 +10,7 @@ import {
 } from '@/components/agents-ui/agent-control-bar';
 import { ChatTranscript } from '@/components/app/chat-transcript';
 import { TileLayout } from '@/components/app/tile-layout';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/shadcn/utils';
 import { Shimmer } from '../ai-elements/shimmer';
 
 const MotionBottom = motion.create('div');

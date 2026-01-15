@@ -9,7 +9,7 @@ import {
   useVoiceAssistant,
 } from '@livekit/components-react';
 import { AgentAudioVisualizerBar } from '@/components/agents-ui/agent-audio-visualizer-bar';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/shadcn/utils';
 
 const MotionContainer = motion.create('div');
 
