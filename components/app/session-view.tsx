@@ -4,7 +4,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useSessionContext, useSessionMessages } from '@livekit/components-react';
 import type { AppConfig } from '@/app-config';
-import { AgentControlBar, type ControlBarControls } from '@/components/agents-ui/agent-control-bar';
+import {
+  AgentControlBar,
+  type AgentControlBarControls,
+} from '@/components/agents-ui/agent-control-bar';
 import { ChatTranscript } from '@/components/app/chat-transcript';
 import { TileLayout } from '@/components/app/tile-layout';
 import { cn } from '@/lib/utils';
@@ -91,7 +94,7 @@ export const SessionView = ({
   const [chatOpen, setChatOpen] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  const controls: ControlBarControls = {
+  const controls: AgentControlBarControls = {
     leave: true,
     microphone: true,
     chat: appConfig.supportsChatInput,
