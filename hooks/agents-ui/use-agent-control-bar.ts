@@ -55,7 +55,7 @@ export interface UseInputControlsProps {
 }
 
 export interface UseInputControlsReturn {
-  micTrackRef: TrackReferenceOrPlaceholder;
+  micTrackRef?: TrackReferenceOrPlaceholder;
   microphoneToggle: ReturnType<typeof useTrackToggle<Track.Source.Microphone>>;
   cameraToggle: ReturnType<typeof useTrackToggle<Track.Source.Camera>>;
   screenShareToggle: ReturnType<typeof useTrackToggle<Track.Source.ScreenShare>>;
@@ -69,8 +69,6 @@ export function useInputControls({
   saveUserChoices = true,
   onDeviceError,
 }: UseInputControlsProps = {}): UseInputControlsReturn {
-  const { microphoneTrack, localParticipant } = useLocalParticipant();
-
   const microphoneToggle = useTrackToggle({
     source: Track.Source.Microphone,
     onDeviceError: (error) => onDeviceError?.({ source: Track.Source.Microphone, error }),
@@ -86,12 +84,15 @@ export function useInputControls({
     onDeviceError: (error) => onDeviceError?.({ source: Track.Source.ScreenShare, error }),
   });
 
+  const { microphoneTrack, localParticipant } = useLocalParticipant();
   const micTrackRef = useMemo(() => {
-    return {
-      participant: localParticipant,
-      source: Track.Source.Microphone,
-      publication: microphoneTrack,
-    };
+    return localParticipant && microphoneTrack
+      ? {
+          participant: localParticipant,
+          source: Track.Source.Microphone,
+          publication: microphoneTrack,
+        }
+      : undefined;
   }, [localParticipant, microphoneTrack]);
 
   const {

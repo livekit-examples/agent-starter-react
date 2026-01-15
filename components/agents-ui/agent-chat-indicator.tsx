@@ -1,5 +1,6 @@
+import { type Ref } from 'react';
 import { type VariantProps, cva } from 'class-variance-authority';
-import { type HTMLMotionProps, motion } from 'motion/react';
+import { type MotionProps, motion } from 'motion/react';
 import { cn } from '@/lib/utils';
 
 const motionAnimationProps = {
@@ -42,37 +43,41 @@ const agentChatIndicatorVariants = cva('bg-muted-foreground inline-block size-2.
   },
 });
 
-/** Props for the AgentChatIndicator component. */
-export interface AgentChatIndicatorProps {
+/**
+ * Props for the AgentChatIndicator component.
+ */
+export interface AgentChatIndicatorProps extends MotionProps {
   /**
    * The size of the indicator dot.
-   *
    * @defaultValue 'md'
    */
   size?: 'sm' | 'md' | 'lg';
-  /** Additional CSS class names to apply to the indicator. */
+  /**
+   * Additional CSS class names to apply to the indicator.
+   */
   className?: string;
+  /**
+   * Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).\n@see {@link https://react.dev/learn/referencing-values-with-refs#refs-and-the-dom React Docs}
+   */
+  ref?: Ref<HTMLSpanElement>;
 }
 
 /**
- * An animated indicator that shows the agent is processing or thinking. Displays as a pulsing dot,
- * typically used in chat interfaces.
+ * An animated indicator that shows the agent is processing or thinking.
+ * Displays as a pulsing dot, typically used in chat interfaces.
+ *
+ * @extends ComponentProps<'span'>
  *
  * @example
- *
  * ```tsx
  * {agentState === 'thinking' && <AgentChatIndicator size="md" />}
  * ```
- *
- * @extends ComponentProps<'span'>
  */
 export function AgentChatIndicator({
   size = 'md',
   className,
   ...props
-}: AgentChatIndicatorProps &
-  HTMLMotionProps<'span'> &
-  VariantProps<typeof agentChatIndicatorVariants>) {
+}: AgentChatIndicatorProps & VariantProps<typeof agentChatIndicatorVariants>) {
   return (
     <motion.span
       {...motionAnimationProps}

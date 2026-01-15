@@ -115,7 +115,7 @@ export function AgentAudioVisualizerRadial({
 
   const volumeBands = useMultibandTrackVolume(audioTrack, {
     bands: _barCount,
-    loPass: 80,
+    loPass: 100,
     hiPass: 200,
   });
 
