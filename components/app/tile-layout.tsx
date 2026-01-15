@@ -116,7 +116,7 @@ export function TileLayout({ chatOpen }: TileLayoutProps) {
                   }}
                   animate={{
                     opacity: 1,
-                    scale: chatOpen ? 1 : 5,
+                    scale: chatOpen ? 1 : 4,
                   }}
                   transition={{
                     ...ANIMATION_TRANSITION,
@@ -131,7 +131,7 @@ export function TileLayout({ chatOpen }: TileLayoutProps) {
                     barCount={5}
                     state={agentState}
                     audioTrack={agentAudioTrack}
-                    className={cn('flex h-full items-center justify-center gap-1 p-2')}
+                    className={cn('flex h-full items-center justify-center gap-1 px-4 py-2')}
                   >
                     <span
                       className={cn([
