@@ -289,7 +289,8 @@ export function AgentTrackControl({
           <AgentAudioVisualizerBar
             size="icon"
             barCount={3}
-            audioTrack={audioTrack}
+            state={pressed ? 'speaking' : 'disconnected'}
+            audioTrack={pressed ? audioTrack : undefined}
             className="audiovisualizer flex h-6 w-auto items-center justify-center gap-0.5"
           >
             <span

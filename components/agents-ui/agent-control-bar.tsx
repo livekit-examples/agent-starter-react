@@ -282,7 +282,6 @@ export function AgentControlBar({
     >
       <motion.div
         {...MOTION_PROPS}
-        // @ts-ignore
         inert={!(isChatOpen || isChatOpenUncontrolled)}
         animate={isChatOpen || isChatOpenUncontrolled ? 'visible' : 'hidden'}
         className="border-input/50 flex w-full items-start overflow-hidden border-b"
