@@ -3,6 +3,7 @@
 import React, {
   type CSSProperties,
   Children,
+  type ComponentProps,
   type ReactNode,
   cloneElement,
   isValidElement,
@@ -45,17 +46,17 @@ function cloneSingleChild(
 export const AgentAudioVisualizerBarVariants = cva(
   [
     'relative flex items-center justify-center',
-    '[&_>_*]:rounded-full [&_>_*]:transition-colors [&_>_*]:duration-250 [&_>_*]:ease-linear',
-    '[&_>_*]:bg-transparent [&_>_*]:data-[lk-highlighted=true]:bg-current',
+    '*:rounded-full *:transition-colors *:duration-250 *:ease-linear',
+    '*:bg-transparent *:data-[lk-highlighted=true]:bg-current',
   ],
   {
     variants: {
       size: {
-        icon: ['h-[24px] gap-[2px]', '[&_>_*]:w-[4px] [&_>_*]:min-h-[4px]'],
-        sm: ['h-[56px] gap-[4px]', '[&_>_*]:w-[8px] [&_>_*]:min-h-[8px]'],
-        md: ['h-[112px] gap-[8px]', '[&_>_*]:w-[16px] [&_>_*]:min-h-[16px]'],
-        lg: ['h-[224px] gap-[16px]', '[&_>_*]:w-[32px] [&_>_*]:min-h-[32px]'],
-        xl: ['h-[448px] gap-[32px]', '[&_>_*]:w-[64px] [&_>_*]:min-h-[64px]'],
+        icon: ['h-[24px] gap-[2px]', '*:w-[4px] *:min-h-[4px]'],
+        sm: ['h-[56px] gap-[4px]', '*:w-[8px] *:min-h-[8px]'],
+        md: ['h-[112px] gap-[8px]', '*:w-[16px] *:min-h-[16px]'],
+        lg: ['h-[224px] gap-[16px]', '*:w-[32px] *:min-h-[32px]'],
+        xl: ['h-[448px] gap-[32px]', '*:w-[64px] *:min-h-[64px]'],
       },
     },
     defaultVariants: {
@@ -64,14 +65,56 @@ export const AgentAudioVisualizerBarVariants = cva(
   }
 );
 
+/**
+ * Props for the AgentAudioVisualizerBar component.
+ */
 export interface AgentAudioVisualizerBarProps {
+  /**
+   * The size of the visualizer.
+   * @defaultValue 'md'
+   */
+  size?: 'icon' | 'sm' | 'md' | 'lg' | 'xl';
+  /**
+   * The current state of the agent. Determines the animation pattern.
+   * @defaultValue 'connecting'
+   */
   state?: AgentState;
+  /**
+   * The number of bars to display in the visualizer.
+   * If not provided, defaults based on size: 3 for 'icon'/'sm', 5 for others.
+   */
   barCount?: number;
+  /**
+   * The audio track to visualize. Can be a local/remote audio track or a track reference.
+   */
   audioTrack?: LocalAudioTrack | RemoteAudioTrack | TrackReferenceOrPlaceholder;
+  /**
+   * Additional CSS class names to apply to the container.
+   */
   className?: string;
+  /**
+   * Custom children to render as bars. Each child receives data-lk-index,
+   * data-lk-highlighted, and style props for height.
+   */
   children?: ReactNode | ReactNode[];
 }
 
+/**
+ * A bar-style audio visualizer that responds to agent state and audio levels.
+ * Displays animated bars that react to the current agent state (connecting, thinking, speaking, etc.)
+ * and audio volume when speaking.
+ *
+ * @extends ComponentProps<'div'>
+ *
+ * @example
+ * ```tsx
+ * <AgentAudioVisualizerBar
+ *   size="md"
+ *   state="speaking"
+ *   audioTrack={agentAudioTrack}
+ * />
+ * ```
+ */
 export function AgentAudioVisualizerBar({
   size = 'md',
   state = 'connecting',
@@ -79,7 +122,10 @@ export function AgentAudioVisualizerBar({
   audioTrack,
   className,
   children,
-}: AgentAudioVisualizerBarProps & VariantProps<typeof AgentAudioVisualizerBarVariants>) {
+  ...props
+}: AgentAudioVisualizerBarProps &
+  VariantProps<typeof AgentAudioVisualizerBarVariants> &
+  ComponentProps<'div'>) {
   const _barCount = useMemo(() => {
     if (barCount) {
       return barCount;
@@ -126,7 +172,7 @@ export function AgentAudioVisualizerBar({
   );
 
   return (
-    <div className={cn(AgentAudioVisualizerBarVariants({ size }), className)}>
+    <div className={cn(AgentAudioVisualizerBarVariants({ size }), className)} {...props}>
       {bands.map((band: number, idx: number) =>
         children ? (
           <React.Fragment key={idx}>

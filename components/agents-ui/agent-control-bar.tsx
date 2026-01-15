@@ -1,6 +1,6 @@
 'use client';
 
-import { type HTMLAttributes, useEffect, useRef, useState } from 'react';
+import { type ComponentProps, useEffect, useRef, useState } from 'react';
 import { Track } from 'livekit-client';
 import { Loader, MessageSquareTextIcon, SendHorizontal } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -67,11 +67,7 @@ interface AgentChatInputProps {
   className?: string;
 }
 
-export function AgentChatInput({
-  chatOpen,
-  onSend = async () => {},
-  className,
-}: AgentChatInputProps) {
+function AgentChatInput({ chatOpen, onSend = async () => {}, className }: AgentChatInputProps) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [isSending, setIsSending] = useState(false);
   const [message, setMessage] = useState<string>('');
@@ -126,25 +122,108 @@ export function AgentChatInput({
   );
 }
 
-export interface ControlBarControls {
+/**
+ * Configuration for which controls to display in the AgentControlBar.
+ */
+export interface AgentControlBarControls {
+  /**
+   * Whether to show the leave/disconnect button.
+   * @defaultValue true
+   */
   leave?: boolean;
+  /**
+   * Whether to show the camera toggle control.
+   * @defaultValue true (if camera publish permission is granted)
+   */
   camera?: boolean;
+  /**
+   * Whether to show the microphone toggle control.
+   * @defaultValue true (if microphone publish permission is granted)
+   */
   microphone?: boolean;
+  /**
+   * Whether to show the screen share toggle control.
+   * @defaultValue true (if screen share publish permission is granted)
+   */
   screenShare?: boolean;
+  /**
+   * Whether to show the chat toggle control.
+   * @defaultValue true (if data publish permission is granted)
+   */
   chat?: boolean;
 }
 
 export interface AgentControlBarProps extends UseInputControlsProps {
+  /**
+   * The visual style of the control bar.
+   * @default 'default'
+   */
   variant?: 'default' | 'outline' | 'livekit';
-  controls?: ControlBarControls;
+  /**
+   * This takes an object with the following keys: `leave`, `microphone`, `screenShare`, `camera`, `chat`.
+   * Each key maps to a boolean value that determines whether the control is displayed.
+   *
+   * @default
+   * {
+   *   leave: true,
+   *   microphone: true,
+   *   screenShare: true,
+   *   camera: true,
+   *   chat: true,
+   * }
+   */
+  controls?: AgentControlBarControls;
+  /**
+   * Whether to save user choices.
+   * @default true
+   */
+  saveUserChoices?: boolean;
+  /**
+   * Whether the agent is connected to a session.
+   * @default false
+   */
   isConnected?: boolean;
+  /**
+   * Whether the chat input interface is open.
+   * @default false
+   */
   isChatOpen?: boolean;
+  /**
+   * The callback for when the user disconnects.
+   */
+  onDisconnect?: () => void;
+  /**
+   * The callback for when the chat is opened or closed.
+   */
   onIsChatOpenChange?: (open: boolean) => void;
+  /**
+   * The callback for when a device error occurs.
+   */
   onDeviceError?: (error: { source: Track.Source; error: Error }) => void;
 }
 
 /**
- * A control bar specifically designed for voice assistant interfaces
+ * A control bar specifically designed for voice assistant interfaces.
+ * Provides controls for microphone, camera, screen share, chat, and disconnect.
+ * Includes an expandable chat input for text-based interaction with the agent.
+ *
+ * @extends ComponentProps<'div'>
+ *
+ * @example
+ * ```tsx
+ * <AgentControlBar
+ *   variant="livekit"
+ *   isConnected={true}
+ *   onDisconnect={() => handleDisconnect()}
+ *   controls={{
+ *     microphone: true,
+ *     camera: true,
+ *     screenShare: false,
+ *     chat: true,
+ *     leave: true,
+ *   }}
+ * />
+ * ```
  */
 export function AgentControlBar({
   variant = 'default',
@@ -157,7 +236,7 @@ export function AgentControlBar({
   onIsChatOpenChange,
   className,
   ...props
-}: AgentControlBarProps & HTMLAttributes<HTMLDivElement>) {
+}: AgentControlBarProps & ComponentProps<'div'>) {
   const { send } = useChat();
   const publishPermissions = usePublishPermissions();
   const [isChatOpenUncontrolled, setIsChatOpenUncontrolled] = useState(isChatOpen);
@@ -203,6 +282,7 @@ export function AgentControlBar({
     >
       <motion.div
         {...MOTION_PROPS}
+        // @ts-ignore
         inert={!(isChatOpen || isChatOpenUncontrolled)}
         animate={isChatOpen || isChatOpenUncontrolled ? 'visible' : 'hidden'}
         className="border-input/50 flex w-full items-start overflow-hidden border-b"

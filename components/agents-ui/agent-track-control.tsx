@@ -7,7 +7,6 @@ import {
   type TrackReferenceOrPlaceholder,
   useMaybeRoomContext,
   useMediaDeviceSelect,
-  useTrackToggle,
 } from '@livekit/components-react';
 import { AgentAudioVisualizerBar } from '@/components/agents-ui/agent-audio-visualizer-bar';
 import { AgentTrackToggle } from '@/components/agents-ui/agent-track-toggle';
@@ -18,8 +17,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { toggleVariants } from '@/components/ui/toggle';
 import { cn } from '@/lib/utils';
-import { toggleVariants } from '../ui/toggle';
 
 const selectVariants = cva(
   [
@@ -70,27 +69,73 @@ const selectVariants = cva(
   }
 );
 
-type DeviceSelectProps = React.ComponentProps<typeof SelectTrigger> &
+/**
+ * Props for the TrackDeviceSelect component. */
+type TrackDeviceSelectProps = React.ComponentProps<typeof SelectTrigger> &
   VariantProps<typeof selectVariants> & {
+    /**
+     * The size of the select.
+     * @defaultValue 'default'
+     */
+    size?: 'default' | 'sm';
+    /**
+     * The variant of the select.
+     * @defaultValue 'default'
+     */
+    variant?: 'default' | 'outline' | null;
+    /**
+     * The type of media device (audioinput or videoinput).
+     */
     kind: MediaDeviceKind;
+    /**
+     * The track source to control (Microphone, Camera, or ScreenShare).
+     */
     track?: LocalAudioTrack | LocalVideoTrack | undefined;
+    /**
+     * Whether to request permissions for the media device.
+     */
     requestPermissions?: boolean;
+    /**
+     * Callback when a media device error occurs.
+     */
     onMediaDeviceError?: (error: Error) => void;
+    /**
+     * Callback when the device list changes.
+     */
     onDeviceListChange?: (devices: MediaDeviceInfo[]) => void;
+    /**
+     * Callback when the active device changes.
+     */
     onActiveDeviceChange?: (deviceId: string) => void;
   };
 
-export function TrackDeviceSelect({
+/**
+ * A select component for selecting a media device.
+ *
+ * @extends ComponentProps<'button'>
+ *
+ * @example
+ * ```tsx
+ * <TrackDeviceSelect
+ *   size="sm"
+ *   variant="outline"
+ *   kind="audioinput"
+ *   track={micTrackRef}
+ * />
+ * ```
+ */
+function TrackDeviceSelect({
   kind,
   track,
   size = 'default',
   variant = 'default',
+  className,
   requestPermissions = false,
   onMediaDeviceError,
   onDeviceListChange,
   onActiveDeviceChange,
   ...props
-}: DeviceSelectProps) {
+}: TrackDeviceSelectProps) {
   const room = useMaybeRoomContext();
   const [open, setOpen] = useState(false);
   const [requestPermissionsState, setRequestPermissionsState] = useState(requestPermissions);
@@ -131,12 +176,12 @@ export function TrackDeviceSelect({
       onOpenChange={handleOpenChange}
       onValueChange={handleActiveDeviceChange}
     >
-      <SelectTrigger className={cn(selectVariants({ size, variant }), props.className)}>
+      <SelectTrigger className={cn(selectVariants({ size, variant }), className)} {...props}>
         {size !== 'sm' && (
           <SelectValue className="font-mono text-sm" placeholder={`Select a ${kind}`} />
         )}
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent position="popper">
         {filteredDevices.map((device) => (
           <SelectItem key={device.deviceId} value={device.deviceId} className="font-mono text-xs">
             {device.label}
@@ -147,19 +192,69 @@ export function TrackDeviceSelect({
   );
 }
 
+/**
+ * Props for the AgentTrackControl component.
+ */
 export type AgentTrackControlProps = VariantProps<typeof toggleVariants> & {
+  /**
+   * The type of media device (audioinput or videoinput).
+   */
   kind: MediaDeviceKind;
-  source: Parameters<typeof useTrackToggle>[0]['source'];
+  /**
+   * The track source to control (Microphone, Camera, or ScreenShare).
+   */
+  source: 'camera' | 'microphone' | 'screen_share';
+  /**
+   * Whether the track is currently enabled/published.
+   */
   pressed?: boolean;
+  /**
+   * Whether the control is in a pending/loading state.
+   */
   pending?: boolean;
+  /**
+   * Whether the control is disabled.
+   */
   disabled?: boolean;
+  /**
+   * Additional CSS class names to apply to the container.
+   */
   className?: string;
+  /**
+   * The audio track reference for visualization (only for microphone).
+   */
   audioTrack?: TrackReferenceOrPlaceholder;
+  /**
+   * Callback when the pressed state changes.
+   */
   onPressedChange?: (pressed: boolean) => void;
+  /**
+   * Callback when a media device error occurs.
+   */
   onMediaDeviceError?: (error: Error) => void;
+  /**
+   * Callback when the active device changes.
+   */
   onActiveDeviceChange?: (deviceId: string) => void;
 };
 
+/**
+ * A combined track toggle and device selector control.
+ * Includes a toggle button and a dropdown to select the active device.
+ * For microphone tracks, displays an audio visualizer.
+ *
+ * @example
+ * ```tsx
+ * <AgentTrackControl
+ *   kind="audioinput"
+ *   source={Track.Source.Microphone}
+ *   pressed={isMicEnabled}
+ *   audioTrack={micTrackRef}
+ *   onPressedChange={(pressed) => setMicEnabled(pressed)}
+ *   onActiveDeviceChange={(deviceId) => setMicDevice(deviceId)}
+ * />
+ * ```
+ */
 export function AgentTrackControl({
   kind,
   variant = 'default',
