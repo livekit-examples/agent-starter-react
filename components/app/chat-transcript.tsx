@@ -1,11 +1,11 @@
 'use client';
 
 import { AnimatePresence, type HTMLMotionProps, motion } from 'motion/react';
-import { type ReceivedMessage } from '@livekit/components-react';
-import { ChatEntry } from '@/components/livekit/chat-entry';
+import { type ReceivedMessage, useAgent } from '@livekit/components-react';
+import { AgentChatTranscript } from '@/components/agents-ui/agent-chat-transcript';
+import { cn } from '@/lib/shadcn/utils';
 
 const MotionContainer = motion.create('div');
-const MotionChatEntry = motion.create(ChatEntry);
 
 const CONTAINER_MOTION_PROPS = {
   variants: {
@@ -14,8 +14,6 @@ const CONTAINER_MOTION_PROPS = {
       transition: {
         ease: 'easeOut',
         duration: 0.3,
-        staggerChildren: 0.1,
-        staggerDirection: -1,
       },
     },
     visible: {
@@ -24,28 +22,12 @@ const CONTAINER_MOTION_PROPS = {
         delay: 0.2,
         ease: 'easeOut',
         duration: 0.3,
-        stagerDelay: 0.2,
-        staggerChildren: 0.1,
-        staggerDirection: 1,
       },
     },
   },
   initial: 'hidden',
   animate: 'visible',
   exit: 'hidden',
-};
-
-const MESSAGE_MOTION_PROPS = {
-  variants: {
-    hidden: {
-      opacity: 0,
-      translateY: 10,
-    },
-    visible: {
-      opacity: 1,
-      translateY: 0,
-    },
-  },
 };
 
 interface ChatTranscriptProps {
@@ -56,33 +38,28 @@ interface ChatTranscriptProps {
 export function ChatTranscript({
   hidden = false,
   messages = [],
+  className,
   ...props
 }: ChatTranscriptProps & Omit<HTMLMotionProps<'div'>, 'ref'>) {
-  return (
-    <AnimatePresence>
-      {!hidden && (
-        <MotionContainer {...CONTAINER_MOTION_PROPS} {...props}>
-          {messages.map((receivedMessage) => {
-            const { id, timestamp, from, message } = receivedMessage;
-            const locale = navigator?.language ?? 'en-US';
-            const messageOrigin = from?.isLocal ? 'local' : 'remote';
-            const hasBeenEdited =
-              receivedMessage.type === 'chatMessage' && !!receivedMessage.editTimestamp;
+  const { state: agentState } = useAgent();
 
-            return (
-              <MotionChatEntry
-                key={id}
-                locale={locale}
-                timestamp={timestamp}
-                message={message}
-                messageOrigin={messageOrigin}
-                hasBeenEdited={hasBeenEdited}
-                {...MESSAGE_MOTION_PROPS}
-              />
-            );
-          })}
-        </MotionContainer>
-      )}
-    </AnimatePresence>
+  return (
+    <div className="absolute top-0 bottom-[135px] flex w-full flex-col md:bottom-[170px]">
+      <AnimatePresence>
+        {!hidden && (
+          <MotionContainer
+            {...props}
+            {...CONTAINER_MOTION_PROPS}
+            className={cn('flex h-full w-full flex-col gap-4', className)}
+          >
+            <AgentChatTranscript
+              agentState={agentState}
+              messages={messages}
+              className="mx-auto w-full max-w-2xl [&_.is-user>div]:rounded-[22px] [&>div>div]:px-4 [&>div>div]:pt-40 md:[&>div>div]:px-6"
+            />
+          </MotionContainer>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

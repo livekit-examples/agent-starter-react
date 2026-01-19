@@ -3,9 +3,50 @@ import { Track } from 'livekit-client';
 import {
   type TrackReferenceOrPlaceholder,
   useLocalParticipant,
+  useLocalParticipantPermissions,
   usePersistentUserChoices,
   useTrackToggle,
 } from '@livekit/components-react';
+
+const trackSourceToProtocol = (source: Track.Source) => {
+  // NOTE: this mapping avoids importing the protocol package as that leads to a significant bundle size increase
+  switch (source) {
+    case Track.Source.Camera:
+      return 1;
+    case Track.Source.Microphone:
+      return 2;
+    case Track.Source.ScreenShare:
+      return 3;
+    default:
+      return 0;
+  }
+};
+
+export interface PublishPermissions {
+  camera: boolean;
+  microphone: boolean;
+  screenShare: boolean;
+  data: boolean;
+}
+
+export function usePublishPermissions(): PublishPermissions {
+  const localPermissions = useLocalParticipantPermissions();
+
+  const canPublishSource = (source: Track.Source) => {
+    return (
+      !!localPermissions?.canPublish &&
+      (localPermissions.canPublishSources.length === 0 ||
+        localPermissions.canPublishSources.includes(trackSourceToProtocol(source)))
+    );
+  };
+
+  return {
+    camera: canPublishSource(Track.Source.Camera),
+    microphone: canPublishSource(Track.Source.Microphone),
+    screenShare: canPublishSource(Track.Source.ScreenShare),
+    data: localPermissions?.canPublishData ?? false,
+  };
+}
 
 export interface UseInputControlsProps {
   saveUserChoices?: boolean;
@@ -14,7 +55,7 @@ export interface UseInputControlsProps {
 }
 
 export interface UseInputControlsReturn {
-  micTrackRef: TrackReferenceOrPlaceholder;
+  micTrackRef?: TrackReferenceOrPlaceholder;
   microphoneToggle: ReturnType<typeof useTrackToggle<Track.Source.Microphone>>;
   cameraToggle: ReturnType<typeof useTrackToggle<Track.Source.Camera>>;
   screenShareToggle: ReturnType<typeof useTrackToggle<Track.Source.ScreenShare>>;
@@ -28,8 +69,6 @@ export function useInputControls({
   saveUserChoices = true,
   onDeviceError,
 }: UseInputControlsProps = {}): UseInputControlsReturn {
-  const { microphoneTrack, localParticipant } = useLocalParticipant();
-
   const microphoneToggle = useTrackToggle({
     source: Track.Source.Microphone,
     onDeviceError: (error) => onDeviceError?.({ source: Track.Source.Microphone, error }),
@@ -45,12 +84,15 @@ export function useInputControls({
     onDeviceError: (error) => onDeviceError?.({ source: Track.Source.ScreenShare, error }),
   });
 
+  const { microphoneTrack, localParticipant } = useLocalParticipant();
   const micTrackRef = useMemo(() => {
-    return {
-      participant: localParticipant,
-      source: Track.Source.Microphone,
-      publication: microphoneTrack,
-    };
+    return localParticipant && microphoneTrack
+      ? {
+          participant: localParticipant,
+          source: Track.Source.Microphone,
+          publication: microphoneTrack,
+        }
+      : undefined;
   }, [localParticipant, microphoneTrack]);
 
   const {

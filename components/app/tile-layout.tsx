@@ -2,14 +2,14 @@ import React, { useMemo } from 'react';
 import { Track } from 'livekit-client';
 import { AnimatePresence, motion } from 'motion/react';
 import {
-  BarVisualizer,
   type TrackReference,
   VideoTrack,
   useLocalParticipant,
   useTracks,
   useVoiceAssistant,
 } from '@livekit/components-react';
-import { cn } from '@/lib/utils';
+import { AgentAudioVisualizerBar } from '@/components/agents-ui/agent-audio-visualizer-bar';
+import { cn } from '@/lib/shadcn/utils';
 
 const MotionContainer = motion.create('div');
 
@@ -116,7 +116,7 @@ export function TileLayout({ chatOpen }: TileLayoutProps) {
                   }}
                   animate={{
                     opacity: 1,
-                    scale: chatOpen ? 1 : 5,
+                    scale: chatOpen ? 1 : 4,
                   }}
                   transition={{
                     ...ANIMATION_TRANSITION,
@@ -127,12 +127,11 @@ export function TileLayout({ chatOpen }: TileLayoutProps) {
                     chatOpen && 'border-input/50 drop-shadow-lg/10 delay-200'
                   )}
                 >
-                  <BarVisualizer
+                  <AgentAudioVisualizerBar
                     barCount={5}
                     state={agentState}
-                    options={{ minHeight: 5 }}
-                    trackRef={agentAudioTrack}
-                    className={cn('flex h-full items-center justify-center gap-1')}
+                    audioTrack={agentAudioTrack}
+                    className={cn('flex h-full items-center justify-center gap-1 px-4 py-2')}
                   >
                     <span
                       className={cn([
@@ -141,7 +140,7 @@ export function TileLayout({ chatOpen }: TileLayoutProps) {
                         'data-[lk-highlighted=true]:bg-foreground data-[lk-muted=true]:bg-muted',
                       ])}
                     />
-                  </BarVisualizer>
+                  </AgentAudioVisualizerBar>
                 </MotionContainer>
               )}
 

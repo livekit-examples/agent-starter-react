@@ -2,7 +2,7 @@
 
 import { useTheme } from 'next-themes';
 import { MonitorIcon, MoonIcon, SunIcon } from '@phosphor-icons/react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/shadcn/utils';
 
 interface ThemeToggleProps {
   className?: string;
