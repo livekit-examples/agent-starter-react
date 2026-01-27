@@ -8,8 +8,9 @@ import {
   useTracks,
   useVoiceAssistant,
 } from '@livekit/components-react';
-import { AgentAudioVisualizerBar } from '@/components/agents-ui/agent-audio-visualizer-bar';
+import { AppConfig } from '@/app-config';
 import { cn } from '@/lib/shadcn/utils';
+import { AudioVisualizer } from './audio-visualizer';
 
 const MotionContainer = motion.create('div');
 
@@ -71,14 +72,11 @@ export function useLocalTrackRef(source: Track.Source) {
 
 interface TileLayoutProps {
   chatOpen: boolean;
+  appConfig: AppConfig;
 }
 
-export function TileLayout({ chatOpen }: TileLayoutProps) {
-  const {
-    state: agentState,
-    audioTrack: agentAudioTrack,
-    videoTrack: agentVideoTrack,
-  } = useVoiceAssistant();
+export function TileLayout({ chatOpen, appConfig }: TileLayoutProps) {
+  const { videoTrack: agentVideoTrack } = useVoiceAssistant();
   const [screenShareTrack] = useTracks([Track.Source.ScreenShare]);
   const cameraTrack: TrackReference | undefined = useLocalTrackRef(Track.Source.Camera);
 
@@ -88,6 +86,7 @@ export function TileLayout({ chatOpen }: TileLayoutProps) {
 
   const animationDelay = chatOpen ? 0 : 0.15;
   const isAvatar = agentVideoTrack !== undefined;
+  const isVoiceOnly = agentVideoTrack == undefined;
   const videoWidth = agentVideoTrack?.publication.dimensions?.width ?? 0;
   const videoHeight = agentVideoTrack?.publication.dimensions?.height ?? 0;
 
@@ -96,7 +95,20 @@ export function TileLayout({ chatOpen }: TileLayoutProps) {
       <div className="relative mx-auto h-full max-w-2xl px-4 md:px-0">
         <div className={cn(classNames.grid)}>
           {/* Agent */}
-          <div
+          <MotionContainer
+            key="agent"
+            layoutId="agent"
+            initial={{
+              opacity: 0,
+            }}
+            animate={{
+              opacity: 1,
+              scale: chatOpen ? 0.25 : 1,
+            }}
+            transition={{
+              ...ANIMATION_TRANSITION,
+              delay: animationDelay,
+            }}
             className={cn([
               'grid',
               !chatOpen && classNames.agentChatClosed,
@@ -105,43 +117,16 @@ export function TileLayout({ chatOpen }: TileLayoutProps) {
             ])}
           >
             <AnimatePresence mode="popLayout">
-              {!isAvatar && (
+              {isVoiceOnly && (
                 // Audio Agent
-                <MotionContainer
-                  key="agent"
-                  layoutId="agent"
-                  initial={{
-                    opacity: 0,
-                    scale: 0,
-                  }}
-                  animate={{
-                    opacity: 1,
-                    scale: chatOpen ? 1 : 4,
-                  }}
-                  transition={{
-                    ...ANIMATION_TRANSITION,
-                    delay: animationDelay,
-                  }}
+                <div
                   className={cn(
-                    'bg-background aspect-square h-[90px] rounded-md border border-transparent transition-[border,drop-shadow]',
+                    'bg-background aspect-square rounded-3xl border border-transparent transition-[border,drop-shadow]',
                     chatOpen && 'border-input/50 drop-shadow-lg/10 delay-200'
                   )}
                 >
-                  <AgentAudioVisualizerBar
-                    barCount={5}
-                    state={agentState}
-                    audioTrack={agentAudioTrack}
-                    className={cn('flex h-full items-center justify-center gap-1 px-4 py-2')}
-                  >
-                    <span
-                      className={cn([
-                        'bg-muted min-h-2.5 w-2.5 rounded-full',
-                        'origin-center transition-colors duration-250 ease-linear',
-                        'data-[lk-highlighted=true]:bg-foreground data-[lk-muted=true]:bg-muted',
-                      ])}
-                    />
-                  </AgentAudioVisualizerBar>
-                </MotionContainer>
+                  <AudioVisualizer appConfig={appConfig} />
+                </div>
               )}
 
               {isAvatar && (
@@ -186,7 +171,7 @@ export function TileLayout({ chatOpen }: TileLayoutProps) {
                 </MotionContainer>
               )}
             </AnimatePresence>
-          </div>
+          </MotionContainer>
 
           <div
             className={cn([

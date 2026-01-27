@@ -14,6 +14,14 @@ export interface AppConfig {
   logoDark?: string;
   accentDark?: string;
 
+  audioVisualizerType?: 'bar' | 'wave' | 'grid' | 'radial' | 'aura';
+  audioVisualizerRadius?: number;
+  audioVisualizerBarCount?: number;
+  audioVisualizerRowCount?: number;
+  audioVisualizerColumnCount?: number;
+  audioVisualizerColor?: `#${string}`;
+  audioVisualizerColorShift?: number;
+
   // agent dispatch configuration
   agentName?: string;
 
@@ -36,6 +44,13 @@ export const APP_CONFIG_DEFAULTS: AppConfig = {
   logoDark: '/lk-logo-dark.svg',
   accentDark: '#1fd5f9',
   startButtonText: 'Start call',
+
+  audioVisualizerType: 'wave',
+  audioVisualizerBarCount: 25,
+  audioVisualizerRowCount: 11,
+  audioVisualizerColumnCount: 11,
+  audioVisualizerColor: '#1fd5f9',
+  audioVisualizerColorShift: 0.3,
 
   // agent dispatch configuration
   agentName: process.env.AGENT_NAME ?? undefined,

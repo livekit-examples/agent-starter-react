@@ -36,7 +36,7 @@ const selectVariants = cva(
           'border-none',
           'peer-data-[state=off]/track:bg-destructive/10',
           'peer-data-[state=off]/track:hover:bg-destructive/15',
-          'peer-data-[state=off]/track:[&_svg]:!text-destructive',
+          'peer-data-[state=off]/track:[&_svg]:text-destructive!',
 
           'dark:peer-data-[state=on]/track:bg-accent',
           'dark:peer-data-[state=on]/track:hover:bg-foreground/10',
@@ -48,7 +48,7 @@ const selectVariants = cva(
           'peer-data-[state=off]/track:border-destructive/20',
           'peer-data-[state=off]/track:bg-destructive/10',
           'peer-data-[state=off]/track:hover:bg-destructive/15',
-          'peer-data-[state=off]/track:[&_svg]:!text-destructive',
+          'peer-data-[state=off]/track:[&_svg]:text-destructive!',
           'peer-data-[state=on]/track:hover:border-foreground/12',
 
           'dark:peer-data-[state=off]/track:bg-destructive/10',
