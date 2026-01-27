@@ -121,7 +121,7 @@ export const SessionView = ({
         className="space-y-3 transition-opacity duration-300 ease-out"
       />
       {/* Tile layout */}
-      <TileLayout chatOpen={chatOpen} />
+      <TileLayout chatOpen={chatOpen} appConfig={appConfig} />
       {/* Bottom */}
       <MotionBottom
         {...BOTTOM_VIEW_MOTION_PROPS}
