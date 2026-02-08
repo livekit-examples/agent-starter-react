@@ -146,7 +146,7 @@ importers:
         version: 5.2.2(prettier@3.6.2)
       '@types/node':
         specifier: ^22.0.0
-        version: 22.18.1
+        version: 22.19.10
       '@types/react':
         specifier: ^19
         version: 19.1.12
@@ -516,6 +516,7 @@ packages:
   '@livekit/components-react@2.9.18':
     resolution: {integrity: sha512-apnT0tEL1lQdTWO+m5qIfnxfOJAjFeX8Vx7g1qU73V7L+upM+xZBClAgD3eoOMhLyqgW1Aea2HUE5JdEdPKFhA==}
     engines: {node: '>=18'}
+    deprecated: unintentional classname change to BarVisualizer
     peerDependencies:
       '@livekit/krisp-noise-filter': ^0.2.12 || ^0.3.0
       livekit-client: ^2.16.0
@@ -1369,8 +1370,8 @@ packages:
   '@types/ms@2.1.0':
     resolution: {integrity: sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA==}
 
-  '@types/node@22.18.1':
-    resolution: {integrity: sha512-rzSDyhn4cYznVG+PCzGe1lwuMYJrcBS1fc3JqSa2PvtABwWo+dZ1ij5OVok3tqfpEBCBoaR4d7upFJk73HRJDw==}
+  '@types/node@22.19.10':
+    resolution: {integrity: sha512-tF5VOugLS/EuDlTBijk0MqABfP8UxgYazTLo3uIn3b4yJgg26QRbVYJYsDtHrjdDUIRfP70+VfhTTc+CE1yskw==}
 
   '@types/react-dom@19.1.9':
     resolution: {integrity: sha512-qXRuZaOsAdXKFyOhRBg6Lqqc0yay13vN7KrIg4L7N4aaHN68ma9OK3NE1BoDFgFOTfM7zg+3/8+2n8rLUH3OKQ==}
@@ -3621,6 +3622,7 @@ packages:
   tar@7.4.3:
     resolution: {integrity: sha512-5S7Va8hKfV7W5U6g3aYxXmlPoZVAwUMy9AOKyF2fVuZa2UD3qZjg578OrLRt8PcNN1PleVaL/5/yYATNL0ICUw==}
     engines: {node: '>=18'}
+    deprecated: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
 
   tinyexec@1.0.2:
     resolution: {integrity: sha512-W/KYk+NFhkmsYpuHq5JykngiOCnxeVL8v8dFnqxSD8qEEdRfXk1SDM6JzNqcERbcGYj9tMrDQBYV9cjgnunFIg==}
@@ -5040,7 +5042,7 @@ snapshots:
 
   '@types/ms@2.1.0': {}
 
-  '@types/node@22.18.1':
+  '@types/node@22.19.10':
     dependencies:
       undici-types: 6.21.0
 
@@ -5353,7 +5355,7 @@ snapshots:
 
   buffer-image-size@0.6.4:
     dependencies:
-      '@types/node': 22.18.1
+      '@types/node': 22.19.10
 
   call-bind-apply-helpers@1.0.2:
     dependencies:
