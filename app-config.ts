@@ -21,6 +21,7 @@ export interface AppConfig {
   audioVisualizerColumnCount?: number;
   audioVisualizerColor?: `#${string}`;
   audioVisualizerColorShift?: number;
+  audioVisualizerLineWidth?: number;
 
   // agent dispatch configuration
   agentName?: string;
@@ -45,10 +46,11 @@ export const APP_CONFIG_DEFAULTS: AppConfig = {
   accentDark: '#1fd5f9',
   startButtonText: 'Start call',
 
-  audioVisualizerType: 'wave',
-  audioVisualizerBarCount: 25,
-  audioVisualizerRowCount: 11,
-  audioVisualizerColumnCount: 11,
+  // audioVisualizerType: 'bar',
+  // audioVisualizerType: 'radial',
+  // audioVisualizerType: 'grid',
+  // audioVisualizerType: 'wave',
+  audioVisualizerType: 'aura',
   audioVisualizerColor: '#1fd5f9',
   audioVisualizerColorShift: 0.3,
 

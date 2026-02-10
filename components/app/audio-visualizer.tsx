@@ -1,3 +1,4 @@
+import { type MotionProps, motion } from 'motion/react';
 import { useVoiceAssistant } from '@livekit/components-react';
 import { AppConfig } from '@/app-config';
 import { cn } from '@/lib/shadcn/utils';
@@ -7,11 +8,24 @@ import { AgentAudioVisualizerGrid } from '../agents-ui/agent-audio-visualizer-gr
 import { AgentAudioVisualizerRadial } from '../agents-ui/agent-audio-visualizer-radial';
 import { AgentAudioVisualizerWave } from '../agents-ui/agent-audio-visualizer-wave';
 
-interface AudioVisualizerProps {
+const MotionAgentAudioVisualizerAura = motion.create(AgentAudioVisualizerAura);
+const MotionAgentAudioVisualizerBar = motion.create(AgentAudioVisualizerBar);
+const MotionAgentAudioVisualizerGrid = motion.create(AgentAudioVisualizerGrid);
+const MotionAgentAudioVisualizerRadial = motion.create(AgentAudioVisualizerRadial);
+const MotionAgentAudioVisualizerWave = motion.create(AgentAudioVisualizerWave);
+
+interface AudioVisualizerProps extends MotionProps {
   appConfig: AppConfig;
+  isChatOpen: boolean;
+  className?: string;
 }
 
-export function AudioVisualizer({ appConfig }: AudioVisualizerProps) {
+export function AudioVisualizer({
+  appConfig,
+  isChatOpen,
+  className,
+  ...props
+}: AudioVisualizerProps) {
   const { audioVisualizerType } = appConfig;
   const { state, audioTrack } = useVoiceAssistant();
 
@@ -19,68 +33,63 @@ export function AudioVisualizer({ appConfig }: AudioVisualizerProps) {
     case 'aura': {
       const { audioVisualizerColor, audioVisualizerColorShift } = appConfig;
       return (
-        <AgentAudioVisualizerAura
-          key="audio-visualizer-aura"
-          size="md"
+        <MotionAgentAudioVisualizerAura
           state={state}
           audioTrack={audioTrack}
           color={audioVisualizerColor}
           colorShift={audioVisualizerColorShift}
-          className="h-[360px]"
+          className={className}
+          {...props}
         />
       );
     }
     case 'wave': {
       const { audioVisualizerColor } = appConfig;
       return (
-        <AgentAudioVisualizerWave
-          key="audio-visualizer-wave"
-          size="md"
+        <MotionAgentAudioVisualizerWave
           state={state}
           audioTrack={audioTrack}
-          lineWidth={3}
+          lineWidth={isChatOpen ? 6 : 3}
           color={audioVisualizerColor}
-          className="h-[360px]"
+          className={className}
+          {...props}
         />
       );
     }
     case 'grid': {
-      const { audioVisualizerRowCount, audioVisualizerColumnCount } = appConfig;
       return (
-        <AgentAudioVisualizerGrid
-          key="audio-visualizer-grid"
-          size="sm"
+        <MotionAgentAudioVisualizerGrid
+          size="xl"
           state={state}
           audioTrack={audioTrack}
-          rowCount={audioVisualizerRowCount}
-          columnCount={audioVisualizerColumnCount}
-          className="h-[360px]"
+          rowCount={9}
+          columnCount={9}
+          className={cn('size-[450px] *:place-self-center', className)}
+          {...props}
         />
       );
     }
     case 'radial': {
-      const { audioVisualizerRadius, audioVisualizerBarCount } = appConfig;
       return (
-        <AgentAudioVisualizerRadial
-          key="audio-visualizer-radial"
-          size="sm"
+        <MotionAgentAudioVisualizerRadial
+          size="xl"
           state={state}
           audioTrack={audioTrack}
-          radius={audioVisualizerRadius}
-          barCount={audioVisualizerBarCount}
+          barCount={25}
+          className={className}
+          {...props}
         />
       );
     }
     default: {
-      const { audioVisualizerBarCount } = appConfig;
-
       return (
-        <AgentAudioVisualizerBar
-          key="audio-visualizer-bar"
+        <MotionAgentAudioVisualizerBar
+          size="xl"
           state={state}
           audioTrack={audioTrack}
-          barCount={audioVisualizerBarCount}
-          className={cn('flex h-[360px] items-center justify-center gap-1 px-4 py-2')}
+          barCount={5}
+          className={cn('gap-[24px] *:min-h-[48px] *:w-[48px]', className)}
+          {...props}
         >
           <span
             className={cn([
@@ -89,7 +98,7 @@ export function AudioVisualizer({ appConfig }: AudioVisualizerProps) {
               'data-[lk-highlighted=true]:bg-foreground data-[lk-muted=true]:bg-muted',
             ])}
           />
-        </AgentAudioVisualizerBar>
+        </MotionAgentAudioVisualizerBar>
       );
     }
   }

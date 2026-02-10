@@ -9,8 +9,8 @@ import {
   useVoiceAssistant,
 } from '@livekit/components-react';
 import { AppConfig } from '@/app-config';
+import { AudioVisualizer } from '@/components/app/audio-visualizer';
 import { cn } from '@/lib/shadcn/utils';
-import { AudioVisualizer } from './audio-visualizer';
 
 const MotionContainer = motion.create('div');
 
@@ -27,37 +27,37 @@ const classNames = {
   grid: [
     'h-full w-full',
     'grid gap-x-2 place-content-center',
-    'grid-cols-[1fr_1fr] grid-rows-[90px_1fr_90px]',
+    'grid-cols-[1fr_90px_90px_90px_1fr] grid-rows-[90px_1fr_90px]',
   ],
   // Agent
   // chatOpen: true,
   // hasSecondTile: true
   // layout: Column 1 / Row 1
   // align: x-end y-center
-  agentChatOpenWithSecondTile: ['col-start-1 row-start-1', 'self-center justify-self-end'],
+  agentChatOpenWithSecondTile: ['col-start-2 row-start-1', 'self-center justify-self-end'],
   // Agent
   // chatOpen: true,
   // hasSecondTile: false
   // layout: Column 1 / Row 1 / Column-Span 2
   // align: x-center y-center
-  agentChatOpenWithoutSecondTile: ['col-start-1 row-start-1', 'col-span-2', 'place-content-center'],
+  agentChatOpenWithoutSecondTile: ['col-start-3 row-start-1', 'col-span-2', 'place-content-center'],
   // Agent
   // chatOpen: false
   // layout: Column 1 / Row 1 / Column-Span 2 / Row-Span 3
   // align: x-center y-center
-  agentChatClosed: ['col-start-1 row-start-1', 'col-span-2 row-span-3', 'place-content-center'],
+  agentChatClosed: ['col-start-3 row-start-1', 'col-span-1 row-span-3', 'place-content-center'],
   // Second tile
   // chatOpen: true,
   // hasSecondTile: true
   // layout: Column 2 / Row 1
   // align: x-start y-center
-  secondTileChatOpen: ['col-start-2 row-start-1', 'self-center justify-self-start'],
+  secondTileChatOpen: ['col-start-4 row-start-1', 'self-center justify-self-start'],
   // Second tile
   // chatOpen: false,
   // hasSecondTile: false
   // layout: Column 2 / Row 2
   // align: x-end y-end
-  secondTileChatClosed: ['col-start-2 row-start-3', 'place-content-end'],
+  secondTileChatClosed: ['col-start-5 row-start-3', 'place-content-end'],
 };
 
 export function useLocalTrackRef(source: Track.Source) {
@@ -86,29 +86,15 @@ export function TileLayout({ chatOpen, appConfig }: TileLayoutProps) {
 
   const animationDelay = chatOpen ? 0 : 0.15;
   const isAvatar = agentVideoTrack !== undefined;
-  const isVoiceOnly = agentVideoTrack == undefined;
   const videoWidth = agentVideoTrack?.publication.dimensions?.width ?? 0;
   const videoHeight = agentVideoTrack?.publication.dimensions?.height ?? 0;
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-8 bottom-32 z-50 md:top-12 md:bottom-40">
+    <div className="fixed inset-x-0 top-8 bottom-32 z-50 md:top-12 md:bottom-40">
       <div className="relative mx-auto h-full max-w-2xl px-4 md:px-0">
         <div className={cn(classNames.grid)}>
           {/* Agent */}
-          <MotionContainer
-            key="agent"
-            layoutId="agent"
-            initial={{
-              opacity: 0,
-            }}
-            animate={{
-              opacity: 1,
-              scale: chatOpen ? 0.25 : 1,
-            }}
-            transition={{
-              ...ANIMATION_TRANSITION,
-              delay: animationDelay,
-            }}
+          <div
             className={cn([
               'grid',
               !chatOpen && classNames.agentChatClosed,
@@ -117,16 +103,35 @@ export function TileLayout({ chatOpen, appConfig }: TileLayoutProps) {
             ])}
           >
             <AnimatePresence mode="popLayout">
-              {isVoiceOnly && (
+              {!isAvatar && (
                 // Audio Agent
-                <div
-                  className={cn(
-                    'bg-background aspect-square rounded-3xl border border-transparent transition-[border,drop-shadow]',
-                    chatOpen && 'border-input/50 drop-shadow-lg/10 delay-200'
-                  )}
+                <MotionContainer
+                  key="agent"
+                  layoutId="agent"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{
+                    ...ANIMATION_TRANSITION,
+                    delay: animationDelay,
+                  }}
+                  className={cn('relative aspect-square h-[90px]')}
                 >
-                  <AudioVisualizer appConfig={appConfig} />
-                </div>
+                  <AudioVisualizer
+                    key="audio-visualizer"
+                    initial={{ scale: 1 }}
+                    animate={{ scale: chatOpen ? 0.2 : 1 }}
+                    transition={{
+                      ...ANIMATION_TRANSITION,
+                      delay: animationDelay,
+                    }}
+                    appConfig={appConfig}
+                    isChatOpen={chatOpen}
+                    className={cn(
+                      'absolute top-1/2 left-1/2 size-[450px] -translate-x-1/2 -translate-y-1/2 rounded-3xl border border-transparent transition-[border,drop-shadow]',
+                      chatOpen && 'border-input shadow-2xl/10 delay-200'
+                    )}
+                  />
+                </MotionContainer>
               )}
 
               {isAvatar && (
@@ -171,7 +176,7 @@ export function TileLayout({ chatOpen, appConfig }: TileLayoutProps) {
                 </MotionContainer>
               )}
             </AnimatePresence>
-          </MotionContainer>
+          </div>
 
           <div
             className={cn([
