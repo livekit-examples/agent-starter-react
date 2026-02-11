@@ -90,7 +90,7 @@ export function TileLayout({ chatOpen, appConfig }: TileLayoutProps) {
   const videoHeight = agentVideoTrack?.publication.dimensions?.height ?? 0;
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-8 bottom-32 z-50 md:top-12 md:bottom-40">
+    <div className="fixed inset-x-0 top-8 bottom-32 z-50 md:top-12 md:bottom-40">
       <div className="relative mx-auto h-full max-w-2xl px-4 md:px-0">
         <div className={cn(classNames.grid)}>
           {/* Agent */}
@@ -127,9 +127,11 @@ export function TileLayout({ chatOpen, appConfig }: TileLayoutProps) {
                     appConfig={appConfig}
                     isChatOpen={chatOpen}
                     className={cn(
-                      'absolute top-1/2 left-1/2 size-[450px] -translate-x-1/2 -translate-y-1/2 rounded-3xl border border-transparent transition-[border,drop-shadow]',
+                      'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2',
+                      'bg-background rounded-4xl border border-transparent transition-[border,drop-shadow]',
                       chatOpen && 'border-input shadow-2xl/10 delay-200'
                     )}
+                    style={{ color: appConfig.audioVisualizerColor }}
                   />
                 </MotionContainer>
               )}

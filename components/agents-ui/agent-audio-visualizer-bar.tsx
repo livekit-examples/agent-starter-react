@@ -4,6 +4,7 @@ import React, {
   type CSSProperties,
   Children,
   type ComponentProps,
+  type ReactElement,
   type ReactNode,
   cloneElement,
   isValidElement,
@@ -43,20 +44,19 @@ function cloneSingleChild(
   });
 }
 
-export const AgentAudioVisualizerBarVariants = cva(
+export const AgentAudioVisualizerBarElementVariants = cva(
   [
-    'relative flex items-center justify-center',
-    '*:rounded-full *:transition-colors *:duration-250 *:ease-linear',
-    '*:bg-transparent *:data-[lk-highlighted=true]:bg-current',
+    'rounded-full transition-colors duration-250 ease-linear',
+    'bg-transparent data-[lk-highlighted=true]:bg-current',
   ],
   {
     variants: {
       size: {
-        icon: ['h-[24px] gap-[2px]', '*:w-[4px] *:min-h-[4px]'],
-        sm: ['h-[56px] gap-[4px]', '*:w-[8px] *:min-h-[8px]'],
-        md: ['h-[112px] gap-[8px]', '*:w-[16px] *:min-h-[16px]'],
-        lg: ['h-[224px] gap-[16px]', '*:w-[32px] *:min-h-[32px]'],
-        xl: ['h-[448px] gap-[32px]', '*:w-[64px] *:min-h-[64px]'],
+        icon: 'w-[4px] min-h-[4px]',
+        sm: 'w-[8px] min-h-[8px]',
+        md: 'w-[16px] min-h-[16px]',
+        lg: 'w-[32px] min-h-[32px]',
+        xl: 'w-[64px] min-h-[64px]',
       },
     },
     defaultVariants: {
@@ -64,6 +64,21 @@ export const AgentAudioVisualizerBarVariants = cva(
     },
   }
 );
+
+export const AgentAudioVisualizerBarVariants = cva('relative flex items-center justify-center', {
+  variants: {
+    size: {
+      icon: 'h-[24px] gap-[2px]',
+      sm: 'h-[56px] gap-[4px]',
+      md: 'h-[112px] gap-[8px]',
+      lg: 'h-[224px] gap-[16px]',
+      xl: 'h-[448px] gap-[32px]',
+    },
+  },
+  defaultVariants: {
+    size: 'md',
+  },
+});
 
 /**
  * Props for the AgentAudioVisualizerBar component.
@@ -93,10 +108,10 @@ export interface AgentAudioVisualizerBarProps {
    */
   className?: string;
   /**
-   * Custom children to render as bars. Each child receives data-lk-index,
-   * data-lk-highlighted, and style props for height.
+   * Custom div element to render as grid cells. Each child receives data-lk-index,
+   * data-lk-highlighted props and style props for height. Must be a single div element.
    */
-  children?: ReactNode | ReactNode[];
+  children?: ReactElement<ComponentProps<'div'>, 'div'>;
 }
 
 /**
@@ -172,7 +187,11 @@ export function AgentAudioVisualizerBar({
   );
 
   return (
-    <div className={cn(AgentAudioVisualizerBarVariants({ size }), className)} {...props}>
+    <div
+      data-lk-state={state}
+      className={cn(AgentAudioVisualizerBarVariants({ size }), className)}
+      {...props}
+    >
       {bands.map((band: number, idx: number) =>
         children ? (
           <React.Fragment key={idx}>
@@ -188,6 +207,7 @@ export function AgentAudioVisualizerBar({
             data-lk-index={idx}
             data-lk-highlighted={highlightedIndices.includes(idx)}
             style={{ height: `${band * 100}%` }}
+            className={cn(AgentAudioVisualizerBarElementVariants({ size }))}
           />
         )
       )}

@@ -15,13 +15,14 @@ export interface AppConfig {
   accentDark?: string;
 
   audioVisualizerType?: 'bar' | 'wave' | 'grid' | 'radial' | 'aura';
-  audioVisualizerRadius?: number;
-  audioVisualizerBarCount?: number;
-  audioVisualizerRowCount?: number;
-  audioVisualizerColumnCount?: number;
   audioVisualizerColor?: `#${string}`;
-  audioVisualizerColorShift?: number;
-  audioVisualizerLineWidth?: number;
+  audioVisualizerBarCount?: number;
+  audioVisualizerGridRowCount?: number;
+  audioVisualizerGridColumnCount?: number;
+  audioVisualizerRadialBarCount?: number;
+  audioVisualizerRadialRadius?: number;
+  audioVisualizerAuraColorShift?: number;
+  audioVisualizerWaveLineWidth?: number;
 
   // agent dispatch configuration
   agentName?: string;
@@ -46,13 +47,19 @@ export const APP_CONFIG_DEFAULTS: AppConfig = {
   accentDark: '#1fd5f9',
   startButtonText: 'Start call',
 
+  // audioVisualizerColor: '#1fd5f9',
   // audioVisualizerType: 'bar',
+  // audioVisualizerBarCount: 5,
   // audioVisualizerType: 'radial',
+  // audioVisualizerRadialBarCount: 24,
+  // audioVisualizerRadialRadius: 100,
   // audioVisualizerType: 'grid',
+  // audioVisualizerGridRowCount: 25,
+  // audioVisualizerGridColumnCount: 25,
   // audioVisualizerType: 'wave',
-  audioVisualizerType: 'aura',
-  audioVisualizerColor: '#1fd5f9',
-  audioVisualizerColorShift: 0.3,
+  // audioVisualizerWaveLineWidth: 3,
+  // audioVisualizerType: 'aura',
+  // audioVisualizerAuraColorShift: 0.3,
 
   // agent dispatch configuration
   agentName: process.env.AGENT_NAME ?? undefined,
