@@ -16,7 +16,7 @@ Also available for:
 - Real-time voice interaction with LiveKit Agents
 - Camera video streaming support
 - Screen sharing capabilities
-- Audio visualization and level monitoring
+- Multiple audio visualizer styles (`bar`, `grid`, `radial`, `wave`, `aura`)
 - Virtual avatar integration
 - Light/dark theme switching with system preference detection
 - Customizable branding, colors, and UI text via configuration
@@ -129,6 +129,22 @@ export const APP_CONFIG_DEFAULTS: AppConfig = {
   accentDark: '#1fd5f9',
   startButtonText: 'Start call',
 
+  // optional: audio visualization configuration
+  // audioVisualizerColor: '#002cf2',
+  // audioVisualizerColorDark: '#1fd5f9',
+  // audioVisualizerType: 'bar',
+  // audioVisualizerBarCount: 5,
+  // audioVisualizerType: 'radial',
+  // audioVisualizerRadialBarCount: 24,
+  // audioVisualizerRadialRadius: 100,
+  // audioVisualizerType: 'grid',
+  // audioVisualizerGridRowCount: 25,
+  // audioVisualizerGridColumnCount: 25,
+  // audioVisualizerType: 'wave',
+  // audioVisualizerWaveLineWidth: 3,
+  // audioVisualizerType: 'aura',
+  // audioVisualizerAuraColorShift: 0.3,
+
   // agent dispatch configuration
   agentName: undefined,
 
@@ -138,6 +154,18 @@ export const APP_CONFIG_DEFAULTS: AppConfig = {
 ```
 
 You can update these values in [`app-config.ts`](./app-config.ts) to customize branding, features, and UI text for your deployment.
+
+#### Audio visualizer presets
+
+Set `audioVisualizerType` in [`app-config.ts`](./app-config.ts) to switch visualizer styles:
+
+- `bar` (default): vertical bars with optional `audioVisualizerBarCount`
+- `grid`: dot grid with `audioVisualizerGridRowCount` and `audioVisualizerGridColumnCount`
+- `radial`: circular bars with `audioVisualizerRadialBarCount` and `audioVisualizerRadialRadius`
+- `wave`: oscilloscope-style wave with `audioVisualizerWaveLineWidth`
+- `aura`: shader-based aura with `audioVisualizerAuraColorShift`
+
+Use `audioVisualizerColor` to set a shared accent color across all visualizer modes.
 
 > [!NOTE]
 > The `sandboxId` is for the LiveKit Cloud Sandbox environment.
