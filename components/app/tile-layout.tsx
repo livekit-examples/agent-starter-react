@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTheme } from 'next-themes';
 import { Track } from 'livekit-client';
 import { AnimatePresence, motion } from 'motion/react';
 import {
@@ -76,6 +77,7 @@ interface TileLayoutProps {
 }
 
 export function TileLayout({ chatOpen, appConfig }: TileLayoutProps) {
+  const { resolvedTheme } = useTheme();
   const { videoTrack: agentVideoTrack } = useVoiceAssistant();
   const [screenShareTrack] = useTracks([Track.Source.ScreenShare]);
   const cameraTrack: TrackReference | undefined = useLocalTrackRef(Track.Source.Camera);
@@ -131,7 +133,12 @@ export function TileLayout({ chatOpen, appConfig }: TileLayoutProps) {
                       'bg-background rounded-4xl border border-transparent transition-[border,drop-shadow]',
                       chatOpen && 'border-input shadow-2xl/10 delay-200'
                     )}
-                    style={{ color: appConfig.audioVisualizerColor }}
+                    style={{
+                      color:
+                        resolvedTheme === 'dark'
+                          ? appConfig.audioVisualizerColorDark
+                          : appConfig.audioVisualizerColor,
+                    }}
                   />
                 </MotionContainer>
               )}

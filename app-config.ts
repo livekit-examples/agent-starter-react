@@ -16,6 +16,7 @@ export interface AppConfig {
 
   audioVisualizerType?: 'bar' | 'wave' | 'grid' | 'radial' | 'aura';
   audioVisualizerColor?: `#${string}`;
+  audioVisualizerColorDark?: `#${string}`;
   audioVisualizerBarCount?: number;
   audioVisualizerGridRowCount?: number;
   audioVisualizerGridColumnCount?: number;
@@ -47,7 +48,9 @@ export const APP_CONFIG_DEFAULTS: AppConfig = {
   accentDark: '#1fd5f9',
   startButtonText: 'Start call',
 
-  // audioVisualizerColor: '#1fd5f9',
+  // optional: audio visualization configuration
+  // audioVisualizerColor: '#002cf2',
+  // audioVisualizerColorDark: '#1fd5f9',
   // audioVisualizerType: 'bar',
   // audioVisualizerBarCount: 5,
   // audioVisualizerType: 'radial',
