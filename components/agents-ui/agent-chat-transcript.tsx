@@ -1,5 +1,6 @@
 'use client';
 
+import { type ComponentProps } from 'react';
 import { AnimatePresence } from 'motion/react';
 import { type AgentState, type ReceivedMessage } from '@livekit/components-react';
 import { AgentChatIndicator } from '@/components/agents-ui/agent-chat-indicator';
@@ -13,7 +14,7 @@ import { Message, MessageContent, MessageResponse } from '@/components/ai-elemen
 /**
  * Props for the AgentChatTranscript component.
  */
-export interface AgentChatTranscriptProps {
+export interface AgentChatTranscriptProps extends ComponentProps<'div'> {
   /**
    * The current state of the agent. When 'thinking', displays a loading indicator.
    */

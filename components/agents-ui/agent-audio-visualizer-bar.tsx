@@ -4,7 +4,6 @@ import React, {
   type CSSProperties,
   Children,
   type ComponentProps,
-  type ReactElement,
   type ReactNode,
   cloneElement,
   isValidElement,
@@ -111,7 +110,7 @@ export interface AgentAudioVisualizerBarProps {
    * Custom div element to render as grid cells. Each child receives data-lk-index,
    * data-lk-highlighted props and style props for height. Must be a single div element.
    */
-  children?: ReactElement<ComponentProps<'div'>, 'div'>;
+  children?: ReactNode;
 }
 
 /**
@@ -185,6 +184,10 @@ export function AgentAudioVisualizerBar({
     () => (state === 'speaking' ? volumeBands : new Array(_barCount).fill(0)),
     [state, volumeBands, _barCount]
   );
+
+  if (children && Array.isArray(children)) {
+    throw new Error('AgentAudioVisualizerBar children must be a single element.');
+  }
 
   return (
     <div

@@ -1,4 +1,4 @@
-import { type ComponentProps, Fragment } from 'react';
+import { type ComponentProps, Fragment, useMemo, useState } from 'react';
 import { type VariantProps, cva } from 'class-variance-authority';
 import { Track } from 'livekit-client';
 import {
@@ -120,22 +120,34 @@ export function AgentTrackToggle({
   variant = 'default',
   source,
   pending = false,
-  pressed = false,
+  pressed,
   defaultPressed = false,
   className,
   onPressedChange,
   ...props
 }: AgentTrackToggleProps) {
-  const IconComponent = getSourceIcon(source as Track.Source, pressed ?? false, pending);
+  const [uncontrolledPressed, setUncontrolledPressed] = useState(defaultPressed ?? false);
+  const isControlled = pressed !== undefined;
+  const resolvedPressed = useMemo(
+    () => (isControlled ? pressed : uncontrolledPressed) ?? false,
+    [isControlled, pressed, uncontrolledPressed]
+  );
+  const IconComponent = getSourceIcon(source as Track.Source, resolvedPressed, pending);
+  const handlePressedChange = (nextPressed: boolean) => {
+    if (!isControlled) {
+      setUncontrolledPressed(nextPressed);
+    }
+    onPressedChange?.(nextPressed);
+  };
 
   return (
     <Toggle
       size={size}
       variant={variant}
-      pressed={pressed}
-      defaultPressed={defaultPressed}
+      pressed={isControlled ? pressed : undefined}
+      defaultPressed={isControlled ? undefined : defaultPressed}
       aria-label={`Toggle ${source}`}
-      onPressedChange={onPressedChange}
+      onPressedChange={handlePressedChange}
       className={cn(
         agentTrackToggleVariants({
           size,

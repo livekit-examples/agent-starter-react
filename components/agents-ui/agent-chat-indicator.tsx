@@ -1,4 +1,4 @@
-import { type Ref } from 'react';
+import { type ComponentProps, type Ref } from 'react';
 import { type VariantProps, cva } from 'class-variance-authority';
 import { type MotionProps, motion } from 'motion/react';
 import { cn } from '@/lib/shadcn/utils';
@@ -77,7 +77,9 @@ export function AgentChatIndicator({
   size = 'md',
   className,
   ...props
-}: AgentChatIndicatorProps & VariantProps<typeof agentChatIndicatorVariants>) {
+}: AgentChatIndicatorProps &
+  ComponentProps<'span'> &
+  VariantProps<typeof agentChatIndicatorVariants>) {
   return (
     <motion.span
       {...motionAnimationProps}

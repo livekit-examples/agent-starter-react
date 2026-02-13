@@ -50,7 +50,7 @@ export function StartAudioButton({
   const { mergedProps } = useStartAudio({ room: roomEnsured, props });
 
   return (
-    <Button size={size} variant={variant} {...mergedProps}>
+    <Button size={size} variant={variant} {...props} {...mergedProps}>
       {label}
     </Button>
   );

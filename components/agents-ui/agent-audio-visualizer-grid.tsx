@@ -4,7 +4,6 @@ import React, {
   type CSSProperties,
   Children,
   type ComponentProps,
-  ReactElement,
   type ReactNode,
   cloneElement,
   isValidElement,
@@ -143,7 +142,7 @@ interface GridCellProps {
   columnCount: number;
   volumeBands: number[];
   highlightedCoordinate: Coordinate;
-  children: ReactNode;
+  children?: ReactNode;
 }
 
 const GridCell = memo(function GridCell({
@@ -208,10 +207,10 @@ export type AgentAudioVisualizerGridProps = GridOptions & {
    */
   className?: string;
   /**
-   * Custom div element to render as grid cells. Each child receives data-lk-index
-   * and data-lk-highlighted props. Must be a single div element.
+   * Custom element to render as grid cells. Each child receives data-lk-index
+   * and data-lk-highlighted props.
    */
-  children?: ReactElement<ComponentProps<'div'>, 'div'>;
+  children?: ReactNode;
 } & VariantProps<typeof AgentAudioVisualizerGridVariants>;
 
 /**
@@ -258,6 +257,10 @@ export function AgentAudioVisualizerGrid({
     loPass: 100,
     hiPass: 200,
   });
+
+  if (children && Array.isArray(children)) {
+    throw new Error('AgentAudioVisualizerGrid children must be a single element.');
+  }
 
   return (
     <div

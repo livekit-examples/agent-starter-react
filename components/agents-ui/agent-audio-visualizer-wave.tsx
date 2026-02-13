@@ -282,7 +282,6 @@ export function AgentAudioVisualizerWave({
   blur,
   audioTrack,
   className,
-  style,
   ref,
   ...props
 }: AgentAudioVisualizerWaveProps &
@@ -309,13 +308,13 @@ export function AgentAudioVisualizerWave({
   return (
     <WaveShader
       ref={ref}
+      data-lk-state={state}
       speed={speed}
       color={color}
       amplitude={amplitude}
       frequency={frequency}
       lineWidth={_lineWidth}
       blur={blur}
-      style={{ opacity, ...style }}
       className={cn(
         AgentAudioVisualizerWaveVariants({ size }),
         'mask-[linear-gradient(90deg,transparent_0%,black_20%,black_80%,transparent_100%)]',

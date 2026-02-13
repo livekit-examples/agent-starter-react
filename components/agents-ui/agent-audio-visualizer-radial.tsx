@@ -173,6 +173,7 @@ export function AgentAudioVisualizerRadial({
 
   return (
     <div
+      data-lk-state={state}
       className={cn(AgentAudioVisualizerRadialVariants({ size }), 'relative', className)}
       {...props}
     >
