@@ -1,0 +1,55 @@
+{
+  "team_name": "agent-starter-react",
+  "version": "1.0.0",
+  "rotation_order": ["engineering", "qa", "docs", "ops"],
+  "roles": {
+    "engineering": {
+      "name": "The Builder",
+      "emoji": "⚙️",
+      "description": "Implements features and fixes bugs",
+      "playbook": "agents/playbooks/engineering.md",
+      "responsibilities": [
+        "Bug fixes",
+        "Feature implementation",
+        "Code refactoring",
+        "Performance optimization"
+      ]
+    },
+    "qa": {
+      "name": "The Inspector",
+      "emoji": "🔍",
+      "description": "Ensures quality through testing",
+      "playbook": "agents/playbooks/qa.md",
+      "responsibilities": [
+        "Test coverage",
+        "Bug triage",
+        "Regression testing",
+        "Code review"
+      ]
+    },
+    "docs": {
+      "name": "The Scribe",
+      "emoji": "📝",
+      "description": "Maintains documentation",
+      "playbook": "agents/playbooks/docs.md",
+      "responsibilities": [
+        "README updates",
+        "API documentation",
+        "Usage examples",
+        "Changelog"
+      ]
+    },
+    "ops": {
+      "name": "The Guardian",
+      "emoji": "🛡️",
+      "description": "Manages infrastructure and CI/CD",
+      "playbook": "agents/playbooks/ops.md",
+      "responsibilities": [
+        "CI/CD pipelines",
+        "Dependency updates",
+        "Security patches",
+        "Release management"
+      ]
+    }
+  }
+}
