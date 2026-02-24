@@ -1,5 +1,5 @@
 import { type MotionProps, motion } from 'motion/react';
-import { useVoiceAssistant } from '@livekit/components-react';
+import { useAgent } from '@livekit/components-react';
 import { AppConfig } from '@/app-config';
 import { AgentAudioVisualizerAura } from '@/components/agents-ui/agent-audio-visualizer-aura';
 import {
@@ -30,7 +30,7 @@ export function AudioVisualizer({
   ...props
 }: AudioVisualizerProps) {
   const { audioVisualizerType } = appConfig;
-  const { state, audioTrack } = useVoiceAssistant();
+  const { state, microphoneTrack } = useAgent();
 
   switch (audioVisualizerType) {
     case 'aura': {
@@ -38,7 +38,7 @@ export function AudioVisualizer({
       return (
         <MotionAgentAudioVisualizerAura
           state={state}
-          audioTrack={audioTrack}
+          audioTrack={microphoneTrack}
           color={audioVisualizerColor}
           colorShift={audioVisualizerAuraColorShift}
           className={cn('size-[300px] md:size-[450px]', className)}
@@ -52,7 +52,7 @@ export function AudioVisualizer({
         <motion.div className={className} {...props}>
           <MotionAgentAudioVisualizerWave
             state={state}
-            audioTrack={audioTrack}
+            audioTrack={microphoneTrack}
             color={audioVisualizerColor}
             lineWidth={isChatOpen ? audioVisualizerWaveLineWidth * 2 : audioVisualizerWaveLineWidth}
             className="size-[300px] md:size-[450px]"
@@ -77,7 +77,7 @@ export function AudioVisualizer({
         <MotionAgentAudioVisualizerGrid
           size={size}
           state={state}
-          audioTrack={audioTrack}
+          audioTrack={microphoneTrack}
           rowCount={audioVisualizerGridRowCount}
           columnCount={audioVisualizerGridColumnCount}
           radius={Math.round(
@@ -95,7 +95,7 @@ export function AudioVisualizer({
           <MotionAgentAudioVisualizerRadial
             size="xl"
             state={state}
-            audioTrack={audioTrack}
+            audioTrack={microphoneTrack}
             radius={audioVisualizerRadialRadius}
             barCount={audioVisualizerRadialBarCount}
             className="size-[450px]"
@@ -122,7 +122,7 @@ export function AudioVisualizer({
         <MotionAgentAudioVisualizerBar
           size={size}
           state={state}
-          audioTrack={audioTrack}
+          audioTrack={microphoneTrack}
           barCount={audioVisualizerBarCount}
           className={cn(
             size === 'xl' && 'size-[450px] gap-2',

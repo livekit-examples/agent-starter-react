@@ -5,9 +5,9 @@ import { AnimatePresence, motion } from 'motion/react';
 import {
   type TrackReference,
   VideoTrack,
+  useAgent,
   useLocalParticipant,
   useTracks,
-  useVoiceAssistant,
 } from '@livekit/components-react';
 import { AppConfig } from '@/app-config';
 import { AudioVisualizer } from '@/components/app/audio-visualizer';
@@ -78,7 +78,7 @@ interface TileLayoutProps {
 
 export function TileLayout({ chatOpen, appConfig }: TileLayoutProps) {
   const { resolvedTheme } = useTheme();
-  const { videoTrack: agentVideoTrack } = useVoiceAssistant();
+  const { cameraTrack: agentVideoTrack } = useAgent();
   const [screenShareTrack] = useTracks([Track.Source.ScreenShare]);
   const cameraTrack: TrackReference | undefined = useLocalTrackRef(Track.Source.Camera);
 
