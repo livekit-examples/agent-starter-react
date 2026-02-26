@@ -1,3 +1,26 @@
+// MIT License
+//
+// Copyright (c) 2018 Morgan Villedieu
+// Copyright (c) 2023 Rysana, Inc. (forked from the above)
+// Copyright (c) 2026 LiveKit, Inc. (forked from the above)
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 import React, { type ComponentPropsWithoutRef, useEffect, useRef } from 'react';
 
 const PRECISIONS = ['lowp', 'mediump', 'highp'];
@@ -434,6 +457,13 @@ export interface ReactShaderToyProps {
 
   /** Custom callback to handle warnings. Defaults to `console.warn`. */
   onWarning?: (warning: string) => void;
+
+  /**
+   * When true, the animation loop runs even when the canvas is not visible in the viewport.
+   * When false (default), animation runs only while visible (uses Intersection Observer),
+   * reducing CPU/GPU usage when the shader is off-screen.
+   */
+  animateWhenNotVisible?: boolean;
 }
 
 export function ReactShaderToy({
@@ -450,6 +480,7 @@ export function ReactShaderToy({
   onDoneLoadingTextures,
   onError = console.error,
   onWarning = console.warn,
+  animateWhenNotVisible = false,
   ...canvasProps
 }: ReactShaderToyProps & ComponentPropsWithoutRef<'canvas'>) {
   // Refs for WebGL state
@@ -459,6 +490,9 @@ export function ReactShaderToy({
   const shaderProgramRef = useRef<WebGLProgram | null>(null);
   const vertexPositionAttributeRef = useRef<number | undefined>(undefined);
   const animFrameIdRef = useRef<number | undefined>(undefined);
+  const initFrameIdRef = useRef<number | undefined>(undefined);
+  const isVisibleRef = useRef(true);
+  const animateWhenNotVisibleRef = useRef(animateWhenNotVisible);
   const mousedownRef = useRef(false);
   const canvasPositionRef = useRef<DOMRect | undefined>(undefined);
   const timerRef = useRef(0);
@@ -818,7 +852,9 @@ export function ReactShaderToy({
       mouseValue[0] = lerpVal(currentX, lastMouseArrRef.current[0] ?? 0, lerp);
       mouseValue[1] = lerpVal(currentY, lastMouseArrRef.current[1] ?? 0, lerp);
     }
-    animFrameIdRef.current = requestAnimationFrame(drawScene);
+    if (animateWhenNotVisibleRef.current || isVisibleRef.current) {
+      animFrameIdRef.current = requestAnimationFrame(drawScene);
+    }
   };
 
   const addEventListeners = () => {
@@ -866,6 +902,33 @@ export function ReactShaderToy({
     propsUniformsRef.current = propUniforms;
   }, [propUniforms]);
 
+  useEffect(() => {
+    animateWhenNotVisibleRef.current = animateWhenNotVisible;
+    if (animateWhenNotVisible) {
+      isVisibleRef.current = true;
+    }
+  }, [animateWhenNotVisible]);
+
+  // Intersection Observer: pause animation when off-screen when animateWhenNotVisible is false
+  useEffect(() => {
+    if (animateWhenNotVisible || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          isVisibleRef.current = entry.isIntersecting;
+          if (entry.isIntersecting) {
+            requestAnimationFrame(drawScene);
+          }
+        }
+      },
+      { threshold: 0 }
+    );
+    observer.observe(canvas);
+    return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [animateWhenNotVisible]);
+
   // Main effect for initialization and cleanup
   useEffect(() => {
     const textures = texturesArrRef.current;
@@ -891,7 +954,7 @@ export function ReactShaderToy({
       }
     }
 
-    requestAnimationFrame(init);
+    initFrameIdRef.current = requestAnimationFrame(init);
 
     // Cleanup function
     return () => {
@@ -908,6 +971,7 @@ export function ReactShaderToy({
         shaderProgramRef.current = null;
       }
       removeEventListeners();
+      cancelAnimationFrame(initFrameIdRef.current ?? 0);
       cancelAnimationFrame(animFrameIdRef.current ?? 0);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

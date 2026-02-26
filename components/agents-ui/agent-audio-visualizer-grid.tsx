@@ -199,6 +199,10 @@ export type AgentAudioVisualizerGridProps = GridOptions & {
    */
   state?: AgentState;
   /**
+   * The color of the grid cells in hexidecimal format.
+   */
+  color?: `#${string}`;
+  /**
    * The audio track to visualize. Can be a local/remote audio track or a track reference.
    */
   audioTrack?: LocalAudioTrack | RemoteAudioTrack | TrackReferenceOrPlaceholder;
@@ -235,6 +239,7 @@ export function AgentAudioVisualizerGrid({
   size = 'md',
   state = 'connecting',
   radius,
+  color,
   rowCount: _rowCount = 5,
   columnCount: _columnCount = 5,
   interval = 100,
@@ -266,7 +271,9 @@ export function AgentAudioVisualizerGrid({
     <div
       data-lk-state={state}
       className={cn(AgentAudioVisualizerGridVariants({ size }), className)}
-      style={{ ...style, gridTemplateColumns: `repeat(${columnCount}, 1fr)` }}
+      style={
+        { ...style, gridTemplateColumns: `repeat(${columnCount}, 1fr)`, color } as CSSProperties
+      }
       {...props}
     >
       {items.map((idx) => (

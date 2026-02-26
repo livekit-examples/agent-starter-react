@@ -17,12 +17,12 @@ export interface AppConfig {
   audioVisualizerType?: 'bar' | 'wave' | 'grid' | 'radial' | 'aura';
   audioVisualizerColor?: `#${string}`;
   audioVisualizerColorDark?: `#${string}`;
+  audioVisualizerColorShift?: number;
   audioVisualizerBarCount?: number;
   audioVisualizerGridRowCount?: number;
   audioVisualizerGridColumnCount?: number;
   audioVisualizerRadialBarCount?: number;
   audioVisualizerRadialRadius?: number;
-  audioVisualizerAuraColorShift?: number;
   audioVisualizerWaveLineWidth?: number;
 
   // agent dispatch configuration
@@ -51,6 +51,7 @@ export const APP_CONFIG_DEFAULTS: AppConfig = {
   // optional: audio visualization configuration
   // audioVisualizerColor: '#002cf2',
   // audioVisualizerColorDark: '#1fd5f9',
+  // audioVisualizerColorShift: 0.3,
   // audioVisualizerType: 'bar',
   // audioVisualizerBarCount: 5,
   // audioVisualizerType: 'radial',
@@ -62,7 +63,6 @@ export const APP_CONFIG_DEFAULTS: AppConfig = {
   // audioVisualizerType: 'wave',
   // audioVisualizerWaveLineWidth: 3,
   // audioVisualizerType: 'aura',
-  // audioVisualizerAuraColorShift: 0.3,
 
   // agent dispatch configuration
   agentName: process.env.AGENT_NAME ?? undefined,

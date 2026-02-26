@@ -1,11 +1,10 @@
+'use client';
+
+import React from 'react';
 import { type MotionProps, motion } from 'motion/react';
-import { useAgent } from '@livekit/components-react';
-import { AppConfig } from '@/app-config';
+import { useVoiceAssistant } from '@livekit/components-react';
 import { AgentAudioVisualizerAura } from '@/components/agents-ui/agent-audio-visualizer-aura';
-import {
-  AgentAudioVisualizerBar,
-  AgentAudioVisualizerBarElementVariants,
-} from '@/components/agents-ui/agent-audio-visualizer-bar';
+import { AgentAudioVisualizerBar } from '@/components/agents-ui/agent-audio-visualizer-bar';
 import { AgentAudioVisualizerGrid } from '@/components/agents-ui/agent-audio-visualizer-grid';
 import { AgentAudioVisualizerRadial } from '@/components/agents-ui/agent-audio-visualizer-radial';
 import { AgentAudioVisualizerWave } from '@/components/agents-ui/agent-audio-visualizer-wave';
@@ -18,42 +17,56 @@ const MotionAgentAudioVisualizerRadial = motion.create(AgentAudioVisualizerRadia
 const MotionAgentAudioVisualizerWave = motion.create(AgentAudioVisualizerWave);
 
 interface AudioVisualizerProps extends MotionProps {
-  appConfig: AppConfig;
   isChatOpen: boolean;
+  audioVisualizerType?: 'bar' | 'wave' | 'grid' | 'radial' | 'aura';
+  audioVisualizerColor?: `#${string}`;
+  audioVisualizerColorShift?: number;
+  audioVisualizerWaveLineWidth?: number;
+  audioVisualizerGridRowCount?: number;
+  audioVisualizerGridColumnCount?: number;
+  audioVisualizerRadialBarCount?: number;
+  audioVisualizerRadialRadius?: number;
+  audioVisualizerBarCount?: number;
   className?: string;
 }
 
 export function AudioVisualizer({
-  appConfig,
+  audioVisualizerType = 'bar',
+  audioVisualizerColor,
+  audioVisualizerColorShift = 0.3,
+  audioVisualizerBarCount = 5,
+  audioVisualizerRadialRadius = 100,
+  audioVisualizerRadialBarCount = 25,
+  audioVisualizerGridRowCount = 15,
+  audioVisualizerGridColumnCount = 15,
+  audioVisualizerWaveLineWidth = 3,
   isChatOpen,
   className,
   ...props
 }: AudioVisualizerProps) {
-  const { audioVisualizerType } = appConfig;
-  const { state, microphoneTrack } = useAgent();
+  const { state, audioTrack } = useVoiceAssistant();
 
   switch (audioVisualizerType) {
     case 'aura': {
-      const { audioVisualizerColor, audioVisualizerAuraColorShift } = appConfig;
       return (
         <MotionAgentAudioVisualizerAura
           state={state}
-          audioTrack={microphoneTrack}
+          audioTrack={audioTrack}
           color={audioVisualizerColor}
-          colorShift={audioVisualizerAuraColorShift}
+          colorShift={audioVisualizerColorShift}
           className={cn('size-[300px] md:size-[450px]', className)}
           {...props}
         />
       );
     }
     case 'wave': {
-      const { audioVisualizerColor, audioVisualizerWaveLineWidth = 3 } = appConfig;
       return (
         <motion.div className={className} {...props}>
           <MotionAgentAudioVisualizerWave
             state={state}
-            audioTrack={microphoneTrack}
+            audioTrack={audioTrack}
             color={audioVisualizerColor}
+            colorShift={audioVisualizerColorShift}
             lineWidth={isChatOpen ? audioVisualizerWaveLineWidth * 2 : audioVisualizerWaveLineWidth}
             className="size-[300px] md:size-[450px]"
           />
@@ -61,15 +74,14 @@ export function AudioVisualizer({
       );
     }
     case 'grid': {
-      const { audioVisualizerGridRowCount = 9, audioVisualizerGridColumnCount = 9 } = appConfig;
       const totalCount = audioVisualizerGridRowCount * audioVisualizerGridColumnCount;
 
       let size: 'icon' | 'sm' | 'md' | 'lg' | 'xl' = 'sm';
-      if (totalCount <= 100) {
+      if (totalCount < 100) {
         size = 'xl';
-      } else if (totalCount <= 200) {
+      } else if (totalCount < 200) {
         size = 'lg';
-      } else if (totalCount <= 300) {
+      } else if (totalCount < 300) {
         size = 'md';
       }
 
@@ -77,25 +89,26 @@ export function AudioVisualizer({
         <MotionAgentAudioVisualizerGrid
           size={size}
           state={state}
-          audioTrack={microphoneTrack}
+          color={audioVisualizerColor}
+          audioTrack={audioTrack}
           rowCount={audioVisualizerGridRowCount}
           columnCount={audioVisualizerGridColumnCount}
           radius={Math.round(
             Math.min(audioVisualizerGridRowCount, audioVisualizerGridColumnCount) / 4
           )}
-          className={cn('size-[350px] gap-0 p-8 md:size-[450px]', className)}
+          className={cn('size-[350px] gap-0 p-8 *:place-self-center md:size-[450px]', className)}
           {...props}
         />
       );
     }
     case 'radial': {
-      const { audioVisualizerRadialBarCount = 25, audioVisualizerRadialRadius = 12 } = appConfig;
       return (
         <motion.div className={className} {...props}>
           <MotionAgentAudioVisualizerRadial
             size="xl"
             state={state}
-            audioTrack={microphoneTrack}
+            color={audioVisualizerColor}
+            audioTrack={audioTrack}
             radius={audioVisualizerRadialRadius}
             barCount={audioVisualizerRadialBarCount}
             className="size-[450px]"
@@ -104,37 +117,40 @@ export function AudioVisualizer({
       );
     }
     default: {
-      const { audioVisualizerBarCount = 5 } = appConfig;
-
       let size: 'icon' | 'sm' | 'md' | 'lg' | 'xl' = 'icon';
+      let sizedClassName = cn('size-[300px] md:size-[450px]', className);
 
       if (audioVisualizerBarCount <= 5) {
         size = 'xl';
+        sizedClassName = cn('size-[450px] *:min-h-[64px] *:w-[64px] gap-4', className);
       } else if (audioVisualizerBarCount <= 10) {
         size = 'lg';
+        sizedClassName = cn('size-[450px]', className);
       } else if (audioVisualizerBarCount <= 15) {
         size = 'md';
+        sizedClassName = cn('size-[350px] md:size-[450px]', className);
       } else if (audioVisualizerBarCount <= 30) {
         size = 'sm';
+        sizedClassName = cn('size-[300px] md:size-[450px]', className);
       }
 
       return (
         <MotionAgentAudioVisualizerBar
           size={size}
           state={state}
-          audioTrack={microphoneTrack}
+          color={audioVisualizerColor}
+          audioTrack={audioTrack}
           barCount={audioVisualizerBarCount}
-          className={cn(
-            size === 'xl' && 'size-[450px] gap-2',
-            size === 'lg' && 'size-[450px]',
-            size === 'md' && 'size-[350px] md:size-[450px]',
-            size === 'sm' && 'size-[300px] md:size-[450px]',
-            size === 'icon' && 'size-[300px] md:size-[450px]',
-            className
-          )}
+          className={sizedClassName}
           {...props}
         >
-          <span className={cn(AgentAudioVisualizerBarElementVariants({ size }))} />
+          <span
+            className={cn([
+              'bg-muted min-h-2.5 w-2.5 rounded-full',
+              'origin-center transition-colors duration-250 ease-linear',
+              'data-[lk-highlighted=true]:bg-foreground data-[lk-muted=true]:bg-muted',
+            ])}
+          />
         </MotionAgentAudioVisualizerBar>
       );
     }

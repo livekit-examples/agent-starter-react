@@ -20,7 +20,7 @@ function hexToRgb(hexColor: string) {
 
       return color;
     }
-  } catch (error) {
+  } catch {
     console.error(
       `Invalid hex color '${hexColor}'.\nFalling back to default color '${DEFAULT_COLOR}'.`
     );
@@ -42,6 +42,23 @@ vec2 randFibo(vec2 p) {
 // Luma for alpha
 float luma(vec3 color) {
   return dot(color, vec3(0.299, 0.587, 0.114));
+}
+
+// RGB to HSV
+vec3 rgb2hsv(vec3 c) {
+  vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+  vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+  vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+  float d = q.x - min(q.w, q.y);
+  float e = 1.0e-10;
+  return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+}
+
+// HSV to RGB
+vec3 hsv2rgb(vec3 c) {
+  vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+  vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+  return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
 }
 
 // Bell curve function for attenuation from center with rounded top
@@ -104,9 +121,18 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
   // Solid line with smooth edges using minimum distance
   float line = smoothstep(lineWidthUV + smoothingUV, lineWidthUV - smoothingUV, minDist);
   
-  // Calculate color position based on x position for gradient effect
-  float colorPos = x;
   vec3 color = uColor;
+  if(abs(uColorShift) > 0.01) {
+    // Keep the center 50% at base color, then ramp shift across outer 25% on each side.
+    float centerBandHalfWidth = 0.2;
+    float edgeBandWidth = 0.5;
+    float distanceFromCenter = abs(x - centerX);
+    float edgeFactor = clamp((distanceFromCenter - centerBandHalfWidth) / edgeBandWidth, 0.0, 1.0);
+    vec3 hsv = rgb2hsv(color);
+    // Hue shift is zero in the center band and strongest at far edges.
+    hsv.x = fract(hsv.x + edgeFactor * uColorShift * 0.3);
+    color = hsv2rgb(hsv);
+  }
   
   // Apply line intensity
   color *= line;
@@ -142,10 +168,15 @@ interface WaveShaderProps {
    */
   frequency?: number;
   /**
-   * Color of the oscilloscope
+   * Color of the oscilloscope in hexidecimal format.
    * @default '#1FD5F9'
    */
-  color?: string;
+  color?: `#${string}`;
+  /**
+   * Hue shift amount applied toward the outside of the wave. Center remains at the base color.
+   * @default 0.05
+   */
+  colorShift?: number;
   /**
    * Mix of the oscilloscope
    * @default 1.0
@@ -166,6 +197,7 @@ interface WaveShaderProps {
 function WaveShader({
   speed = 10,
   color = '#1FD5F9',
+  colorShift = 0.05,
   mix = 1.0,
   amplitude = 0.02,
   frequency = 20.0,
@@ -190,6 +222,7 @@ function WaveShader({
           uLineWidth: { type: '1f', value: lineWidth },
           uSmoothing: { type: '1f', value: blur },
           uColor: { type: '3fv', value: rgbColor },
+          uColorShift: { type: '1f', value: colorShift },
         }}
         onError={(error) => {
           console.error('Shader error:', error);
@@ -232,10 +265,15 @@ export interface AgentAudioVisualizerWaveProps {
    */
   state?: AgentState;
   /**
-   * The color of the wave in hex format.
+   * The color of the wave in hexidecimal format.
    * @defaultValue '#1FD5F9'
    */
-  color?: string;
+  color?: `#${string}`;
+  /**
+   * The color shift of the wave. Higher values increase hue variation toward the edges.
+   * @defaultValue 0.05
+   */
+  colorShift?: number;
   /**
    * The line width of the wave in pixels.
    * @defaultValue 2.0
@@ -268,6 +306,7 @@ export interface AgentAudioVisualizerWaveProps {
  *   size="lg"
  *   state="speaking"
  *   color="#1FD5F9"
+ *   colorShift={0.3}
  *   lineWidth={2}
  *   blur={0.5}
  *   audioTrack={audioTrack}
@@ -278,6 +317,7 @@ export function AgentAudioVisualizerWave({
   size = 'lg',
   state = 'speaking',
   color,
+  colorShift = 0.05,
   lineWidth,
   blur,
   audioTrack,
@@ -311,6 +351,8 @@ export function AgentAudioVisualizerWave({
       data-lk-state={state}
       speed={speed}
       color={color}
+      colorShift={colorShift}
+      mix={opacity}
       amplitude={amplitude}
       frequency={frequency}
       lineWidth={_lineWidth}
@@ -318,7 +360,6 @@ export function AgentAudioVisualizerWave({
       className={cn(
         AgentAudioVisualizerWaveVariants({ size }),
         'mask-[linear-gradient(90deg,transparent_0%,black_20%,black_80%,transparent_100%)]',
-        'overflow-hidden rounded-full',
         className
       )}
       {...props}
