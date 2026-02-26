@@ -9,10 +9,10 @@ importers:
   .:
     dependencies:
       '@livekit/components-react':
-        specifier: ^2.9.18
-        version: 2.9.18(@livekit/krisp-noise-filter@0.2.16(livekit-client@2.15.15(@types/dom-mediacapture-record@1.0.22)))(livekit-client@2.15.15(@types/dom-mediacapture-record@1.0.22))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(tslib@2.8.1)
+        specifier: ^2.9.20
+        version: 2.9.20(@livekit/krisp-noise-filter@0.2.16(livekit-client@2.17.2(@types/dom-mediacapture-record@1.0.22)))(livekit-client@2.17.2(@types/dom-mediacapture-record@1.0.22))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(tslib@2.8.1)
       '@livekit/protocol':
-        specifier: ^1.40.0
+        specifier: ^1.41.0
         version: 1.41.0
       '@phosphor-icons/react':
         specifier: ^2.1.8
@@ -84,10 +84,10 @@ importers:
         specifier: ^6.0.12
         version: 6.1.0
       livekit-client:
-        specifier: ^2.15.15
-        version: 2.15.15(@types/dom-mediacapture-record@1.0.22)
+        specifier: ^2.17.2
+        version: 2.17.2(@types/dom-mediacapture-record@1.0.22)
       livekit-server-sdk:
-        specifier: ^2.13.2
+        specifier: ^2.13.3
         version: 2.13.3
       lucide-react:
         specifier: ^0.555.0
@@ -506,19 +506,19 @@ packages:
   '@jridgewell/trace-mapping@0.3.30':
     resolution: {integrity: sha512-GQ7Nw5G2lTu/BtHTKfXhKHok2WGetd4XYcVKGx00SjAk8GMwgJM3zr6zORiPGuOE+/vkc90KtTosSSvaCjKb2Q==}
 
-  '@livekit/components-core@0.12.12':
-    resolution: {integrity: sha512-DQ+lOAMPvum37Ta4lQLETxQe7ZxhivI78ZfE4nnWP0AcnwNByNR2vVLp9VGvw577HmvgHEkbjBbGBJBSZEBEZA==}
+  '@livekit/components-core@0.12.13':
+    resolution: {integrity: sha512-DQmi84afHoHjZ62wm8y+XPNIDHTwFHAltjd3lmyXj8UZHOY7wcza4vFt1xnghJOD5wLRY58L1dkAgAw59MgWvw==}
     engines: {node: '>=18'}
     peerDependencies:
-      livekit-client: ^2.15.14
+      livekit-client: ^2.17.2
       tslib: ^2.6.2
 
-  '@livekit/components-react@2.9.18':
-    resolution: {integrity: sha512-apnT0tEL1lQdTWO+m5qIfnxfOJAjFeX8Vx7g1qU73V7L+upM+xZBClAgD3eoOMhLyqgW1Aea2HUE5JdEdPKFhA==}
+  '@livekit/components-react@2.9.20':
+    resolution: {integrity: sha512-hjkYOsJj9Jbghb7wM5cI8HoVisKeL6Zcy1VnRWTLm0sqVbto8GJp/17T4Udx85mCPY6Jgh8I1Cv0yVzgz7CQtg==}
     engines: {node: '>=18'}
     peerDependencies:
       '@livekit/krisp-noise-filter': ^0.2.12 || ^0.3.0
-      livekit-client: ^2.16.0
+      livekit-client: ^2.17.2
       react: '>=18'
       react-dom: '>=18'
       tslib: ^2.6.2
@@ -537,8 +537,8 @@ packages:
   '@livekit/protocol@1.41.0':
     resolution: {integrity: sha512-bozBB39VSbd0IjRBwShMlLskqkd9weWJNskaB1CVpcEO9UUI1gMwAtBJOKYblzZJT9kE1SJa3L4oWWwsZMzSXw==}
 
-  '@livekit/protocol@1.42.2':
-    resolution: {integrity: sha512-0jeCwoMJKcwsZICg5S6RZM4xhJoF78qMvQELjACJQn6/VB+jmiySQKOSELTXvPBVafHfEbMlqxUw2UR1jTXs2g==}
+  '@livekit/protocol@1.44.0':
+    resolution: {integrity: sha512-/vfhDUGcUKO8Q43r6i+5FrDhl5oZjm/X3U4x2Iciqvgn5C8qbj+57YPcWSJ1kyIZm5Cm6AV2nAPjMm3ETD/iyg==}
 
   '@mermaid-js/parser@0.6.3':
     resolution: {integrity: sha512-lnjOhe7zyHjc+If7yT4zoedx2vo4sHaTmtkl1+or8BRTnCtDmcTpAjpzDSfCZrshM5bCoz0GyidzadJAH1xobA==}
@@ -3035,8 +3035,8 @@ packages:
     resolution: {integrity: sha512-xi6IyHML+c9+Q3W0S4fCQJOym42pyurFiJUHEcEyHS0CeKzia4yZDEsLlqOFykxOdHpNy0NmvVO31vcSqAxJCg==}
     engines: {node: '>= 12.0.0'}
 
-  livekit-client@2.15.15:
-    resolution: {integrity: sha512-z1mrGIyn6BZhCf4VDFcIuvHkbWftihwO6Y9+Kicr4VWQ2TH8pb1PIF97OsS1TiLD2QlhIFp2HNYfuvv6Kz2fVA==}
+  livekit-client@2.17.2:
+    resolution: {integrity: sha512-+67y2EtAWZabARlY7kANl/VT1Uu1EJYR5a8qwpT2ub/uBCltsEgEDOxCIMwE9HFR5w+z41HR6GL9hyEvW/y6CQ==}
     peerDependencies:
       '@types/dom-mediacapture-record': ^1
 
@@ -4488,31 +4488,31 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@livekit/components-core@0.12.12(livekit-client@2.15.15(@types/dom-mediacapture-record@1.0.22))(tslib@2.8.1)':
+  '@livekit/components-core@0.12.13(livekit-client@2.17.2(@types/dom-mediacapture-record@1.0.22))(tslib@2.8.1)':
     dependencies:
       '@floating-ui/dom': 1.7.4
-      livekit-client: 2.15.15(@types/dom-mediacapture-record@1.0.22)
+      livekit-client: 2.17.2(@types/dom-mediacapture-record@1.0.22)
       loglevel: 1.9.1
       rxjs: 7.8.2
       tslib: 2.8.1
 
-  '@livekit/components-react@2.9.18(@livekit/krisp-noise-filter@0.2.16(livekit-client@2.15.15(@types/dom-mediacapture-record@1.0.22)))(livekit-client@2.15.15(@types/dom-mediacapture-record@1.0.22))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(tslib@2.8.1)':
+  '@livekit/components-react@2.9.20(@livekit/krisp-noise-filter@0.2.16(livekit-client@2.17.2(@types/dom-mediacapture-record@1.0.22)))(livekit-client@2.17.2(@types/dom-mediacapture-record@1.0.22))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(tslib@2.8.1)':
     dependencies:
-      '@livekit/components-core': 0.12.12(livekit-client@2.15.15(@types/dom-mediacapture-record@1.0.22))(tslib@2.8.1)
+      '@livekit/components-core': 0.12.13(livekit-client@2.17.2(@types/dom-mediacapture-record@1.0.22))(tslib@2.8.1)
       clsx: 2.1.1
       events: 3.3.0
       jose: 6.1.0
-      livekit-client: 2.15.15(@types/dom-mediacapture-record@1.0.22)
+      livekit-client: 2.17.2(@types/dom-mediacapture-record@1.0.22)
       react: 19.1.1
       react-dom: 19.1.1(react@19.1.1)
       tslib: 2.8.1
       usehooks-ts: 3.1.1(react@19.1.1)
     optionalDependencies:
-      '@livekit/krisp-noise-filter': 0.2.16(livekit-client@2.15.15(@types/dom-mediacapture-record@1.0.22))
+      '@livekit/krisp-noise-filter': 0.2.16(livekit-client@2.17.2(@types/dom-mediacapture-record@1.0.22))
 
-  '@livekit/krisp-noise-filter@0.2.16(livekit-client@2.15.15(@types/dom-mediacapture-record@1.0.22))':
+  '@livekit/krisp-noise-filter@0.2.16(livekit-client@2.17.2(@types/dom-mediacapture-record@1.0.22))':
     dependencies:
-      livekit-client: 2.15.15(@types/dom-mediacapture-record@1.0.22)
+      livekit-client: 2.17.2(@types/dom-mediacapture-record@1.0.22)
     optional: true
 
   '@livekit/mutex@1.1.1': {}
@@ -4521,7 +4521,7 @@ snapshots:
     dependencies:
       '@bufbuild/protobuf': 1.10.1
 
-  '@livekit/protocol@1.42.2':
+  '@livekit/protocol@1.44.0':
     dependencies:
       '@bufbuild/protobuf': 1.10.1
 
@@ -7297,10 +7297,10 @@ snapshots:
       lightningcss-win32-arm64-msvc: 1.30.1
       lightningcss-win32-x64-msvc: 1.30.1
 
-  livekit-client@2.15.15(@types/dom-mediacapture-record@1.0.22):
+  livekit-client@2.17.2(@types/dom-mediacapture-record@1.0.22):
     dependencies:
       '@livekit/mutex': 1.1.1
-      '@livekit/protocol': 1.42.2
+      '@livekit/protocol': 1.44.0
       '@types/dom-mediacapture-record': 1.0.22
       events: 3.3.0
       jose: 6.1.0

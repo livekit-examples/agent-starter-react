@@ -30,7 +30,7 @@ export function App({ appConfig }: AppProps) {
   const tokenSource = useMemo(() => {
     return typeof process.env.NEXT_PUBLIC_CONN_DETAILS_ENDPOINT === 'string'
       ? getSandboxTokenSource(appConfig)
-      : TokenSource.endpoint('/api/connection-details');
+      : TokenSource.endpoint('/api/token');
   }, [appConfig]);
 
   const session = useSession(
