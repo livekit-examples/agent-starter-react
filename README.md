@@ -168,8 +168,8 @@ Set `audioVisualizerType` in [`app-config.ts`](./app-config.ts) to switch visual
 Use `audioVisualizerColor` to set a shared accent color across all visualizer modes.
 
 > [!NOTE]
-> The `sandboxId` is for the LiveKit Cloud Sandbox environment.
-> It is not used for local development.
+> The `sandboxId` is for the LiveKit Cloud Sandbox environment and is not used for local development.
+> You can find your `sandboxId` from your project's **Options** at the [Settings](https://cloud.livekit.io/projects/p_/settings/project) page by enabling the **Token server** toggle.
 
 #### Environment Variables
 
