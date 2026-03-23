@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     // Parse room config from request body.
     const body = await req.json();
     // Recreate the RoomConfiguration object from JSON object.
-    const roomConfig = RoomConfiguration.fromJson(body?.room_config, { ignoreUnknownFields: true });
+    const roomConfig = body?.room_config ? RoomConfiguration.fromJson(body?.room_config, { ignoreUnknownFields: true }) : new RoomConfiguration();
 
     // Generate participant token
     const participantName = 'user';
