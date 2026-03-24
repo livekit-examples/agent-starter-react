@@ -34,7 +34,8 @@ function hexToRgb(hexColor: string) {
     }
   } catch (error) {
     console.error(
-      `Invalid hex color '${hexColor}'.\nFalling back to default color '${DEFAULT_COLOR}'.`
+      `Invalid hex color '${hexColor}'.\nFalling back to default color '${DEFAULT_COLOR}'.`,
+      error
     );
   }
 
