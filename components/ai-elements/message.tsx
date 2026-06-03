@@ -261,12 +261,18 @@ export const MessageBranchPage = ({ className, ...props }: MessageBranchPageProp
 export type MessageResponseProps = ComponentProps<typeof Streamdown>;
 
 export const MessageResponse = memo(
-  ({ className, ...props }: MessageResponseProps) => (
-    <Streamdown
-      className={cn('size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0', className)}
-      {...props}
-    />
-  ),
+  ({ className, children, ...props }: MessageResponseProps) => {
+    // Filter out [FLUSH_NOW] marker sent by backend to force LiveKit flush
+    const filtered = typeof children === 'string' ? children.replace(/\[FLUSH_NOW\]/g, '') : children;
+    return (
+      <Streamdown
+        className={cn('size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0', className)}
+        {...props}
+      >
+        {filtered}
+      </Streamdown>
+    );
+  },
   (prevProps, nextProps) => prevProps.children === nextProps.children
 );
 

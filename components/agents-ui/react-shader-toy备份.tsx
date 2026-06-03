@@ -362,19 +362,84 @@ type TextureParams = {
 };
 
 export interface ReactShaderToyProps {
+  /** Fragment shader GLSL code. */
   fs: string;
+
+  /** Vertex shader GLSL code. */
   vs?: string;
+
+  /**
+   * Textures to be passed to the shader. Textures need to be squared or will be
+   * automatically resized.
+   *
+   * Options default to:
+   *
+   * ```js
+   * {
+   *   minFilter: LinearMipMapLinearFilter,
+   *   magFilter: LinearFilter,
+   *   wrapS: RepeatWrapping,
+   *   wrapT: RepeatWrapping,
+   * }
+   * ```
+   *
+   * See [textures in the docs](https://rysana.com/docs/react-shaders#textures)
+   * for details.
+   */
   textures?: TextureParams[];
+
+  /**
+   * Custom uniforms to be passed to the shader.
+   *
+   * See [custom uniforms in the
+   * docs](https://rysana.com/docs/react-shaders#custom-uniforms) for details.
+   */
   uniforms?: Uniforms;
+
+  /**
+   * Color used when clearing the canvas.
+   *
+   * See [the WebGL
+   * docs](https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/clearColor)
+   * for details.
+   */
   clearColor?: Vector4;
+
+  /**
+   * GLSL precision qualifier. Defaults to `'highp'`. Balance between
+   * performance and quality.
+   */
   precision?: 'highp' | 'lowp' | 'mediump';
+
+  /** Custom inline style for canvas. */
   style?: React.CSSProperties;
+
+  /** Customize WebGL context attributes. See [the WebGL docs](https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/getContextAttributes) for details. */
   contextAttributes?: Record<string, unknown>;
+
+  /** Lerp value for `iMouse` built-in uniform. Must be between 0 and 1. */
   lerp?: number;
+
+  /** Device pixel ratio. */
   devicePixelRatio?: number;
+
+  /**
+   * Callback for when the textures are done loading. Useful if you want to do
+   * something like e.g. hide the canvas until textures are done loading.
+   */
   onDoneLoadingTextures?: () => void;
+
+  /** Custom callback to handle errors. Defaults to `console.error`. */
   onError?: (error: string) => void;
+
+  /** Custom callback to handle warnings. Defaults to `console.warn`. */
   onWarning?: (warning: string) => void;
+
+  /**
+   * When true, the animation loop runs even when the canvas is not visible in the viewport.
+   * When false (default), animation runs only while visible (uses Intersection Observer),
+   * reducing CPU/GPU usage when the shader is off-screen.
+   */
   animateWhenNotVisible?: boolean;
 }
 
@@ -384,7 +449,7 @@ export function ReactShaderToy({
   textures = [],
   uniforms: propUniforms,
   clearColor = [0, 0, 0, 0],
-  precision = 'highp', // 【改进 1】默认改为 mediump（中精度浮点），大幅降低手机 GPU 运算负担
+  precision = 'highp',
   style,
   contextAttributes = {},
   lerp = 1,
@@ -395,6 +460,7 @@ export function ReactShaderToy({
   animateWhenNotVisible = false,
   ...canvasProps
 }: ReactShaderToyProps & ComponentPropsWithoutRef<'canvas'>) {
+  // Refs for WebGL state
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const glRef = useRef<WebGLRenderingContext | null>(null);
   const squareVerticesBufferRef = useRef<WebGLBuffer | null>(null);
@@ -427,13 +493,6 @@ export function ReactShaderToy({
   });
   const propsUniformsRef = useRef<Uniforms | undefined>(propUniforms);
 
-  // 【改进 2】手机环境自动对 Dpi 进行上限拦截（手机通常大于 2.0，强行限制为 1.0 可以省去 4-9 倍计算量，而由于是模糊渐变，视觉无影响）
-  const resolvedDevicePixelRatio = (() => {
-    if (typeof window === 'undefined') return devicePixelRatio;
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    return isMobile ? Math.min(devicePixelRatio, 1.5) : devicePixelRatio;
-  })();
-
   const setupChannelRes = (texture: TextureParams | Texture, id: number) => {
     const width = 'width' in texture ? (texture.width ?? 0) : 0;
     const height = 'height' in texture ? (texture.height ?? 0) : 0;
@@ -442,8 +501,8 @@ export function ReactShaderToy({
     const channelResValue = Array.isArray(channelResUniform.value)
       ? channelResUniform.value
       : (channelResUniform.value = []);
-    channelResValue[id * 3] = width * resolvedDevicePixelRatio;
-    channelResValue[id * 3 + 1] = height * resolvedDevicePixelRatio;
+    channelResValue[id * 3] = width * devicePixelRatio;
+    channelResValue[id * 3 + 1] = height * devicePixelRatio;
     channelResValue[id * 3 + 2] = 0;
   };
 
@@ -529,19 +588,23 @@ export function ReactShaderToy({
     const gl = glRef.current;
     if (!gl || !canvasRef.current) return;
 
+    // getBoundingClientRect for mouse coordinates (iMouse) - includes CSS transform
     canvasPositionRef.current = canvasRef.current?.getBoundingClientRect();
 
+    // Use clientWidth/clientHeight - NOT affected by CSS transform: scale
     const clientWidth = canvasRef.current.clientWidth ?? 1;
     const clientHeight = canvasRef.current.clientHeight ?? 1;
 
+    // Skip if dimensions are too small (keyboard may cause temporarily invalid size)
     if (clientWidth < 10 || clientHeight < 10) {
       return;
     }
 
-    const realToCSSPixels = resolvedDevicePixelRatio;
+    const realToCSSPixels = devicePixelRatio;
     const displayWidth = Math.floor(clientWidth * realToCSSPixels);
     const displayHeight = Math.floor(clientHeight * realToCSSPixels);
 
+    // Only resize if actually different to avoid unnecessary reinitialization
     if (canvasRef.current.width !== displayWidth || canvasRef.current.height !== displayHeight) {
       canvasRef.current.width = displayWidth;
       canvasRef.current.height = displayHeight;
@@ -628,6 +691,7 @@ export function ReactShaderToy({
         value: [],
       };
       const texturePromisesArr = textures.map((texture: TextureParams, id: number) => {
+        // Dynamically add textures uniforms.
         uniformsRef.current[`${UNIFORM_CHANNEL}${id}`] = {
           type: 'sampler2D',
           isNeeded: false,
@@ -650,17 +714,17 @@ export function ReactShaderToy({
   };
 
   const preProcessFragment = (fragment: string) => {
-    const isValidPrecision = PRECISIONS.includes(precision ?? 'mediump');
+    const isValidPrecision = PRECISIONS.includes(precision ?? 'highp');
     const precisionString = `precision ${isValidPrecision ? precision : PRECISIONS[1]} float;\n`;
     if (!isValidPrecision) {
       onWarning?.(
         log(
-          `wrong precision type ${precision}, please make sure to pass one of a valid precision lowp, mediump, highp, by default you shader precision will be set to mediump.`
+          `wrong precision type ${precision}, please make sure to pass one of a valid precision lowp, mediump, highp, by default you shader precision will be set to highp.`
         )
       );
     }
     let fragmentShader = precisionString
-      .concat(`#define DPR ${resolvedDevicePixelRatio.toFixed(1)}\n`)
+      .concat(`#define DPR ${devicePixelRatio.toFixed(1)}\n`)
       .concat(fragment.replace(/texture\(/g, 'texture2D('));
     for (const uniform of Object.keys(uniformsRef.current)) {
       if (fragment.includes(uniform)) {
@@ -838,7 +902,7 @@ export function ReactShaderToy({
     }
   }, [animateWhenNotVisible]);
 
-  // 1. 监听是否滚动出屏幕外
+  // Intersection Observer: pause animation when off-screen when animateWhenNotVisible is false
   useEffect(() => {
     if (animateWhenNotVisible || !canvasRef.current) return;
     const canvas = canvasRef.current;
@@ -847,12 +911,7 @@ export function ReactShaderToy({
         for (const entry of entries) {
           isVisibleRef.current = entry.isIntersecting;
           if (entry.isIntersecting) {
-            // 【改进 3-1】开启前强制取消可能存在的上一帧，彻底修复 IntersectionObserver 导致双重渲染循环的 Bug
-            if (animFrameIdRef.current) cancelAnimationFrame(animFrameIdRef.current);
-            animFrameIdRef.current = requestAnimationFrame(drawScene);
-          } else {
-            // 【改进 3-2】不可见时显式终止，不留后台多余运算
-            if (animFrameIdRef.current) cancelAnimationFrame(animFrameIdRef.current);
+            requestAnimationFrame(drawScene);
           }
         }
       },
@@ -863,30 +922,7 @@ export function ReactShaderToy({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [animateWhenNotVisible]);
 
-  // 👇👇👇【新增：专治三星幕布、锁屏、切后台时的 GPU 发热】👇👇👇
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        // 手机屏幕熄灭、开启幕布、切到桌面时，立刻拔掉 GPU 电源
-        if (animFrameIdRef.current) cancelAnimationFrame(animFrameIdRef.current);
-      } else {
-        // 屏幕重新点亮，且它本身就在视野内时，才恢复 GPU 渲染
-        if (isVisibleRef.current || animateWhenNotVisibleRef.current) {
-          if (animFrameIdRef.current) cancelAnimationFrame(animFrameIdRef.current);
-          animFrameIdRef.current = requestAnimationFrame(drawScene);
-        }
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  // 👆👆👆【新增结束】👆👆👆
-
-  // 2. 初始化核心逻辑
+  // Main effect for initialization and cleanup
   useEffect(() => {
     const textures = texturesArrRef.current;
 
@@ -894,6 +930,7 @@ export function ReactShaderToy({
       initWebGL();
       const gl = glRef.current;
       if (gl && canvasRef.current) {
+        // Wait for valid dimensions (keyboard may cause zero/small size temporarily)
         if (canvasRef.current.clientWidth === 0 || canvasRef.current.clientHeight === 0) {
           initFrameIdRef.current = requestAnimationFrame(init);
           return;
@@ -902,15 +939,12 @@ export function ReactShaderToy({
         gl.clearDepth(1.0);
         gl.enable(gl.DEPTH_TEST);
         gl.depthFunc(gl.LEQUAL);
+        // Let onResize handle canvas sizing to avoid capturing wrong size during keyboard
         processCustomUniforms();
         processTextures();
         initShaders(preProcessFragment(fs || BASIC_FS), vs || BASIC_VS);
         initBuffers();
-        
-        // 【改进 3-3】初始化时也强防多重循环
-        if (animFrameIdRef.current) cancelAnimationFrame(animFrameIdRef.current);
-        animFrameIdRef.current = requestAnimationFrame(drawScene);
-        
+        requestAnimationFrame(drawScene);
         addEventListeners();
         onResize();
       }
@@ -918,6 +952,7 @@ export function ReactShaderToy({
 
     initFrameIdRef.current = requestAnimationFrame(init);
 
+    // Cleanup function
     return () => {
       const gl = glRef.current;
       if (gl) {
@@ -936,7 +971,7 @@ export function ReactShaderToy({
       cancelAnimationFrame(animFrameIdRef.current ?? 0);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []); // Empty dependency array to run only once on mount
 
   return (
     <canvas ref={canvasRef} style={{ height: '100%', width: '100%', ...style }} {...canvasProps} />

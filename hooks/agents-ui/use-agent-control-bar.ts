@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Track } from 'livekit-client';
+import { Track, type AudioCaptureOptions } from 'livekit-client';
 import {
   type TrackReference,
   useLocalParticipantPermissions,
@@ -7,6 +7,13 @@ import {
   useSessionContext,
   useTrackToggle,
 } from '@livekit/components-react';
+
+/** 默认音频采集选项 - 开启降噪和回声消除,关闭自动增益 */
+const DEFAULT_AUDIO_CAPTURE_OPTIONS: AudioCaptureOptions = {
+  echoCancellation: true,
+  noiseSuppression: true,
+  autoGainControl: false,
+};
 
 const trackSourceToProtocol = (source: Track.Source) => {
   // NOTE: this mapping avoids importing the protocol package as that leads to a significant bundle size increase
@@ -52,6 +59,7 @@ export interface UseInputControlsProps {
   saveUserChoices?: boolean;
   onDisconnect?: () => void;
   onDeviceError?: (error: { source: Track.Source; error: Error }) => void;
+  room?: ReturnType<typeof useSessionContext>['room'];
 }
 
 export interface UseInputControlsReturn {
@@ -63,19 +71,24 @@ export interface UseInputControlsReturn {
   handleVideoDeviceChange: (deviceId: string) => void;
   handleMicrophoneDeviceSelectError: (error: Error) => void;
   handleCameraDeviceSelectError: (error: Error) => void;
+  room?: ReturnType<typeof useSessionContext>['room'];
 }
 
 export function useInputControls({
   saveUserChoices = true,
   onDeviceError,
+  room,
 }: UseInputControlsProps = {}): UseInputControlsReturn {
   const {
     local: { microphoneTrack },
   } = useSessionContext();
+  const roomContext = useSessionContext();
+  const actualRoom = room ?? roomContext.room;
 
   const microphoneToggle = useTrackToggle({
     source: Track.Source.Microphone,
     onDeviceError: (error) => onDeviceError?.({ source: Track.Source.Microphone, error }),
+    captureOptions: DEFAULT_AUDIO_CAPTURE_OPTIONS,
   });
 
   const cameraToggle = useTrackToggle({
@@ -126,8 +139,13 @@ export function useInputControls({
       await microphoneToggle.toggle(enabled);
       // persist audio input enabled preference
       saveAudioInputEnabled(!microphoneToggle.enabled);
+      // Send mute_toggle signal to backend (matching xiaomeng_v2.py _on_bgm_data handler)
+      if (actualRoom) {
+        const payload = JSON.stringify({ type: 'mute_toggle', muted: !microphoneToggle.enabled });
+        await actualRoom.localParticipant.publishData(new TextEncoder().encode(payload), { reliable: true });
+      }
     },
-    [microphoneToggle, saveAudioInputEnabled]
+    [microphoneToggle, saveAudioInputEnabled, actualRoom]
   );
 
   const handleToggleScreenShare = useCallback(
@@ -167,5 +185,6 @@ export function useInputControls({
     handleVideoDeviceChange,
     handleMicrophoneDeviceSelectError,
     handleCameraDeviceSelectError,
+    room: actualRoom,
   };
 }

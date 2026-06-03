@@ -45,14 +45,17 @@ export const APP_CONFIG_DEFAULTS: AppConfig = {
   logo: '/lk-logo.svg',
   accent: '#002cf2',
   logoDark: '/lk-logo-dark.svg',
-  accentDark: '#1fd5f9',
+  accentDark: '#00f2fe',
   startButtonText: 'Start call',
 
   // optional: audio visualization configuration
+  audioVisualizerType: 'aura',
+  // audioVisualizerRadialBarCount: 24,
   // audioVisualizerType: 'bar',
   // audioVisualizerColor: '#002cf2',
-  // audioVisualizerColorDark: '#1fd5f9',
-  // audioVisualizerColorShift: 0.3,
+  audioVisualizerColor: '#00f2fe',
+  audioVisualizerColorDark: '#00f2fe',
+  audioVisualizerColorShift: 1.0,
   // audioVisualizerBarCount: 5,
   // audioVisualizerType: 'radial',
   // audioVisualizerRadialBarCount: 24,
@@ -61,7 +64,7 @@ export const APP_CONFIG_DEFAULTS: AppConfig = {
   // audioVisualizerGridRowCount: 25,
   // audioVisualizerGridColumnCount: 25,
   // audioVisualizerType: 'wave',
-  // audioVisualizerWaveLineWidth: 3,
+  // audioVisualizerWaveLineWidth: 4,
   // audioVisualizerType: 'aura',
 
   // agent dispatch configuration

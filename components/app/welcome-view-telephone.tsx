@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { PhoneIcon, SpeakerHighIcon } from '@phosphor-icons/react/dist/ssr';
+import { PhoneIcon } from '@phosphor-icons/react/dist/ssr';
 import { VoiceCharacterButton } from '@/components/agents-ui/voice-character-button';
 
 function WelcomeImage() {
@@ -22,48 +22,33 @@ function WelcomeImage() {
   );
 }
 
-interface WelcomeViewProps {
+interface WelcomeViewTelephoneProps {
   startButtonText: string;
   onStartCall: () => void;
 }
 
-export const WelcomeView = ({
+export const WelcomeViewTelephone = ({
   startButtonText,
   onStartCall,
   ref,
-}: React.ComponentProps<'div'> & WelcomeViewProps) => {
+}: React.ComponentProps<'div'> & WelcomeViewTelephoneProps) => {
   return (
     <div ref={ref}>
       <section className="bg-background flex flex-col items-center justify-center text-center">
         <WelcomeImage />
 
         <p className="text-foreground max-w-prose pt-1 leading-6 font-medium">
-          Chat live with your voice AI agent
+          Chat live with your voice AI agent (Telephone Mode)
         </p>
 
-        <div className="mt-6 flex flex-col gap-3">
-          {/* Media Mode Button (High Quality Audio) */}
-          <Button
-            size="lg"
-            onClick={onStartCall}
-            className="w-64 rounded-full font-mono text-xs font-bold tracking-wider uppercase"
-          >
-            <SpeakerHighIcon className="mr-2 size-5" />
-            {startButtonText || 'Media Mode'}
-          </Button>
-
-          {/* Telephone Mode Button */}
-          <a href="/telephone?auto=true">
-            <Button
-              size="lg"
-              className="w-64 rounded-full font-mono text-xs font-bold tracking-wider uppercase"
-              variant="outline"
-            >
-              <PhoneIcon className="mr-2 size-5" />
-              Telephone Mode
-            </Button>
-          </a>
-        </div>
+        <Button
+          size="lg"
+          onClick={onStartCall}
+          className="mt-6 w-64 rounded-full font-mono text-xs font-bold tracking-wider uppercase"
+        >
+          <PhoneIcon className="mr-2 size-5" />
+          {startButtonText || 'Start Call'}
+        </Button>
       </section>
 
       <div className="fixed bottom-5 left-0 flex w-full items-center justify-center">

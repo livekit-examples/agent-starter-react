@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { type VariantProps, cva } from 'class-variance-authority';
 import { LocalAudioTrack, LocalVideoTrack } from 'livekit-client';
 import {
@@ -147,37 +147,9 @@ function TrackDeviceSelect({
     onError: onMediaDeviceError,
   });
 
-  const hasAutoSelected = useRef(false);
-
-  const handleActiveDeviceChange = useCallback(
-    (deviceId: string) => {
-      setActiveMediaDevice(deviceId);
-      onActiveDeviceChange?.(deviceId);
-    },
-    [setActiveMediaDevice, onActiveDeviceChange]
-  );
-
   useEffect(() => {
     onDeviceListChange?.(devices);
-
-    // Auto-select speakerphone for audio input on first load if nothing specific is selected
-    if (kind === 'audioinput' && devices.length > 0 && !hasAutoSelected.current) {
-      const speaker = devices.find((d) => /speaker|扬声器/i.test(d.label));
-      const targetId = speaker ? speaker.deviceId : (activeDeviceId !== 'default' ? activeDeviceId : devices[0].deviceId);
-
-      // First selection attempt
-      handleActiveDeviceChange(targetId);
-
-      // Second "kick" after 800ms to force the browser to switch to the high-fidelity media channel
-      // This mimics the manual user interaction that fixes the audio quality.
-      const timer = setTimeout(() => {
-        handleActiveDeviceChange(targetId);
-      }, 800);
-
-      hasAutoSelected.current = true;
-      return () => clearTimeout(timer);
-    }
-  }, [devices, onDeviceListChange, kind, activeDeviceId, handleActiveDeviceChange]);
+  }, [devices, onDeviceListChange]);
 
   const handleOpenChange = (open: boolean) => {
     setOpen(open);
@@ -186,41 +158,12 @@ function TrackDeviceSelect({
     }
   };
 
-  const filteredDevices = useMemo(() => {
-    const filtered = devices.filter((d) => d.deviceId !== '');
-    if (kind !== 'audioinput') return filtered;
+  const handleActiveDeviceChange = (deviceId: string) => {
+    setActiveMediaDevice(deviceId);
+    onActiveDeviceChange?.(deviceId);
+  };
 
-    const result: MediaDeviceInfo[] = [];
-    const seen = new Set();
-
-    // 1. Speakerphone Mode (扬声器模式)
-    const speaker = filtered.find((d) => /speaker|扬声器/i.test(d.label));
-    if (speaker) {
-      result.push({ ...speaker, label: '扬声器模式' } as MediaDeviceInfo);
-      seen.add(speaker.deviceId);
-    }
-
-    // 2. Default Mode (默认模式)
-    const def = filtered.find((d) => d.deviceId === 'default');
-    if (def && !seen.has(def.deviceId)) {
-      result.push({ ...def, label: '默认模式' } as MediaDeviceInfo);
-      seen.add(def.deviceId);
-    }
-
-    // 3. Headset/Earpiece Mode (耳机听筒模式)
-    const headset = filtered.find(
-      (d) => /headset|earpiece|receiver|耳机|听筒|bluetooth/i.test(d.label)
-    );
-    if (headset && !seen.has(headset.deviceId)) {
-      result.push({ ...headset, label: '耳机听筒模式' } as MediaDeviceInfo);
-      seen.add(headset.deviceId);
-    }
-
-    // If we didn't match our special categories, fall back to all devices
-    if (result.length === 0) return filtered;
-
-    return result;
-  }, [devices, kind]);
+  const filteredDevices = useMemo(() => devices.filter((d) => d.deviceId !== ''), [devices]);
 
   if (filteredDevices.length < 2) {
     return null;
@@ -248,7 +191,6 @@ function TrackDeviceSelect({
     </Select>
   );
 }
-
 
 /**
  * Props for the AgentTrackControl component.

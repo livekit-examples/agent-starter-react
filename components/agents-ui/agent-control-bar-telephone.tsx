@@ -3,11 +3,11 @@
 import { type ComponentProps, useEffect, useRef, useState } from 'react';
 import { Track } from 'livekit-client';
 import { Loader, MessageSquareTextIcon, Music, SendHorizontal, Keyboard } from 'lucide-react';
-import { type MotionProps, motion } from 'motion/react';
 import { useRoomContext } from '@livekit/components-react';
+import { type MotionProps, motion } from 'motion/react';
 import { useChat } from '@livekit/components-react';
 import { AgentDisconnectButton } from '@/components/agents-ui/agent-disconnect-button';
-import { AgentTrackControl } from '@/components/agents-ui/agent-track-control';
+import { AgentTrackControl } from '@/components/agents-ui/agent-track-control-telephone';
 import {
   AgentTrackToggle,
   agentTrackToggleVariants,
@@ -44,11 +44,22 @@ const LK_TOGGLE_VARIANT_2 = [
 
 const MOTION_PROPS: MotionProps = {
   variants: {
-    hidden: { height: 0, opacity: 0, marginBottom: 0 },
-    visible: { height: 'auto', opacity: 1, marginBottom: 12 },
+    hidden: {
+      height: 0,
+      opacity: 0,
+      marginBottom: 0,
+    },
+    visible: {
+      height: 'auto',
+      opacity: 1,
+      marginBottom: 12,
+    },
   },
   initial: 'hidden',
-  transition: { duration: 0.3, ease: 'easeOut' },
+  transition: {
+    duration: 0.3,
+    ease: 'easeOut',
+  },
 };
 
 interface AgentChatInputProps {
@@ -64,7 +75,10 @@ function AgentChatInput({ chatOpen, onSend = async () => {}, className }: AgentC
   const isDisabled = isSending || message.trim().length === 0;
 
   const handleSend = async () => {
-    if (isDisabled) return;
+    if (isDisabled) {
+      return;
+    }
+
     try {
       setIsSending(true);
       await onSend(message.trim());
@@ -83,8 +97,14 @@ function AgentChatInput({ chatOpen, onSend = async () => {}, className }: AgentC
     }
   };
 
+  const handleButtonClick = async () => {
+    if (isDisabled) return;
+    await handleSend();
+  };
+
   useEffect(() => {
     if (chatOpen) return;
+    // when not disabled refocus on input
     inputRef.current?.focus();
   }, [chatOpen]);
 
@@ -106,7 +126,7 @@ function AgentChatInput({ chatOpen, onSend = async () => {}, className }: AgentC
         disabled={isDisabled}
         variant={isDisabled ? 'secondary' : 'default'}
         title={isSending ? 'Sending...' : 'Send'}
-        onClick={handleSend}
+        onClick={handleButtonClick}
         className="self-end disabled:cursor-not-allowed"
       >
         {isSending ? <Loader className="animate-spin" /> : <SendHorizontal />}
@@ -115,27 +135,113 @@ function AgentChatInput({ chatOpen, onSend = async () => {}, className }: AgentC
   );
 }
 
+/** Configuration for which controls to display in the AgentControlBar. */
 export interface AgentControlBarControls {
+  /**
+   * Whether to show the leave/disconnect button.
+   *
+   * @defaultValue true
+   */
   leave?: boolean;
+  /**
+   * Whether to show the camera toggle control.
+   *
+   * @defaultValue true (if camera publish permission is granted)
+   */
   camera?: boolean;
+  /**
+   * Whether to show the microphone toggle control.
+   *
+   * @defaultValue true (if microphone publish permission is granted)
+   */
   microphone?: boolean;
+  /**
+   * Whether to show the screen share toggle control.
+   *
+   * @defaultValue true (if screen share publish permission is granted)
+   */
   screenShare?: boolean;
+  /**
+   * Whether to show the chat toggle control.
+   *
+   * @defaultValue true (if data publish permission is granted)
+   */
   chat?: boolean;
 }
 
 export interface AgentControlBarProps extends UseInputControlsProps {
+  /**
+   * The visual style of the control bar.
+   *
+   * @default 'default'
+   */
   variant?: 'default' | 'outline' | 'livekit';
+  /**
+   * This takes an object with the following keys: `leave`, `microphone`, `screenShare`, `camera`,
+   * `chat`. Each key maps to a boolean value that determines whether the control is displayed.
+   *
+   * @default
+   * {
+   *   leave: true,
+   *   microphone: true,
+   *   screenShare: true,
+   *   camera: true,
+   *   chat: true,
+   * }
+   */
   controls?: AgentControlBarControls;
+  /**
+   * Whether to save user choices.
+   *
+   * @default true
+   */
   saveUserChoices?: boolean;
+  /**
+   * Whether the agent is connected to a session.
+   *
+   * @default false
+   */
   isConnected?: boolean;
+  /**
+   * Whether the chat input interface is open.
+   *
+   * @default false
+   */
   isChatOpen?: boolean;
-  isMuteMode?: boolean; // 新增：感知当前是否为静音模式
-  onSendText?: (message: string) => void; // 新增：静音模式下的发信回调
+  isMuteMode?: boolean;
+  onSendText?: (message: string) => void;
+  /** The callback for when the user disconnects. */
   onDisconnect?: () => void;
+  /** The callback for when the chat is opened or closed. */
   onIsChatOpenChange?: (open: boolean) => void;
+  /** The callback for when a device error occurs. */
   onDeviceError?: (error: { source: Track.Source; error: Error }) => void;
 }
 
+/**
+ * A control bar specifically designed for voice assistant interfaces. Provides controls for
+ * microphone, camera, screen share, chat, and disconnect. Includes an expandable chat input for
+ * text-based interaction with the agent.
+ *
+ * @example
+ *
+ * ```tsx
+ * <AgentControlBar
+ *   variant="livekit"
+ *   isConnected={true}
+ *   onDisconnect={() => handleDisconnect()}
+ *   controls={{
+ *     microphone: true,
+ *     camera: true,
+ *     screenShare: false,
+ *     chat: true,
+ *     leave: true,
+ *   }}
+ * />;
+ * ```
+ *
+ * @extends ComponentProps<'div'>
+ */
 export function AgentControlBar({
   variant = 'default',
   controls,
@@ -154,11 +260,12 @@ export function AgentControlBar({
   const publishPermissions = usePublishPermissions();
   const room = useRoomContext();
   const [isChatOpenUncontrolled, setIsChatOpenUncontrolled] = useState(isChatOpen);
-  const [ambientEnabled, setAmbientEnabled] = useState(true);
-  const [typingEnabled, setTypingEnabled] = useState(false);
+  const [ambientEnabled, setAmbientEnabled] = useState(true);  // 背景音默认开启
+  const [typingEnabled, setTypingEnabled] = useState(false);   // 键盘音默认关闭
   const [soundMenuOpen, setSoundMenuOpen] = useState(false);
   const soundMenuRef = useRef<HTMLDivElement>(null);
 
+  // 点击外部关闭 Sound Menu
   useEffect(() => {
     if (!soundMenuOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
@@ -181,17 +288,14 @@ export function AgentControlBar({
     handleCameraDeviceSelectError,
   } = useInputControls({ onDeviceError, saveUserChoices });
 
-  // 路由分发器：保证两者完全分离
+  // 路由分发器：静音模式走旁路，正常模式走 livekit chat pipeline
   const handleSendMessage = async (message: string) => {
-    console.log('[AgentControlBar] sendMessage:', { message, isMuteMode });
     try {
       if (isMuteMode) {
-        // 1. 旁路静音模式：完全不走 livekit chat pipeline
         if (onSendText) {
           onSendText(message);
         }
       } else {
-        // 2. 正常模式：走原生的 livekit chat pipeline
         await send(message);
       }
     } catch (e) {
@@ -208,7 +312,11 @@ export function AgentControlBar({
   };
 
   const isEmpty = Object.values(visibleControls).every((value) => !value);
-  if (isEmpty) return null;
+
+  if (isEmpty) {
+    console.warn('AgentControlBar: `visibleControls` contains only false values.');
+    return null;
+  }
 
   return (
     <div
@@ -235,6 +343,7 @@ export function AgentControlBar({
 
       <div className="flex gap-1">
         <div className="flex grow gap-1">
+          {/* Toggle Microphone */}
           {visibleControls.microphone && (
             <AgentTrackControl
               variant={variant === 'outline' ? 'outline' : 'default'}
@@ -247,10 +356,16 @@ export function AgentControlBar({
               onPressedChange={microphoneToggle.toggle}
               onActiveDeviceChange={handleAudioDeviceChange}
               onMediaDeviceError={handleMicrophoneDeviceSelectError}
-              className={cn(variant === 'livekit' && [LK_TOGGLE_VARIANT_1, 'rounded-full [&_button:first-child]:rounded-l-full [&_button:last-child]:rounded-r-full'])}
+              className={cn(
+                variant === 'livekit' && [
+                  LK_TOGGLE_VARIANT_1,
+                  'rounded-full [&_button:first-child]:rounded-l-full [&_button:last-child]:rounded-r-full',
+                ]
+              )}
             />
           )}
 
+          {/* Toggle Camera */}
           {visibleControls.camera && (
             <AgentTrackControl
               variant={variant === 'outline' ? 'outline' : 'default'}
@@ -263,10 +378,16 @@ export function AgentControlBar({
               onPressedChange={cameraToggle.toggle}
               onMediaDeviceError={handleCameraDeviceSelectError}
               onActiveDeviceChange={handleVideoDeviceChange}
-              className={cn(variant === 'livekit' && [LK_TOGGLE_VARIANT_1, 'rounded-full [&_button:first-child]:rounded-l-full [&_button:last-child]:rounded-r-full'])}
+              className={cn(
+                variant === 'livekit' && [
+                  LK_TOGGLE_VARIANT_1,
+                  'rounded-full [&_button:first-child]:rounded-l-full [&_button:last-child]:rounded-r-full',
+                ]
+              )}
             />
           )}
 
+          {/* Toggle Screen Share */}
           {visibleControls.screenShare && (
             <AgentTrackToggle
               variant={variant === 'outline' ? 'outline' : 'default'}
@@ -279,6 +400,7 @@ export function AgentControlBar({
             />
           )}
 
+          {/* Toggle Transcript */}
           {visibleControls.chat && (
             <Toggle
               variant={variant === 'outline' ? 'outline' : 'default'}
@@ -297,14 +419,18 @@ export function AgentControlBar({
             </Toggle>
           )}
 
-          {/* Sound Menu */}
+          {/* Sound Menu (背景音 + 键盘音) */}
           <div className="relative" ref={soundMenuRef}>
             <Toggle
               variant="outline"
               size="default"
               pressed={ambientEnabled || typingEnabled}
               onPressedChange={() => setSoundMenuOpen(!soundMenuOpen)}
-              className={cn('size-9 rounded-full', variant === 'livekit' && [LK_TOGGLE_VARIANT_2, 'rounded-full'], soundMenuOpen && 'ring-2 ring-ring')}
+              className={cn(
+                'size-9 rounded-full',
+                variant === 'livekit' && [LK_TOGGLE_VARIANT_2, 'rounded-full'],
+                soundMenuOpen && 'ring-2 ring-ring'
+              )}
             >
               <Music size={16} />
             </Toggle>
@@ -319,9 +445,14 @@ export function AgentControlBar({
                     await room?.localParticipant.publishData(new TextEncoder().encode(payload), { reliable: true });
                     setSoundMenuOpen(false);
                   }}
-                  className={cn('flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent', ambientEnabled && 'bg-accent/50')}
+                  className={cn(
+                    'flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent',
+                    ambientEnabled && 'bg-accent/50'
+                  )}
                 >
-                  <Music size={14} /><span>背景音</span><span className="ml-auto">{ambientEnabled ? '开' : '关'}</span>
+                  <Music size={14} />
+                  <span>背景音</span>
+                  <span className="ml-auto">{ambientEnabled ? '开' : '关'}</span>
                 </button>
                 <button
                   onClick={async () => {
@@ -331,20 +462,29 @@ export function AgentControlBar({
                     await room?.localParticipant.publishData(new TextEncoder().encode(payload), { reliable: true });
                     setSoundMenuOpen(false);
                   }}
-                  className={cn('flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent', typingEnabled && 'bg-accent/50')}
+                  className={cn(
+                    'flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent',
+                    typingEnabled && 'bg-accent/50'
+                  )}
                 >
-                  <Keyboard size={14} /><span>键盘音</span><span className="ml-auto">{typingEnabled ? '开' : '关'}</span>
+                  <Keyboard size={14} />
+                  <span>键盘音</span>
+                  <span className="ml-auto">{typingEnabled ? '开' : '关'}</span>
                 </button>
               </div>
             )}
           </div>
         </div>
 
+        {/* Disconnect */}
         {visibleControls.leave && (
           <AgentDisconnectButton
             onClick={onDisconnect}
             disabled={!isConnected}
-            className={cn(variant === 'livekit' && 'bg-destructive/10 dark:bg-destructive/10 text-destructive hover:bg-destructive/20 dark:hover:bg-destructive/20 focus:bg-destructive/20 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/4 rounded-full font-mono text-xs font-bold tracking-wider')}
+            className={cn(
+              variant === 'livekit' &&
+                'bg-destructive/10 dark:bg-destructive/10 text-destructive hover:bg-destructive/20 dark:hover:bg-destructive/20 focus:bg-destructive/20 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/4 rounded-full font-mono text-xs font-bold tracking-wider'
+            )}
           >
             <span className="hidden md:inline">END CALL</span>
             <span className="inline md:hidden">END</span>

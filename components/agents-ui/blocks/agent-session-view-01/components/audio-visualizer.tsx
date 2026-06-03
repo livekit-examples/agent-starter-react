@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { type MotionProps, motion } from 'motion/react';
-import { useVoiceAssistant } from '@livekit/components-react';
+import { type AgentState, useVoiceAssistant } from '@livekit/components-react';
 import { AgentAudioVisualizerAura } from '@/components/agents-ui/agent-audio-visualizer-aura';
 import { AgentAudioVisualizerBar } from '@/components/agents-ui/agent-audio-visualizer-bar';
 import { AgentAudioVisualizerGrid } from '@/components/agents-ui/agent-audio-visualizer-grid';
@@ -18,6 +18,7 @@ const MotionAgentAudioVisualizerWave = motion.create(AgentAudioVisualizerWave);
 
 interface AudioVisualizerProps extends MotionProps {
   isChatOpen: boolean;
+  state?: AgentState;
   audioVisualizerType?: 'bar' | 'wave' | 'grid' | 'radial' | 'aura';
   audioVisualizerColor?: `#${string}`;
   audioVisualizerColorShift?: number;
@@ -41,10 +42,12 @@ export function AudioVisualizer({
   audioVisualizerGridColumnCount = 15,
   audioVisualizerWaveLineWidth = 3,
   isChatOpen,
+  state: externalState,
   className,
   ...props
 }: AudioVisualizerProps) {
-  const { state, audioTrack } = useVoiceAssistant();
+  const { state: lkAgentState, audioTrack } = useVoiceAssistant();
+  const state = externalState ?? lkAgentState;
 
   switch (audioVisualizerType) {
     case 'aura': {

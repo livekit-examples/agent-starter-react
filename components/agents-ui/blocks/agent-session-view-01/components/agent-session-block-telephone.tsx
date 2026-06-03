@@ -9,7 +9,7 @@ import { AgentChatTranscript } from '@/components/agents-ui/agent-chat-transcrip
 import {
   AgentControlBar,
   type AgentControlBarControls,
-} from '@/components/agents-ui/agent-control-bar';
+} from '@/components/agents-ui/agent-control-bar-telephone';
 import { VoiceCharacterButton } from '@/components/agents-ui/voice-character-button';
 import { useVoiceContext } from '@/components/agents-ui/voice-context';
 import { Shimmer } from '@/components/ai-elements/shimmer';
@@ -84,7 +84,7 @@ export interface AgentSessionView_01Props {
   className?: string;
 }
 
-export function AgentSessionView_01({
+export function AgentSessionView_01Telephone({
   preConnectMessage = 'Agent is listening, ask it a question',
   supportsChatInput = true,
   supportsVideoInput = true,
@@ -104,7 +104,7 @@ export function AgentSessionView_01({
   ...props
 }: React.ComponentProps<'section'> & AgentSessionView_01Props) {
   const session = useSessionContext();
-  const { messages } = useSessionMessages(session);
+  const { messages } = useSessionMessages(session); // Livekit 原生的 pipeline 消息
   const [chatOpen, setChatOpen] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { state: agentState } = useAgent();
@@ -350,6 +350,7 @@ export function AgentSessionView_01({
         const payload = JSON.parse(text);
         const msgType = payload.type;
 
+        // 队列状态探针
         const getActiveChatTask = () => {
           const q = taskQueueRef.current;
           for (let i = q.length - 1; i >= 0; i--) {
