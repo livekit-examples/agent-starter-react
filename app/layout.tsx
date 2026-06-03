@@ -1,7 +1,9 @@
 import { Public_Sans } from 'next/font/google';
 import localFont from 'next/font/local';
 import { headers } from 'next/headers';
+import type { Viewport } from 'next'; // <-- 新增：引入 Viewport 类型
 import { ThemeProvider } from '@/components/app/theme-provider';
+import { VoiceProvider } from '@/components/agents-ui/voice-context';
 import { ThemeToggle } from '@/components/app/theme-toggle';
 import { cn } from '@/lib/shadcn/utils';
 import { getAppConfig, getStyles } from '@/lib/utils';
@@ -15,7 +17,7 @@ const publicSans = Public_Sans({
 const commitMono = localFont({
   display: 'swap',
   variable: '--font-commit-mono',
-  src: [
+  src:[
     {
       path: '../fonts/CommitMono-400-Regular.otf',
       weight: '400',
@@ -38,6 +40,15 @@ const commitMono = localFont({
     },
   ],
 });
+
+// 👇 新增这一段：控制手机端视口，禁止手动缩放，优化移动端体验 👇
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: '#000000',
+};
 
 interface RootLayoutProps {
   children: React.ReactNode;
@@ -63,6 +74,12 @@ export default async function RootLayout({ children }: RootLayoutProps) {
         {styles && <style>{styles}</style>}
         <title>{pageTitle}</title>
         <meta name="description" content={pageDescription} />
+        
+        {/* 👇 新增的 PWA 核心标签 👇 */}
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="openclaw" />
       </head>
       <body className="overflow-x-hidden">
         <ThemeProvider
@@ -100,10 +117,32 @@ export default async function RootLayout({ children }: RootLayoutProps) {
             </span>
           </header>
 
-          {children}
+          <VoiceProvider>
+            {children}
+          </VoiceProvider>
           <div className="group fixed bottom-0 left-1/2 z-50 mb-2 -translate-x-1/2">
             <ThemeToggle className="translate-y-20 transition-transform delay-150 duration-300 group-hover:translate-y-0" />
           </div>
+          {/* 👇👇👇 在这里插入这段 Script 代码 👇👇👇 */}
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                if ('serviceWorker' in navigator) {
+                  window.addEventListener('load', function() {
+                    navigator.serviceWorker.register('/sw.js').then(
+                      function(registration) {
+                        console.log('Service Worker 注册成功: ', registration.scope);
+                      },
+                      function(err) {
+                        console.log('Service Worker 注册失败: ', err);
+                      }
+                    );
+                  });
+                }
+              `,
+            }}
+          />
+          {/* 👆👆👆 插入结束 👆👆👆 */}
         </ThemeProvider>
       </body>
     </html>

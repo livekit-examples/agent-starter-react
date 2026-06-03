@@ -171,40 +171,49 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
   
   // Dark mode (default)
   if(uMode < 0.5) {
-    // use bloom effect
     bloom = bloom / (bloom + 2e4);
-    color = (-pp + bloom * 3.0 * uBloom) * 1.2;
-    color += (randFibo(fragCoord).x - 0.5) / 255.0;
+
+    // Core brightness boost 1: increase base multiplier from 1.2 to 1.8
+    color = max(-pp + bloom * 3.0 * uBloom, 0.0) * 1.8;
+
+    float noise = (randFibo(fragCoord).x - 0.5) / 255.0;
+    color += noise * smoothstep(0.0, 0.1, length(color));
+
     color = Tonemap(color);
-    float alpha = luma(color) * uMix;
-    fragColor = vec4(color * uMix, alpha);
+
+    // Core brightness boost 2: use length() instead of max() for alpha
+    float alpha = length(color) * uMix;
+
+    // Widen the glow radius for more visible outer emission
+    alpha = smoothstep(0.0, 0.25, alpha);
+    alpha = alpha < 0.005 ? 0.0 : alpha;
+
+    // Core brightness boost 3: apply extra 1.3x multiplier to final color
+    vec3 finalColor = color * uMix * 1.3;
+
+    finalColor = max(finalColor, 0.0);
+    finalColor *= step(0.001, alpha);
+
+    fragColor = vec4(finalColor, alpha);
   }
-    
-  // Light mode 
+
+  // Light mode
   else {
-    // no bloom effect
-    color = -pp;
-    color += (randFibo(fragCoord).x - 0.5) / 255.0;
-  
-    // Preserve hue by tone mapping brightness only
+    color = max(-pp, 0.0);
+    float noise = (randFibo(fragCoord).x - 0.5) / 255.0;
+    color += noise * smoothstep(0.0, 0.1, length(color));
+
     float brightness = length(color);
     vec3 direction = brightness > 0.0 ? color / brightness : color;
-  
-    // Reinhard on brightness
+
     float factor = 2.0;
     float mappedBrightness = (brightness * factor) / (1.0 + brightness * factor);
     color = direction * mappedBrightness;
-    
-    // Boost saturation to compensate for white background bleed-through
-    // When alpha < 1.0, white bleeds through making colors look desaturated
-    // So we increase saturation to maintain vibrant appearance
+
     float gray = dot(color, vec3(0.2, 0.5, 0.1));
-    float saturationBoost = 3.0;
-    color = mix(vec3(gray), color, saturationBoost);
-    
-    // Clamp between 0-1
+    color = mix(vec3(gray), color, 3.0);
     color = clamp(color, 0.0, 1.0);
-    
+
     float alpha = mappedBrightness * clamp(uMix, 1.0, 2.0);
     fragColor = vec4(color, alpha);
   }
@@ -298,7 +307,7 @@ function AuraShader({
   const rgbColor = useMemo(() => hexToRgb(color), [color]);
 
   return (
-    <div ref={ref} className={className} {...props}>
+    <div ref={ref} className={className} style={{ backgroundColor: 'transparent' }} {...props}>
       <ReactShaderToy
         fs={shaderSource}
         devicePixelRatio={globalThis.devicePixelRatio ?? 1}
@@ -338,7 +347,8 @@ function AuraShader({
         onWarning={(warning) => {
           console.warn('Shader warning:', warning);
         }}
-        style={{ width: '100%', height: '100%' }}
+        style={{ width: '100%', height: '100%', mixBlendMode: 'screen' }}
+        contextAttributes={{ alpha: true, premultipliedAlpha: true }}
       />
     </div>
   );
@@ -424,7 +434,7 @@ export function AgentAudioVisualizerAura({
   VariantProps<typeof AgentAudioVisualizerAuraVariants>) {
   const { speed, scale, amplitude, frequency, brightness } = useAgentAudioVisualizerAura(
     state,
-    audioTrack
+    state === 'speaking' ? undefined : audioTrack
   );
 
   return (
@@ -440,7 +450,7 @@ export function AgentAudioVisualizerAura({
       amplitude={amplitude}
       frequency={frequency}
       brightness={brightness}
-      className={cn(AgentAudioVisualizerAuraVariants({ size }), className)}
+      className={cn(AgentAudioVisualizerAuraVariants({ size }), '!border-0', className)}
       {...props}
     />
   );

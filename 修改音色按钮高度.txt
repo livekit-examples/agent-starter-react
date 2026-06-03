@@ -1,0 +1,4 @@
+\xiaomeng-web\components\agents-ui\blocks\agent-session-view-01\components
+
+<VoiceCharacterButton className="absolute right-0 -top-12" />
+两个文件都需要修改

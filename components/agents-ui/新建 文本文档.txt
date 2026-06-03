@@ -1,0 +1,26 @@
+找到 AgentAudioVisualizerAura 函数里面的这一段代码：
+code
+Tsx
+const { speed, scale, amplitude, frequency, brightness } = useAgentAudioVisualizerAura(
+    state,
+    audioTrack
+  );
+将它修改为：
+code
+Tsx
+// 故意在 speaking 状态下不传入 audioTrack，强制触发无音量时的完美 fallback 动画
+  const { speed, scale, amplitude, frequency, brightness } = useAgentAudioVisualizerAura(
+    state,
+    state === 'speaking' ? undefined : audioTrack
+  );
+为什么这次一定对？
+这行代码的意思是：
+如果他在 connecting 或 listening：照常把 audioTrack 传进去。
+只要 AI 一开口（进入 speaking）：我们立刻把传给控制器的音频流切断（变成 undefined）。
+此时底层的 useAgentAudioVisualizerAura 看到状态是 speaking，但手里没有音轨，就会立刻切入那个你最喜欢的、没有因为真实音量忽大忽小而干扰的备用平滑动画。
+快去保存试试，这绝对就是你要的那条完美的丝带效果！
+
+
+信号格式：{ type: 'mute_toggle', muted: true/false }
+  - 静音时发送：{ type: 'mute_toggle', muted: true }
+  - 解除静音时发送：{ type: 'mute_toggle', muted: false }

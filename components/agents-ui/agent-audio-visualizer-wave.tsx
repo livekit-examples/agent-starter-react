@@ -357,6 +357,7 @@ export function AgentAudioVisualizerWave({
       frequency={frequency}
       lineWidth={_lineWidth}
       blur={blur}
+      clearColor={[0, 0, 0, 0]}
       className={cn(
         AgentAudioVisualizerWaveVariants({ size }),
         'mask-[linear-gradient(90deg,transparent_0%,black_20%,black_80%,transparent_100%)]',

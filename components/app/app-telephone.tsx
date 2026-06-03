@@ -1,13 +1,13 @@
 'use client';
 
-import { useMemo } from 'react';
+import { Suspense, useMemo } from 'react';
 import { TokenSource } from 'livekit-client';
 import { useSession } from '@livekit/components-react';
 import { WarningIcon } from '@phosphor-icons/react/dist/ssr';
 import type { AppConfig } from '@/app-config';
 import { AgentSessionProvider } from '@/components/agents-ui/agent-session-provider';
 import { StartAudioButton } from '@/components/agents-ui/start-audio-button';
-import { ViewController } from '@/components/app/view-controller';
+import { ViewControllerTelephone } from '@/components/app/view-controller-telephone';
 import { Toaster } from '@/components/ui/sonner';
 import { useAgentErrors } from '@/hooks/useAgentErrors';
 import { useDebugMode } from '@/hooks/useDebug';
@@ -23,18 +23,17 @@ function AppSetup() {
   return null;
 }
 
-interface AppProps {
+interface AppTelephoneProps {
   appConfig: AppConfig;
 }
 
-export function App({ appConfig }: AppProps) {
+export function AppTelephone({ appConfig }: AppTelephoneProps) {
   const { currentVoice } = useVoiceContext();
 
   const tokenSource = useMemo(() => {
     if (typeof process.env.NEXT_PUBLIC_CONN_DETAILS_ENDPOINT === 'string') {
       return getSandboxTokenSource(appConfig);
     }
-    // Use TokenSource.custom to pass the selected voice to the token API
     return TokenSource.custom(async () => {
       const res = await fetch('/api/token', {
         method: 'POST',
@@ -55,7 +54,9 @@ export function App({ appConfig }: AppProps) {
     <AgentSessionProvider session={session}>
       <AppSetup />
       <main className="grid h-svh grid-cols-1 place-content-center">
-        <ViewController appConfig={appConfig} />
+        <Suspense fallback={<div>Loading...</div>}>
+          <ViewControllerTelephone appConfig={appConfig} />
+        </Suspense>
       </main>
       <StartAudioButton label="Start Audio" />
       <Toaster

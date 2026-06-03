@@ -59,7 +59,7 @@ export function useAgentErrors() {
         ),
       });
 
-      end();
+      // end(); // 注释掉这行，防止前端自动断开
     }
   }, [agent, isConnected, end]);
 }

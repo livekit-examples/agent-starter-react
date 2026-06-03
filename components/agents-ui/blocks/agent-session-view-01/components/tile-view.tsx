@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Track } from 'livekit-client';
 import { AnimatePresence, type MotionProps, motion } from 'motion/react';
 import {
+  type AgentState,
   type TrackReference,
   VideoTrack,
   useLocalParticipant,
@@ -68,6 +69,7 @@ export function useLocalTrackRef(source: Track.Source) {
 }
 
 interface TileLayoutProps {
+  state?: AgentState;
   chatOpen: boolean;
   audioVisualizerType?: 'bar' | 'wave' | 'grid' | 'radial' | 'aura';
   audioVisualizerColor?: `#${string}`;
@@ -81,6 +83,7 @@ interface TileLayoutProps {
 }
 
 export function TileLayout({
+  state: externalState,
   chatOpen,
   audioVisualizerType,
   audioVisualizerColor,
@@ -92,7 +95,8 @@ export function TileLayout({
   audioVisualizerGridColumnCount,
   audioVisualizerWaveLineWidth,
 }: TileLayoutProps) {
-  const { videoTrack: agentVideoTrack } = useVoiceAssistant();
+  const { state: lkAgentState, audioTrack, videoTrack: agentVideoTrack } = useVoiceAssistant();
+  const effectiveState = externalState ?? lkAgentState;
   const [screenShareTrack] = useTracks([Track.Source.ScreenShare]);
   const cameraTrack: TrackReference | undefined = useLocalTrackRef(Track.Source.Camera);
 
@@ -130,10 +134,11 @@ export function TileLayout({
                     ...ANIMATION_TRANSITION,
                     delay: animationDelay,
                   }}
-                  className={cn('relative aspect-square h-[90px]')}
-                >
+                  className={cn('relative aspect-square h-[90px] bg-transparent')}
+                  >
                   <AudioVisualizer
                     key="audio-visualizer"
+                    state={effectiveState}
                     initial={{ scale: 1 }}
                     animate={{ scale: chatOpen ? 0.2 : 1 }}
                     transition={{
@@ -152,8 +157,8 @@ export function TileLayout({
                     isChatOpen={chatOpen}
                     className={cn(
                       'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2',
-                      'bg-background rounded-[50px] border border-transparent transition-[border,drop-shadow]',
-                      chatOpen && 'border-input shadow-2xl/10 delay-200'
+                      'rounded-[50px] transition-[border]',
+                      chatOpen && 'delay-200'
                     )}
                     style={{ color: audioVisualizerColor }}
                   />
