@@ -5,6 +5,8 @@ import { useRemoteParticipants, useVoiceAssistant } from '@livekit/components-re
 import { VideoTrackConfig } from '@/app-config';
 import { useExcludedVideoTracks } from './useExcludedVideoTracks';
 
+const EXCLUDED_AVATAR_PARTICIPANT_IDENTITIES = new Set(['room_audio_input', 'room_vision_input']);
+
 export interface UseSmartVoiceAssistantOptions {
   videoTrackConfigs?: VideoTrackConfig[];
 }
@@ -23,45 +25,45 @@ export function useSmartVoiceAssistant({
   const smartVideoTrack = useMemo(() => {
     // 如果原始 voiceAssistant 有视频轨道且不在排除列表中，使用它
     if (voiceAssistant.videoTrack) {
-      const trackName = voiceAssistant.videoTrack.publication.trackName || 
-                       voiceAssistant.videoTrack.publication.trackSid;
-      
-      if (!shouldExcludeTrack(trackName)) {
-        console.log(`[useSmartVoiceAssistant] Using original voice assistant track: ${trackName}`);
+      const trackName =
+        voiceAssistant.videoTrack.publication.trackName ||
+        voiceAssistant.videoTrack.publication.trackSid;
+      const participantIdentity = voiceAssistant.videoTrack.participant.identity;
+
+      if (
+        !EXCLUDED_AVATAR_PARTICIPANT_IDENTITIES.has(participantIdentity) &&
+        !shouldExcludeTrack(trackName)
+      ) {
         return voiceAssistant.videoTrack;
-      } else {
-        console.log(`[useSmartVoiceAssistant] Original track excluded: ${trackName}`);
       }
     }
 
     // 如果原始轨道被排除，寻找其他合适的轨道
     for (const participant of remoteParticipants) {
       if (!participant.isAgent) continue;
-      
+      if (EXCLUDED_AVATAR_PARTICIPANT_IDENTITIES.has(participant.identity)) continue;
+
       for (const [, publication] of participant.videoTrackPublications) {
         if (!publication.isSubscribed || !publication.track) continue;
-        
+
         const trackName = publication.trackName || publication.trackSid;
-        
+
         // 跳过配置中的轨道
         if (shouldExcludeTrack(trackName)) {
-          console.log(`[useSmartVoiceAssistant] Skipping excluded track: ${trackName}`);
           continue;
         }
-        
+
         // 找到合适的轨道
         const trackRef = {
           participant,
           publication,
           source: publication.source,
         };
-        
-        console.log(`[useSmartVoiceAssistant] Found alternative avatar track: ${trackName} from ${participant.identity}`);
+
         return trackRef;
       }
     }
 
-    console.log(`[useSmartVoiceAssistant] No suitable avatar track found`);
     return undefined;
   }, [voiceAssistant.videoTrack, remoteParticipants, shouldExcludeTrack]);
 

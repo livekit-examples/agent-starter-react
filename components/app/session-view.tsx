@@ -11,7 +11,7 @@ import {
   type ControlBarControls,
 } from '@/components/livekit/agent-control-bar/agent-control-bar';
 import { useChatMessages } from '@/hooks/useChatMessages';
-import { useConnectionTimeout } from '@/hooks/useConnectionTimout';
+import { useConnectionTimeout } from '@/hooks/useConnectionTimeout';
 import { useDebugMode } from '@/hooks/useDebug';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../livekit/scroll-area/scroll-area';
@@ -74,14 +74,15 @@ export const SessionView = ({
     enableTranscriptionDebug: appConfig.enableTranscriptionDebug,
     userTranscriptionIdentities: appConfig.userTranscriptionIdentities,
   });
-  const [chatOpen, setChatOpen] = useState(appConfig.showTranscriptByDefault ?? false);
+  const transcriptOpen = appConfig.showTranscriptByDefault ?? true;
+  const [textInputOpen, setTextInputOpen] = useState(false);
 
   const controls: ControlBarControls = {
     leave: true,
-    microphone: true,
+    microphone: !appConfig.usesServerRoomInput,
     chat: appConfig.supportsChatInput,
     camera: appConfig.supportsVideoInput,
-    screenShare: appConfig.supportsVideoInput,
+    screenShare: appConfig.supportsScreenShare,
   };
 
   return (
@@ -90,13 +91,13 @@ export const SessionView = ({
       <div
         className={cn(
           'fixed inset-0 grid grid-cols-1 grid-rows-1',
-          !chatOpen && 'pointer-events-none'
+          !transcriptOpen && 'pointer-events-none'
         )}
       >
         <Fade top className="absolute inset-x-4 top-0 h-40" />
         <ScrollArea className="px-4 pt-40 pb-[150px] md:px-6 md:pb-[180px]">
           <ChatTranscript
-            hidden={!chatOpen}
+            hidden={!transcriptOpen}
             messages={messages}
             showParticipantNames={appConfig.showParticipantNames}
             className="mx-auto max-w-2xl space-y-3 transition-opacity duration-300 ease-out"
@@ -105,7 +106,13 @@ export const SessionView = ({
       </div>
 
       {/* Tile Layout */}
-      <TileLayout chatOpen={chatOpen} />
+      <TileLayout
+        chatOpen={transcriptOpen}
+        videoTrackConfigs={appConfig.availableVideoTracks}
+        defaultVideoTrackId={appConfig.defaultVideoTrack}
+        showDefaultCameraPreview={appConfig.showDefaultCameraPreview}
+        debugVideo={appConfig.debugVideo}
+      />
 
       {/* Bottom */}
       <MotionBottom
@@ -117,7 +124,11 @@ export const SessionView = ({
         )}
         <div className="bg-background relative mx-auto max-w-2xl pb-3 md:pb-12">
           <Fade bottom className="absolute inset-x-0 top-0 h-4 -translate-y-full" />
-          <AgentControlBar controls={controls} onChatOpenChange={setChatOpen} />
+          <AgentControlBar
+            controls={controls}
+            chatOpen={textInputOpen}
+            onChatOpenChange={setTextInputOpen}
+          />
         </div>
       </MotionBottom>
     </section>

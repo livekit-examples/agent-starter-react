@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { useAudioTrackFilter } from '@/hooks/useAudioTrackFilter';
 import { useRemoteParticipants } from '@livekit/components-react';
+import { useAudioTrackFilter } from '@/hooks/useAudioTrackFilter';
 
 interface AudioFilterDebugProps {
   excludeTrackNames?: string[];
@@ -15,10 +15,11 @@ interface AudioFilterDebugProps {
  */
 export function AudioFilterDebug({ excludeTrackNames = [], show = false }: AudioFilterDebugProps) {
   const participants = useRemoteParticipants();
-  const { shouldExcludeTrack, getFilteredTracks, unsubscribeTrack, subscribeTrack } = useAudioTrackFilter({
-    excludeTrackNames,
-    autoUnsubscribe: false, // 调试时不自动取消订阅
-  });
+  const { shouldExcludeTrack, getFilteredTracks, unsubscribeTrack, subscribeTrack } =
+    useAudioTrackFilter({
+      excludeTrackNames,
+      autoUnsubscribe: false, // 调试时不自动取消订阅
+    });
 
   const filteredTracks = getFilteredTracks();
 
@@ -35,43 +36,43 @@ export function AudioFilterDebug({ excludeTrackNames = [], show = false }: Audio
   }
 
   return (
-    <div className="fixed top-4 right-4 z-50 max-w-sm bg-black/80 text-white p-4 rounded-lg text-xs">
-      <h3 className="font-bold mb-2">音频轨道调试</h3>
-      
+    <div className="fixed top-4 right-4 z-50 max-w-sm rounded-lg bg-black/80 p-4 text-xs text-white">
+      <h3 className="mb-2 font-bold">音频轨道调试</h3>
+
       <div className="mb-3">
         <div className="text-yellow-400">排除规则: {excludeTrackNames.join(', ') || '无'}</div>
       </div>
 
       <div className="space-y-2">
         <div className="font-semibold">所有参与者音频轨道:</div>
-        {participants.map(participant => (
+        {participants.map((participant) => (
           <div key={participant.identity} className="border-l-2 border-blue-500 pl-2">
             <div className="text-blue-300">{participant.identity}</div>
-            {Array.from(participant.audioTrackPublications.values()).map(publication => {
+            {Array.from(participant.audioTrackPublications.values()).map((publication) => {
               const isExcluded = shouldExcludeTrack(publication);
               const trackName = publication.trackName || publication.trackSid;
-              
+
               return (
-                <div 
-                  key={publication.trackSid} 
-                  className={`ml-2 p-1 rounded ${isExcluded ? 'bg-red-900/50' : 'bg-green-900/50'}`}
+                <div
+                  key={publication.trackSid}
+                  className={`ml-2 rounded p-1 ${isExcluded ? 'bg-red-900/50' : 'bg-green-900/50'}`}
                 >
-                  <div className="flex justify-between items-center">
+                  <div className="flex items-center justify-between">
                     <div>
                       <div className={isExcluded ? 'text-red-300' : 'text-green-300'}>
                         {trackName}
                       </div>
-                      <div className="text-gray-400 text-xs">
-                        SID: {publication.trackSid}
-                      </div>
-                      <div className="text-gray-400 text-xs">
-                        订阅: {publication.isSubscribed ? '是' : '否'} | 
-                        过滤: {isExcluded ? '是' : '否'}
+                      <div className="text-xs text-gray-400">SID: {publication.trackSid}</div>
+                      <div className="text-xs text-gray-400">
+                        订阅: {publication.isSubscribed ? '是' : '否'} | 过滤:{' '}
+                        {isExcluded ? '是' : '否'}
                       </div>
                     </div>
                     <button
-                      onClick={() => handleToggleSubscription(publication.trackSid, publication.isSubscribed)}
-                      className="ml-2 px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs"
+                      onClick={() =>
+                        handleToggleSubscription(publication.trackSid, publication.isSubscribed)
+                      }
+                      className="ml-2 rounded bg-blue-600 px-2 py-1 text-xs hover:bg-blue-700"
                     >
                       {publication.isSubscribed ? '取消' : '订阅'}
                     </button>
@@ -84,10 +85,13 @@ export function AudioFilterDebug({ excludeTrackNames = [], show = false }: Audio
       </div>
 
       {filteredTracks.length > 0 && (
-        <div className="mt-3 pt-3 border-t border-gray-600">
+        <div className="mt-3 border-t border-gray-600 pt-3">
           <div className="font-semibold text-red-300">被过滤的轨道:</div>
-          {filteredTracks.map(track => (
-            <div key={`${track.participantIdentity}-${track.trackSid}`} className="text-red-200 text-xs">
+          {filteredTracks.map((track) => (
+            <div
+              key={`${track.participantIdentity}-${track.trackSid}`}
+              className="text-xs text-red-200"
+            >
               {track.participantIdentity}: {track.trackName}
             </div>
           ))}

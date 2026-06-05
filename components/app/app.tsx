@@ -1,11 +1,11 @@
 'use client';
 
 import { StartAudio } from '@livekit/components-react';
-import { FilteredAudioRenderer } from '@/components/livekit/filtered-audio-renderer';
-import { AudioFilterDebug } from '@/components/livekit/audio-filter-debug';
 import type { AppConfig } from '@/app-config';
 import { SessionProvider } from '@/components/app/session-provider';
 import { ViewController } from '@/components/app/view-controller';
+import { AudioFilterDebug } from '@/components/livekit/audio-filter-debug';
+import { FilteredAudioRenderer } from '@/components/livekit/filtered-audio-renderer';
 import { Toaster } from '@/components/livekit/toaster';
 
 interface AppProps {
@@ -19,10 +19,13 @@ export function App({ appConfig }: AppProps) {
         <ViewController />
       </main>
       <StartAudio label="Start Audio" />
-      <FilteredAudioRenderer excludeTrackNames={appConfig.excludeAudioTracks} />
-      <AudioFilterDebug 
-        excludeTrackNames={appConfig.excludeAudioTracks} 
-        show={appConfig.showAudioFilterDebug} 
+      <FilteredAudioRenderer
+        excludeTrackNames={appConfig.excludeAudioTracks}
+        debugAudio={appConfig.debugAudio}
+      />
+      <AudioFilterDebug
+        excludeTrackNames={appConfig.excludeAudioTracks}
+        show={appConfig.showAudioFilterDebug}
       />
       <Toaster />
     </SessionProvider>

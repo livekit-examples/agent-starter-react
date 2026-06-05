@@ -1,8 +1,15 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
-import { useRoomContext, useRemoteParticipants } from '@livekit/components-react';
-import { Track, TrackPublication, RemoteTrackPublication } from 'livekit-client';
+import { useCallback, useEffect } from 'react';
+import {
+  ParticipantEvent,
+  type RemoteParticipant,
+  type RemoteTrackPublication,
+  RoomEvent,
+  Track,
+  type TrackPublication,
+} from 'livekit-client';
+import { useRemoteParticipants, useRoomContext } from '@livekit/components-react';
 
 interface UseAudioTrackFilterProps {
   excludeTrackNames?: string[];
@@ -13,64 +20,82 @@ interface UseAudioTrackFilterProps {
  * 音频轨道过滤Hook
  * 提供更精细的音频轨道订阅控制
  */
-export function useAudioTrackFilter({ 
-  excludeTrackNames = [], 
-  autoUnsubscribe = false 
+export function useAudioTrackFilter({
+  excludeTrackNames = [],
+  autoUnsubscribe = false,
 }: UseAudioTrackFilterProps = {}) {
   const room = useRoomContext();
   const participants = useRemoteParticipants();
 
   // 检查轨道是否应该被排除
-  const shouldExcludeTrack = useCallback((publication: TrackPublication): boolean => {
-    const trackName = publication.trackName || publication.trackSid;
-    return excludeTrackNames.some(excludeName => 
-      trackName.includes(excludeName) || 
-      trackName === excludeName ||
-      publication.trackSid === excludeName
-    );
-  }, [excludeTrackNames]);
+  const shouldExcludeTrack = useCallback(
+    (publication: TrackPublication): boolean => {
+      const trackName = publication.trackName || publication.trackSid;
+      return excludeTrackNames.some(
+        (excludeName) =>
+          trackName.includes(excludeName) ||
+          trackName === excludeName ||
+          publication.trackSid === excludeName
+      );
+    },
+    [excludeTrackNames]
+  );
 
   // 手动取消订阅指定轨道
-  const unsubscribeTrack = useCallback(async (trackSid: string) => {
-    if (!room) return false;
+  const unsubscribeTrack = useCallback(
+    async (trackSid: string) => {
+      if (!room) return false;
 
-    for (const participant of participants) {
-      // 查找音频轨道
-      const publication = participant.audioTrackPublications.get(trackSid) as RemoteTrackPublication;
-      if (publication && publication.isSubscribed) {
-        try {
-          publication.setSubscribed(false);
-          console.log(`[AudioTrackFilter] 手动取消订阅音频轨道: ${publication.trackName || trackSid}`);
-          return true;
-        } catch (error) {
-          console.error(`[AudioTrackFilter] 取消订阅失败:`, error);
-          return false;
+      for (const participant of participants) {
+        // 查找音频轨道
+        const publication = participant.audioTrackPublications.get(
+          trackSid
+        ) as RemoteTrackPublication;
+        if (publication && publication.isSubscribed) {
+          try {
+            publication.setSubscribed(false);
+            console.log(
+              `[AudioTrackFilter] 手动取消订阅音频轨道: ${publication.trackName || trackSid}`
+            );
+            return true;
+          } catch (error) {
+            console.error(`[AudioTrackFilter] 取消订阅失败:`, error);
+            return false;
+          }
         }
       }
-    }
-    return false;
-  }, [room, participants]);
+      return false;
+    },
+    [room, participants]
+  );
 
   // 手动订阅指定轨道
-  const subscribeTrack = useCallback(async (trackSid: string) => {
-    if (!room) return false;
+  const subscribeTrack = useCallback(
+    async (trackSid: string) => {
+      if (!room) return false;
 
-    for (const participant of participants) {
-      // 查找音频轨道
-      const publication = participant.audioTrackPublications.get(trackSid) as RemoteTrackPublication;
-      if (publication && !publication.isSubscribed) {
-        try {
-          publication.setSubscribed(true);
-          console.log(`[AudioTrackFilter] 手动订阅音频轨道: ${publication.trackName || trackSid}`);
-          return true;
-        } catch (error) {
-          console.error(`[AudioTrackFilter] 订阅失败:`, error);
-          return false;
+      for (const participant of participants) {
+        // 查找音频轨道
+        const publication = participant.audioTrackPublications.get(
+          trackSid
+        ) as RemoteTrackPublication;
+        if (publication && !publication.isSubscribed) {
+          try {
+            publication.setSubscribed(true);
+            console.log(
+              `[AudioTrackFilter] 手动订阅音频轨道: ${publication.trackName || trackSid}`
+            );
+            return true;
+          } catch (error) {
+            console.error(`[AudioTrackFilter] 订阅失败:`, error);
+            return false;
+          }
         }
       }
-    }
-    return false;
-  }, [room, participants]);
+      return false;
+    },
+    [room, participants]
+  );
 
   // 获取所有被过滤的轨道信息
   const getFilteredTracks = useCallback(() => {
@@ -81,8 +106,8 @@ export function useAudioTrackFilter({
       isSubscribed: boolean;
     }> = [];
 
-    participants.forEach(participant => {
-      participant.audioTrackPublications.forEach(publication => {
+    participants.forEach((participant) => {
+      participant.audioTrackPublications.forEach((publication) => {
         if (shouldExcludeTrack(publication)) {
           filteredTracks.push({
             participantIdentity: participant.identity,
@@ -103,7 +128,9 @@ export function useAudioTrackFilter({
 
     const handleTrackPublished = async (publication: RemoteTrackPublication) => {
       if (publication.kind === Track.Kind.Audio && shouldExcludeTrack(publication)) {
-        console.log(`[AudioTrackFilter] 检测到被排除的音频轨道，自动取消订阅: ${publication.trackName || publication.trackSid}`);
+        console.log(
+          `[AudioTrackFilter] 检测到被排除的音频轨道，自动取消订阅: ${publication.trackName || publication.trackSid}`
+        );
         try {
           publication.setSubscribed(false);
         } catch (error) {
@@ -113,10 +140,12 @@ export function useAudioTrackFilter({
     };
 
     // 处理现有轨道
-    participants.forEach(participant => {
+    participants.forEach((participant) => {
       participant.audioTrackPublications.forEach((publication) => {
         if (publication.isSubscribed && shouldExcludeTrack(publication)) {
-          console.log(`[AudioTrackFilter] 发现已订阅的被排除轨道，取消订阅: ${publication.trackName || publication.trackSid}`);
+          console.log(
+            `[AudioTrackFilter] 发现已订阅的被排除轨道，取消订阅: ${publication.trackName || publication.trackSid}`
+          );
           try {
             (publication as RemoteTrackPublication).setSubscribed(false);
           } catch (error) {
@@ -125,19 +154,19 @@ export function useAudioTrackFilter({
         }
       });
 
-      participant.on('trackPublished', handleTrackPublished);
+      participant.on(ParticipantEvent.TrackPublished, handleTrackPublished);
     });
 
-    const onParticipantConnected = (participant: any) => {
-      participant.on('trackPublished', handleTrackPublished);
+    const onParticipantConnected = (participant: RemoteParticipant) => {
+      participant.on(ParticipantEvent.TrackPublished, handleTrackPublished);
     };
 
-    room.on('participantConnected', onParticipantConnected);
+    room.on(RoomEvent.ParticipantConnected, onParticipantConnected);
 
     return () => {
-      room.off('participantConnected', onParticipantConnected);
-      participants.forEach(participant => {
-        participant.off('trackPublished', handleTrackPublished);
+      room.off(RoomEvent.ParticipantConnected, onParticipantConnected);
+      participants.forEach((participant) => {
+        participant.off(ParticipantEvent.TrackPublished, handleTrackPublished);
       });
     };
   }, [room, participants, shouldExcludeTrack, autoUnsubscribe]);

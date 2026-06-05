@@ -1,8 +1,28 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { RemoteTrackPublication, RemoteVideoTrack, Track } from 'livekit-client';
-import { useRemoteParticipants, useRoomContext } from '@livekit/components-react';
+import {
+  ParticipantEvent,
+  type RemoteParticipant,
+  type RemoteTrack,
+  type RemoteTrackPublication,
+  type RemoteVideoTrack,
+  type Room,
+  RoomEvent,
+  Track,
+  VideoQuality,
+} from 'livekit-client';
+import {
+  type TrackReference,
+  useRemoteParticipants,
+  useRoomContext,
+} from '@livekit/components-react';
+import type { AppConfig } from '@/app-config';
+
+type RemoteVideoConfig = Pick<
+  AppConfig,
+  'debugVideo' | 'remoteVideoWidth' | 'remoteVideoHeight' | 'remoteVideoFps'
+>;
 
 export interface RemoteVideoTrackInfo {
   trackName: string;
@@ -21,11 +41,49 @@ export interface UseRemoteVideoTracksReturn {
   refreshTracks: () => void;
 }
 
+function debugVideoLog(config: RemoteVideoConfig | undefined, ...args: unknown[]) {
+  if (config?.debugVideo) {
+    console.log(...args);
+  }
+}
+
+export function requestRemoteVideoHighQuality(
+  publication: RemoteTrackPublication | null | undefined,
+  config?: RemoteVideoConfig
+) {
+  if (!publication || publication.kind !== Track.Kind.Video) {
+    return;
+  }
+
+  publication.setVideoQuality(VideoQuality.HIGH);
+  publication.setVideoDimensions({
+    width: config?.remoteVideoWidth ?? 640,
+    height: config?.remoteVideoHeight ?? 480,
+  });
+  publication.setVideoFPS(config?.remoteVideoFps ?? 25);
+}
+
+export function createRemoteVideoTrackReference(
+  room: Room | undefined,
+  trackInfo: RemoteVideoTrackInfo
+): TrackReference | null {
+  const participant = room?.remoteParticipants.get(trackInfo.participantIdentity);
+  if (!participant) {
+    return null;
+  }
+
+  return {
+    participant,
+    publication: trackInfo.publication,
+    source: trackInfo.publication.source,
+  };
+}
+
 /**
  * Hook to manage remote video tracks from LiveKit participants
  * 管理来自 LiveKit 参与者的远程视频轨道
  */
-export function useRemoteVideoTracks(): UseRemoteVideoTracksReturn {
+export function useRemoteVideoTracks(config?: RemoteVideoConfig): UseRemoteVideoTracksReturn {
   const room = useRoomContext();
   const participants = useRemoteParticipants();
   const [remoteVideoTracks, setRemoteVideoTracks] = useState<Map<string, RemoteVideoTrackInfo>>(
@@ -52,11 +110,12 @@ export function useRemoteVideoTracks(): UseRemoteVideoTracksReturn {
     });
 
     setRemoteVideoTracks(tracks);
-    console.log(
+    debugVideoLog(
+      config,
       `[useRemoteVideoTracks] Found ${tracks.size} remote video tracks:`,
       Array.from(tracks.keys())
     );
-  }, [participants]);
+  }, [config, participants]);
 
   // 订阅指定轨道
   const subscribeToTrack = useCallback(
@@ -68,20 +127,25 @@ export function useRemoteVideoTracks(): UseRemoteVideoTracksReturn {
       }
 
       if (trackInfo.isSubscribed) {
-        console.log(`[useRemoteVideoTracks] Track "${trackName}" is already subscribed`);
+        debugVideoLog(config, `[useRemoteVideoTracks] Track "${trackName}" is already subscribed`);
+        requestRemoteVideoHighQuality(trackInfo.publication, config);
         return true;
       }
 
       try {
         trackInfo.publication.setSubscribed(true);
-        console.log(`[useRemoteVideoTracks] Successfully subscribed to track: ${trackName}`);
+        requestRemoteVideoHighQuality(trackInfo.publication, config);
+        debugVideoLog(
+          config,
+          `[useRemoteVideoTracks] Successfully subscribed to track: ${trackName}`
+        );
         return true;
       } catch (error) {
         console.error(`[useRemoteVideoTracks] Failed to subscribe to track "${trackName}":`, error);
         return false;
       }
     },
-    [remoteVideoTracks]
+    [config, remoteVideoTracks]
   );
 
   // 取消订阅指定轨道
@@ -94,13 +158,19 @@ export function useRemoteVideoTracks(): UseRemoteVideoTracksReturn {
       }
 
       if (!trackInfo.isSubscribed) {
-        console.log(`[useRemoteVideoTracks] Track "${trackName}" is already unsubscribed`);
+        debugVideoLog(
+          config,
+          `[useRemoteVideoTracks] Track "${trackName}" is already unsubscribed`
+        );
         return true;
       }
 
       try {
         trackInfo.publication.setSubscribed(false);
-        console.log(`[useRemoteVideoTracks] Successfully unsubscribed from track: ${trackName}`);
+        debugVideoLog(
+          config,
+          `[useRemoteVideoTracks] Successfully unsubscribed from track: ${trackName}`
+        );
         return true;
       } catch (error) {
         console.error(
@@ -110,7 +180,7 @@ export function useRemoteVideoTracks(): UseRemoteVideoTracksReturn {
         return false;
       }
     },
-    [remoteVideoTracks]
+    [config, remoteVideoTracks]
   );
 
   // 根据名称获取轨道信息
@@ -129,18 +199,21 @@ export function useRemoteVideoTracks(): UseRemoteVideoTracksReturn {
     refreshTracks();
 
     // 监听轨道订阅事件
-    const handleTrackSubscribed = (track: Track, publication: RemoteTrackPublication) => {
+    const handleTrackSubscribed = (track: RemoteTrack, publication: RemoteTrackPublication) => {
       if (track.kind === Track.Kind.Video) {
-        console.log(
+        requestRemoteVideoHighQuality(publication, config);
+        debugVideoLog(
+          config,
           `[useRemoteVideoTracks] Video track subscribed: ${publication.trackName || publication.trackSid}`
         );
         refreshTracks();
       }
     };
 
-    const handleTrackUnsubscribed = (track: Track, publication: RemoteTrackPublication) => {
+    const handleTrackUnsubscribed = (track: RemoteTrack, publication: RemoteTrackPublication) => {
       if (track.kind === Track.Kind.Video) {
-        console.log(
+        debugVideoLog(
+          config,
           `[useRemoteVideoTracks] Video track unsubscribed: ${publication.trackName || publication.trackSid}`
         );
         refreshTracks();
@@ -149,7 +222,8 @@ export function useRemoteVideoTracks(): UseRemoteVideoTracksReturn {
 
     const handleTrackPublished = (publication: RemoteTrackPublication) => {
       if (publication.kind === Track.Kind.Video) {
-        console.log(
+        debugVideoLog(
+          config,
           `[useRemoteVideoTracks] Video track published: ${publication.trackName || publication.trackSid}`
         );
         refreshTracks();
@@ -158,52 +232,60 @@ export function useRemoteVideoTracks(): UseRemoteVideoTracksReturn {
 
     const handleTrackUnpublished = (publication: RemoteTrackPublication) => {
       if (publication.kind === Track.Kind.Video) {
-        console.log(
+        debugVideoLog(
+          config,
           `[useRemoteVideoTracks] Video track unpublished: ${publication.trackName || publication.trackSid}`
         );
         refreshTracks();
       }
     };
 
+    const participantListenerCleanups: Array<() => void> = [];
+
+    const attachParticipantListeners = (participant: RemoteParticipant) => {
+      participant.on(ParticipantEvent.TrackSubscribed, handleTrackSubscribed);
+      participant.on(ParticipantEvent.TrackUnsubscribed, handleTrackUnsubscribed);
+      participant.on(ParticipantEvent.TrackPublished, handleTrackPublished);
+      participant.on(ParticipantEvent.TrackUnpublished, handleTrackUnpublished);
+
+      participantListenerCleanups.push(() => {
+        participant.off(ParticipantEvent.TrackSubscribed, handleTrackSubscribed);
+        participant.off(ParticipantEvent.TrackUnsubscribed, handleTrackUnsubscribed);
+        participant.off(ParticipantEvent.TrackPublished, handleTrackPublished);
+        participant.off(ParticipantEvent.TrackUnpublished, handleTrackUnpublished);
+      });
+    };
+
     // 监听现有参与者的事件
-    participants.forEach((participant) => {
-      participant.on('trackSubscribed', handleTrackSubscribed);
-      participant.on('trackUnsubscribed', handleTrackUnsubscribed);
-      participant.on('trackPublished', handleTrackPublished);
-      participant.on('trackUnpublished', handleTrackUnpublished);
-    });
+    participants.forEach(attachParticipantListeners);
 
     // 监听参与者连接/断开
-    const handleParticipantConnected = (participant: any) => {
-      console.log(`[useRemoteVideoTracks] Participant connected: ${participant.identity}`);
-      participant.on('trackSubscribed', handleTrackSubscribed);
-      participant.on('trackUnsubscribed', handleTrackUnsubscribed);
-      participant.on('trackPublished', handleTrackPublished);
-      participant.on('trackUnpublished', handleTrackUnpublished);
+    const handleParticipantConnected = (participant: RemoteParticipant) => {
+      debugVideoLog(
+        config,
+        `[useRemoteVideoTracks] Participant connected: ${participant.identity}`
+      );
+      attachParticipantListeners(participant);
       refreshTracks();
     };
 
-    const handleParticipantDisconnected = (participant: any) => {
-      console.log(`[useRemoteVideoTracks] Participant disconnected: ${participant.identity}`);
+    const handleParticipantDisconnected = (participant: RemoteParticipant) => {
+      debugVideoLog(
+        config,
+        `[useRemoteVideoTracks] Participant disconnected: ${participant.identity}`
+      );
       refreshTracks();
     };
 
-    room.on('participantConnected', handleParticipantConnected);
-    room.on('participantDisconnected', handleParticipantDisconnected);
+    room.on(RoomEvent.ParticipantConnected, handleParticipantConnected);
+    room.on(RoomEvent.ParticipantDisconnected, handleParticipantDisconnected);
 
     return () => {
-      // 清理事件监听器
-      participants.forEach((participant) => {
-        participant.removeAllListeners('trackSubscribed');
-        participant.removeAllListeners('trackUnsubscribed');
-        participant.removeAllListeners('trackPublished');
-        participant.removeAllListeners('trackUnpublished');
-      });
-
-      room.off('participantConnected', handleParticipantConnected);
-      room.off('participantDisconnected', handleParticipantDisconnected);
+      participantListenerCleanups.forEach((cleanup) => cleanup());
+      room.off(RoomEvent.ParticipantConnected, handleParticipantConnected);
+      room.off(RoomEvent.ParticipantDisconnected, handleParticipantDisconnected);
     };
-  }, [room, participants, refreshTracks]);
+  }, [config, room, participants, refreshTracks]);
 
   return {
     remoteVideoTracks,

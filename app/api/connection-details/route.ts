@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { AccessToken, type AccessTokenOptions, type VideoGrant } from 'livekit-server-sdk';
+import { randomUUID } from 'node:crypto';
 import { RoomConfiguration } from '@livekit/protocol';
+import { resolveConnectionRoomId } from '@/lib/connection-room-id';
 
 type ConnectionDetails = {
   serverUrl: string;
@@ -35,8 +37,9 @@ export async function POST(req: Request) {
 
     // Generate participant token
     const participantName = 'user';
-    const participantIdentity = `voice_assistant_user_${Math.floor(Math.random() * 10_000)}`;
-    const roomName = `voice_assistant_room_${Math.floor(Math.random() * 10_000)}`;
+    const roomId = resolveConnectionRoomId(body, randomUUID);
+    const participantIdentity = `voice_assistant_user_${roomId}`;
+    const roomName = `voice_assistant_room_${roomId}`;
 
     const participantToken = await createParticipantToken(
       { identity: participantIdentity, name: participantName },

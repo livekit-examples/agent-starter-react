@@ -6,7 +6,7 @@ function isAgentAvailable(agentState: AgentState) {
   return agentState == 'listening' || agentState == 'thinking' || agentState == 'speaking';
 }
 
-export function useConnectionTimeout(timout = 20_000) {
+export function useConnectionTimeout(timeoutMs = 20_000) {
   const room = useRoomContext();
   const { state: agentState } = useVoiceAssistant();
 
@@ -38,8 +38,8 @@ export function useConnectionTimeout(timout = 20_000) {
 
         room.disconnect();
       }
-    }, timout);
+    }, timeoutMs);
 
     return () => clearTimeout(timeout);
-  }, [agentState, room, timout]);
+  }, [agentState, room, timeoutMs]);
 }

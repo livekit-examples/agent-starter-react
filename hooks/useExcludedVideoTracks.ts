@@ -31,7 +31,6 @@ export function useExcludedVideoTracks({
       }
     });
 
-    console.log(`[useExcludedVideoTracks] Excluding video tracks:`, trackNames);
     return trackNames;
   }, [videoTrackConfigs]);
 

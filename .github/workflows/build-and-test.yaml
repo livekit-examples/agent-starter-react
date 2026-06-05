@@ -4,9 +4,9 @@ permissions:
   pull-requests: read
 on:
   push:
-    branches: [main]
+    branches: [main, lex-main]
   pull_request:
-    branches: [main]
+    branches: [main, lex-main]
 
 jobs:
   test:
@@ -28,6 +28,9 @@ jobs:
 
       - name: Prettier
         run: pnpm format:check
+
+      - name: Tests
+        run: pnpm test
 
       - name: Ensure build succeeds
         run: pnpm build

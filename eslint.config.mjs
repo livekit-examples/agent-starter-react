@@ -10,6 +10,9 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
+  {
+    ignores: ['.next/**', 'coverage/**', 'dist/**', 'next-env.d.ts', 'node_modules/**', 'out/**'],
+  },
   ...compat.extends(
     'next/core-web-vitals',
     'next/typescript',
@@ -17,6 +20,12 @@ const eslintConfig = [
     'prettier',
     'plugin:prettier/recommended'
   ),
+  {
+    files: ['scripts/**/*.js'],
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+    },
+  },
 ];
 
 export default eslintConfig;
