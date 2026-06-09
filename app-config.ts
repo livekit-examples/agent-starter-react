@@ -60,8 +60,10 @@ export interface AppConfig {
   showDefaultCameraPreview?: boolean; // 是否默认显示摄像头/视频输入预览
 }
 
+const XUNFEI_AUDIO_TRACK_NAME = 'xunfei_audio_track';
 const ROOM_INPUT_AUDIO_TRACK_NAME = 'room_audio';
-const ROOM_INPUT_VIDEO_TRACK_NAME = 'room_video';
+const ROOM_INPUT_VIDEO_TRACK_NAME =
+  process.env.NEXT_PUBLIC_FRONTDESK_VIDEO_TRACK_NAME || 'room_video';
 const BROWSER_VIDEO_TRACK_NAME = 'browser_video_track';
 export function buildDefaultVideoTracks(
   isBrowserInput: boolean,
@@ -140,7 +142,7 @@ export const APP_CONFIG_DEFAULTS: AppConfig = {
   agentName: undefined,
 
   // 音频过滤配置
-  excludeAudioTracks: [ROOM_INPUT_AUDIO_TRACK_NAME], // 要排除的音频轨道名称列表
+  excludeAudioTracks: [XUNFEI_AUDIO_TRACK_NAME, ROOM_INPUT_AUDIO_TRACK_NAME], // 要排除的音频轨道名称列表
 
   // 调试配置
   showAudioFilterDebug: process.env.NEXT_PUBLIC_SHOW_AUDIO_DEBUG === 'true' || false, // 是否显示音频过滤调试组件
@@ -154,7 +156,7 @@ export const APP_CONFIG_DEFAULTS: AppConfig = {
   enableSmartParticipantMatching: true, // 启用智能参与者匹配，解决自定义音频track的字幕显示问题
   enableTranscriptionDebug: process.env.NEXT_PUBLIC_SHOW_TRANSCRIPTION_DEBUG === 'true' || false, // 转录调试日志
   showTranscriptByDefault: true, // 默认显示字幕；文本输入栏由用户点击 text 按钮后展开
-  userTranscriptionIdentities: ['room_audio_input'], // 用户转录身份标识（自定义音频track）
+  userTranscriptionIdentities: ['xunfei_service_agent', 'room_input', 'room_audio_input'], // 用户转录身份标识（自定义音频track）
   showParticipantNames: false, // 默认不显示参与者名称（user、agent-xxx等）
 
   // 视频轨道配置

@@ -8,7 +8,13 @@ import { readConnectionDetailsResponse } from '@/lib/connection-details-response
 
 export function useRoom(appConfig: AppConfig) {
   const aborted = useRef(false);
-  const room = useMemo(() => new Room(), []);
+  const room = useMemo(
+    () =>
+      new Room({
+        reconnectPolicy: { nextRetryDelayInMs: () => null },
+      }),
+    []
+  );
   const [isSessionActive, setIsSessionActive] = useState(false);
   const handleBrowserVideoError = useCallback((error: Error) => {
     toastAlert({
@@ -134,6 +140,7 @@ export function useRoom(appConfig: AppConfig) {
       }
 
       if (appConfig.usesServerRoomInput) {
+        await room.localParticipant.setMicrophoneEnabled(false);
         return;
       }
 
