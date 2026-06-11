@@ -42,9 +42,9 @@ export const APP_CONFIG_DEFAULTS: AppConfig = {
   supportsScreenShare: true,
   isPreConnectBufferEnabled: true,
 
-  logo: '/lk-logo.svg',
+  logo: 'lk-logo.svg',
   accent: '#002cf2',
-  logoDark: '/lk-logo-dark.svg',
+  logoDark: 'lk-logo-dark.svg',
   accentDark: '#1fd5f9',
   startButtonText: 'Start call',
 
