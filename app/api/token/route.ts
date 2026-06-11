@@ -13,12 +13,13 @@ type ConnectionDetails = {
 const API_KEY = process.env.LIVEKIT_API_KEY;
 const API_SECRET = process.env.LIVEKIT_API_SECRET;
 const LIVEKIT_URL = process.env.LIVEKIT_URL;
+const LOCAL_TOKEN_ROUTE_ENABLED = process.env.LEXVOICE_ENABLE_LOCAL_TOKEN_ROUTE === '1';
 
 // don't cache the results
 export const revalidate = 0;
 
 export async function POST(req: Request) {
-  if (process.env.NODE_ENV !== 'development') {
+  if (process.env.NODE_ENV !== 'development' && !LOCAL_TOKEN_ROUTE_ENABLED) {
     throw new Error(
       'THIS API ROUTE IS INSECURE. DO NOT USE THIS ROUTE IN PRODUCTION WITHOUT AN AUTHENTICATION LAYER.'
     );
