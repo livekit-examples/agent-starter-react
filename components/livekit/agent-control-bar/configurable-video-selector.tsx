@@ -384,6 +384,13 @@ export function ConfigurableVideoSelector({
     [isTrackPreviewEnabled, getPreviewTrackId, enableTrackPreview, disableTrackPreview]
   );
 
+  const setExternalMediaEnabledFromUserToggle = useCallback(
+    async (enabled: boolean) => {
+      await onMediaEnabledChange?.(enabled);
+    },
+    [onMediaEnabledChange]
+  );
+
   // 统一的摄像头开关逻辑
   const handleToggleVideo = useCallback(
     async (enabled?: boolean) => {
@@ -393,7 +400,7 @@ export function ConfigurableVideoSelector({
         effectivePressed,
         shouldEnable,
       });
-      await onMediaEnabledChange?.(shouldEnable);
+      await setExternalMediaEnabledFromUserToggle(shouldEnable);
 
       if (shouldEnable) {
         previewedTrackIdRef.current = null;
@@ -419,7 +426,7 @@ export function ConfigurableVideoSelector({
       defaultTrackId,
       handleTrackPreviewToggle,
       disableTrackPreview,
-      onMediaEnabledChange,
+      setExternalMediaEnabledFromUserToggle,
       isMediaExternallyControlled,
       autoPreviewLivekitTracks,
       clearSelectedTrack,

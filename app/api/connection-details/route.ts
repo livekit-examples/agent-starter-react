@@ -2,10 +2,11 @@ import { NextResponse } from 'next/server';
 import { AccessToken, type AccessTokenOptions, type VideoGrant } from 'livekit-server-sdk';
 import { randomUUID } from 'node:crypto';
 import { RoomConfiguration } from '@livekit/protocol';
-import { resolveConnectionRoomId } from '@/lib/connection-room-id';
+import { deriveLiveKitRoomName, resolveConnectionSessionId } from '@/lib/connection-room-id';
 
 type ConnectionDetails = {
   serverUrl: string;
+  sessionId: string;
   roomName: string;
   participantName: string;
   participantToken: string;
@@ -31,31 +32,40 @@ export async function POST(req: Request) {
       throw new Error('LIVEKIT_API_SECRET is not defined');
     }
 
-    // Parse agent configuration from request body
+    // Parse room configuration from request body
     const body = await req.json();
-    const agentName: string = body?.room_config?.agents?.[0]?.agent_name;
+    const roomConfig = body?.room_config
+      ? RoomConfiguration.fromJson(body.room_config, { ignoreUnknownFields: true })
+      : new RoomConfiguration();
+    const tokenRoomConfig = buildTokenRoomConfig(roomConfig);
 
     // Generate participant token
     const participantName = 'user';
-    const roomId = resolveConnectionRoomId(body, randomUUID);
-    const participantIdentity = `voice_assistant_user_${roomId}`;
-    const roomName = `voice_assistant_room_${roomId}`;
+    const sessionId = resolveConnectionSessionId(body, randomUUID);
+    const participantIdentity = `voice_assistant_user_${sessionId}`;
+    const roomName = deriveLiveKitRoomName(sessionId);
 
     const participantToken = await createParticipantToken(
       { identity: participantIdentity, name: participantName },
       roomName,
-      agentName
+      tokenRoomConfig
     );
 
     // Return connection details
     const data: ConnectionDetails = {
       serverUrl: LIVEKIT_URL,
+      sessionId,
       roomName,
       participantToken: participantToken,
       participantName,
     };
     const headers = new Headers({
       'Cache-Control': 'no-store',
+    });
+    console.info('agent session connection details issued', {
+      sessionId,
+      roomName,
+      participantIdentity,
     });
     return NextResponse.json(data, { headers });
   } catch (error) {
@@ -69,7 +79,7 @@ export async function POST(req: Request) {
 function createParticipantToken(
   userInfo: AccessTokenOptions,
   roomName: string,
-  agentName?: string
+  roomConfig: RoomConfiguration | undefined
 ): Promise<string> {
   const at = new AccessToken(API_KEY, API_SECRET, {
     ...userInfo,
@@ -84,11 +94,21 @@ function createParticipantToken(
   };
   at.addGrant(grant);
 
-  if (agentName) {
-    at.roomConfig = new RoomConfiguration({
-      agents: [{ agentName }],
-    });
+  if (roomConfig) {
+    at.roomConfig = roomConfig;
   }
 
   return at.toJwt();
+}
+
+function buildTokenRoomConfig(roomConfig: RoomConfiguration) {
+  if (roomConfig.agents.length === 0) {
+    return roomConfig;
+  }
+
+  // Explicit dispatch is handled by /api/session/dispatch; token agents would create duplicate jobs.
+  return new RoomConfiguration({
+    ...roomConfig,
+    agents: [],
+  });
 }

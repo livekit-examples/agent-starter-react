@@ -1,7 +1,14 @@
 import { cache } from 'react';
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { APP_CONFIG_DEFAULTS, buildDefaultVideoTracks, getDefaultVideoTrack } from '@/app-config';
+import {
+  APP_CONFIG_DEFAULTS,
+  buildDefaultVideoTracks,
+  getDefaultVideoTrack,
+  normalizeInputSource,
+  resolveAgentNameForInputSource,
+  resolveInputDeviceConfig,
+} from '@/app-config';
 import type { AppConfig, VideoTrackConfig } from '@/app-config';
 
 export const CONFIG_ENDPOINT =
@@ -37,14 +44,45 @@ function readEnv(...names: string[]) {
   return '';
 }
 
+const warnedLegacyEnvNames = new Set<string>();
+
+function readEnvWithLegacy(names: string[], legacyNames: string[]) {
+  const value = readEnv(...names);
+  if (value) return value;
+
+  for (const legacyName of legacyNames) {
+    const legacyValue = process.env[legacyName];
+    if (legacyValue && legacyValue.trim()) {
+      warnLegacyEnvName(legacyName, names[0]);
+      return legacyValue.trim();
+    }
+  }
+
+  return '';
+}
+
+function warnLegacyEnvName(legacyName: string, replacementName: string) {
+  if (warnedLegacyEnvNames.has(legacyName)) {
+    return;
+  }
+  warnedLegacyEnvNames.add(legacyName);
+  console.warn(`${legacyName} is deprecated; use ${replacementName} instead.`);
+}
+
 function readBooleanEnv(defaultValue: boolean, ...names: string[]) {
   const value = readEnv(...names).toLowerCase();
   if (!value) return defaultValue;
   return ['1', 'true', 'yes', 'on'].includes(value);
 }
 
-function readNumberEnv(defaultValue: number, ...names: string[]) {
-  const parsed = Number(readEnv(...names));
+function readBooleanEnvWithLegacy(defaultValue: boolean, names: string[], legacyNames: string[]) {
+  const value = readEnvWithLegacy(names, legacyNames).toLowerCase();
+  if (!value) return defaultValue;
+  return ['1', 'true', 'yes', 'on'].includes(value);
+}
+
+function readNumberEnvWithLegacy(defaultValue: number, names: string[], legacyNames: string[]) {
+  const parsed = Number(readEnvWithLegacy(names, legacyNames));
   return Number.isFinite(parsed) && parsed > 0 ? parsed : defaultValue;
 }
 
@@ -116,13 +154,15 @@ function canApplySandboxConfigEntry(key: keyof AppConfig, entry: NonNullable<San
 }
 
 export function getClientConfigFromEnv(): AppConfig {
-  const inputSource = readEnv(
-    'INPUT_SOURCE',
-    'NEXT_PUBLIC_INPUT_SOURCE',
-    'NEXT_PUBLIC_LEXVOICE_DEVICE'
-  ).toLowerCase();
-  const isBrowserInput = inputSource === 'browser';
-  const usesServerRoomInput = ['xunfei', 'generic'].includes(inputSource);
+  const inputSource = normalizeInputSource(
+    readEnv('INPUT_SOURCE', 'NEXT_PUBLIC_INPUT_SOURCE', 'NEXT_PUBLIC_LEXVOICE_DEVICE')
+  );
+  const inputDeviceConfig = resolveInputDeviceConfig({
+    inputSource,
+    audioInputDevice: readEnv('ROOM_AUDIO_INPUT_DEVICE', 'NEXT_PUBLIC_ROOM_AUDIO_INPUT_DEVICE'),
+    visionInputDevice: readEnv('ROOM_VISION_INPUT_DEVICE', 'NEXT_PUBLIC_ROOM_VISION_INPUT_DEVICE'),
+    outputDevice: readEnv('ROOM_OUTPUT_DEVICE', 'NEXT_PUBLIC_ROOM_OUTPUT_DEVICE'),
+  });
   const agentName = readEnv(
     'AGENT_NAME',
     'NEXT_PUBLIC_AGENT_NAME',
@@ -131,12 +171,21 @@ export function getClientConfigFromEnv(): AppConfig {
 
   return {
     ...APP_CONFIG_DEFAULTS,
-    supportsScreenShare: isBrowserInput ? false : APP_CONFIG_DEFAULTS.supportsScreenShare,
-    usesBrowserRawMediaInput: isBrowserInput,
-    usesServerRoomInput,
-    agentName: agentName || undefined,
-    showDefaultCameraPreview: isBrowserInput ? false : APP_CONFIG_DEFAULTS.showDefaultCameraPreview,
-    availableVideoTracks: buildDefaultVideoTracks(isBrowserInput, usesServerRoomInput),
+    supportsScreenShare: inputDeviceConfig.supportsScreenShare,
+    usesBrowserRawMediaInput: inputDeviceConfig.usesBrowserRawMediaInput,
+    usesBrowserRawAudioInput: inputDeviceConfig.usesBrowserRawAudioInput,
+    usesBrowserRawVideoInput: inputDeviceConfig.usesBrowserRawVideoInput,
+    usesServerRoomInput: inputDeviceConfig.usesServerRoomInput,
+    agentName: resolveAgentNameForInputSource(inputSource, agentName),
+    inputSource: inputDeviceConfig.inputSource,
+    audioInputDevice: inputDeviceConfig.audioInputDevice,
+    visionInputDevice: inputDeviceConfig.visionInputDevice,
+    outputDevice: inputDeviceConfig.outputDevice,
+    showDefaultCameraPreview: inputDeviceConfig.showDefaultCameraPreview,
+    availableVideoTracks: buildDefaultVideoTracks(
+      inputDeviceConfig.usesBrowserRawVideoInput,
+      inputDeviceConfig.usesServerRoomInput
+    ),
     defaultVideoTrack: getDefaultVideoTrack(),
     browserMediaStreamName:
       readEnv(
@@ -144,53 +193,105 @@ export function getClientConfigFromEnv(): AppConfig {
         'NEXT_PUBLIC_BROWSER_MEDIA_STREAM_NAME',
         'NEXT_PUBLIC_LEXVOICE_BROWSER_MEDIA_STREAM_NAME'
       ) || APP_CONFIG_DEFAULTS.browserMediaStreamName,
-    browserVideoWidth: readNumberEnv(
+    browserVideoWidth: readNumberEnvWithLegacy(
       APP_CONFIG_DEFAULTS.browserVideoWidth ?? 640,
-      'BROWSER_VIDEO_WIDTH',
-      'NEXT_PUBLIC_BROWSER_VIDEO_WIDTH',
-      'NEXT_PUBLIC_LEXVOICE_BROWSER_VIDEO_WIDTH'
+      [
+        'BROWSER_VISION_WIDTH',
+        'NEXT_PUBLIC_BROWSER_VISION_WIDTH',
+        'NEXT_PUBLIC_LEXVOICE_BROWSER_VISION_WIDTH',
+      ],
+      [
+        'BROWSER_VIDEO_WIDTH',
+        'NEXT_PUBLIC_BROWSER_VIDEO_WIDTH',
+        'NEXT_PUBLIC_LEXVOICE_BROWSER_VIDEO_WIDTH',
+      ]
     ),
-    browserVideoHeight: readNumberEnv(
+    browserVideoHeight: readNumberEnvWithLegacy(
       APP_CONFIG_DEFAULTS.browserVideoHeight ?? 480,
-      'BROWSER_VIDEO_HEIGHT',
-      'NEXT_PUBLIC_BROWSER_VIDEO_HEIGHT',
-      'NEXT_PUBLIC_LEXVOICE_BROWSER_VIDEO_HEIGHT'
+      [
+        'BROWSER_VISION_HEIGHT',
+        'NEXT_PUBLIC_BROWSER_VISION_HEIGHT',
+        'NEXT_PUBLIC_LEXVOICE_BROWSER_VISION_HEIGHT',
+      ],
+      [
+        'BROWSER_VIDEO_HEIGHT',
+        'NEXT_PUBLIC_BROWSER_VIDEO_HEIGHT',
+        'NEXT_PUBLIC_LEXVOICE_BROWSER_VIDEO_HEIGHT',
+      ]
     ),
-    browserVideoFps: readNumberEnv(
+    browserVideoFps: readNumberEnvWithLegacy(
       APP_CONFIG_DEFAULTS.browserVideoFps ?? 25,
-      'BROWSER_VIDEO_FPS',
-      'NEXT_PUBLIC_BROWSER_VIDEO_FPS',
-      'NEXT_PUBLIC_LEXVOICE_BROWSER_VIDEO_FPS'
+      [
+        'BROWSER_VISION_FPS',
+        'NEXT_PUBLIC_BROWSER_VISION_FPS',
+        'NEXT_PUBLIC_LEXVOICE_BROWSER_VISION_FPS',
+      ],
+      [
+        'BROWSER_VIDEO_FPS',
+        'NEXT_PUBLIC_BROWSER_VIDEO_FPS',
+        'NEXT_PUBLIC_LEXVOICE_BROWSER_VIDEO_FPS',
+      ]
     ),
-    browserVideoMaxBitrate: readNumberEnv(
+    browserVideoMaxBitrate: readNumberEnvWithLegacy(
       APP_CONFIG_DEFAULTS.browserVideoMaxBitrate ?? 1700000,
-      'BROWSER_VIDEO_MAX_BITRATE',
-      'NEXT_PUBLIC_BROWSER_VIDEO_MAX_BITRATE',
-      'NEXT_PUBLIC_LEXVOICE_BROWSER_VIDEO_MAX_BITRATE'
+      [
+        'BROWSER_VISION_MAX_BITRATE',
+        'NEXT_PUBLIC_BROWSER_VISION_MAX_BITRATE',
+        'NEXT_PUBLIC_LEXVOICE_BROWSER_VISION_MAX_BITRATE',
+      ],
+      [
+        'BROWSER_VIDEO_MAX_BITRATE',
+        'NEXT_PUBLIC_BROWSER_VIDEO_MAX_BITRATE',
+        'NEXT_PUBLIC_LEXVOICE_BROWSER_VIDEO_MAX_BITRATE',
+      ]
     ),
-    browserVideoStats: readBooleanEnv(
+    browserVideoStats: readBooleanEnvWithLegacy(
       APP_CONFIG_DEFAULTS.browserVideoStats ?? false,
-      'BROWSER_VIDEO_STATS',
-      'NEXT_PUBLIC_BROWSER_VIDEO_STATS',
-      'NEXT_PUBLIC_LEXVOICE_BROWSER_VIDEO_STATS'
+      [
+        'BROWSER_VISION_STATS',
+        'NEXT_PUBLIC_BROWSER_VISION_STATS',
+        'NEXT_PUBLIC_LEXVOICE_BROWSER_VISION_STATS',
+      ],
+      [
+        'BROWSER_VIDEO_STATS',
+        'NEXT_PUBLIC_BROWSER_VIDEO_STATS',
+        'NEXT_PUBLIC_LEXVOICE_BROWSER_VIDEO_STATS',
+      ]
     ),
-    remoteVideoWidth: readNumberEnv(
+    remoteVideoWidth: readNumberEnvWithLegacy(
       APP_CONFIG_DEFAULTS.remoteVideoWidth ?? 640,
-      'REMOTE_VIDEO_WIDTH',
-      'NEXT_PUBLIC_REMOTE_VIDEO_WIDTH',
-      'NEXT_PUBLIC_LEXVOICE_REMOTE_VIDEO_WIDTH'
+      [
+        'REMOTE_VISION_WIDTH',
+        'NEXT_PUBLIC_REMOTE_VISION_WIDTH',
+        'NEXT_PUBLIC_LEXVOICE_REMOTE_VISION_WIDTH',
+      ],
+      [
+        'REMOTE_VIDEO_WIDTH',
+        'NEXT_PUBLIC_REMOTE_VIDEO_WIDTH',
+        'NEXT_PUBLIC_LEXVOICE_REMOTE_VIDEO_WIDTH',
+      ]
     ),
-    remoteVideoHeight: readNumberEnv(
+    remoteVideoHeight: readNumberEnvWithLegacy(
       APP_CONFIG_DEFAULTS.remoteVideoHeight ?? 480,
-      'REMOTE_VIDEO_HEIGHT',
-      'NEXT_PUBLIC_REMOTE_VIDEO_HEIGHT',
-      'NEXT_PUBLIC_LEXVOICE_REMOTE_VIDEO_HEIGHT'
+      [
+        'REMOTE_VISION_HEIGHT',
+        'NEXT_PUBLIC_REMOTE_VISION_HEIGHT',
+        'NEXT_PUBLIC_LEXVOICE_REMOTE_VISION_HEIGHT',
+      ],
+      [
+        'REMOTE_VIDEO_HEIGHT',
+        'NEXT_PUBLIC_REMOTE_VIDEO_HEIGHT',
+        'NEXT_PUBLIC_LEXVOICE_REMOTE_VIDEO_HEIGHT',
+      ]
     ),
-    remoteVideoFps: readNumberEnv(
+    remoteVideoFps: readNumberEnvWithLegacy(
       APP_CONFIG_DEFAULTS.remoteVideoFps ?? 25,
-      'REMOTE_VIDEO_FPS',
-      'NEXT_PUBLIC_REMOTE_VIDEO_FPS',
-      'NEXT_PUBLIC_LEXVOICE_REMOTE_VIDEO_FPS'
+      [
+        'REMOTE_VISION_FPS',
+        'NEXT_PUBLIC_REMOTE_VISION_FPS',
+        'NEXT_PUBLIC_LEXVOICE_REMOTE_VISION_FPS',
+      ],
+      ['REMOTE_VIDEO_FPS', 'NEXT_PUBLIC_REMOTE_VIDEO_FPS', 'NEXT_PUBLIC_LEXVOICE_REMOTE_VIDEO_FPS']
     ),
     debugAudio: readBooleanEnv(
       APP_CONFIG_DEFAULTS.debugAudio ?? false,
@@ -198,11 +299,10 @@ export function getClientConfigFromEnv(): AppConfig {
       'NEXT_PUBLIC_DEBUG_AUDIO',
       'NEXT_PUBLIC_LEXVOICE_DEBUG_AUDIO'
     ),
-    debugVideo: readBooleanEnv(
+    debugVideo: readBooleanEnvWithLegacy(
       APP_CONFIG_DEFAULTS.debugVideo ?? false,
-      'DEBUG_VIDEO',
-      'NEXT_PUBLIC_DEBUG_VIDEO',
-      'NEXT_PUBLIC_LEXVOICE_DEBUG_VIDEO'
+      ['DEBUG_VISION', 'NEXT_PUBLIC_DEBUG_VISION', 'NEXT_PUBLIC_LEXVOICE_DEBUG_VISION'],
+      ['DEBUG_VIDEO', 'NEXT_PUBLIC_DEBUG_VIDEO', 'NEXT_PUBLIC_LEXVOICE_DEBUG_VIDEO']
     ),
   };
 }

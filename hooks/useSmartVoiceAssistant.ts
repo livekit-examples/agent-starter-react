@@ -5,7 +5,7 @@ import { useRemoteParticipants, useVoiceAssistant } from '@livekit/components-re
 import { VideoTrackConfig } from '@/app-config';
 import { useExcludedVideoTracks } from './useExcludedVideoTracks';
 
-const EXCLUDED_AVATAR_PARTICIPANT_IDENTITIES = new Set(['room_audio_input', 'room_vision_input']);
+const EXCLUDED_AVATAR_PARTICIPANT_IDENTITIES = new Set(['room_audio_input', 'room_video_input']);
 
 export interface UseSmartVoiceAssistantOptions {
   videoTrackConfigs?: VideoTrackConfig[];

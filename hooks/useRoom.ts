@@ -3,11 +3,23 @@ import { Room, RoomEvent, TokenSource } from 'livekit-client';
 import { AppConfig } from '@/app-config';
 import { toastAlert } from '@/components/livekit/alert-toast';
 import { useBrowserSourceClient } from '@/hooks/useBrowserSourceClient';
-import { getBrowserRoomSessionId } from '@/lib/browser-room-session';
+import { getVoiceSessionId, resetVoiceSessionId } from '@/lib/browser-room-session';
 import { readConnectionDetailsResponse } from '@/lib/connection-details-response';
+import { waitForRoomDisconnected } from '@/lib/room-disconnect';
+import {
+  AgentSessionDispatchCancelledError,
+  requestAgentSessionDispatch,
+} from '@/lib/session-dispatch-client';
+import {
+  beginAgentSessionStart,
+  registerAgentSessionDispatch,
+  requestAgentSessionStop,
+  waitForAgentSessionStop,
+} from '@/lib/session-stop-client';
 
 export function useRoom(appConfig: AppConfig) {
   const aborted = useRef(false);
+  const sessionIdRef = useRef<string | null>(null);
   const room = useMemo(
     () =>
       new Room({
@@ -50,6 +62,9 @@ export function useRoom(appConfig: AppConfig) {
   useEffect(() => {
     return () => {
       aborted.current = true;
+      void requestAgentSessionStop(sessionIdRef.current, {
+        waitForRemote: false,
+      });
       room.disconnect();
     };
   }, [room]);
@@ -63,7 +78,8 @@ export function useRoom(appConfig: AppConfig) {
         );
 
         try {
-          const roomId = appConfig.usesBrowserRawMediaInput ? getBrowserRoomSessionId() : undefined;
+          const sessionId = sessionIdRef.current ?? getVoiceSessionId();
+          sessionIdRef.current = sessionId;
 
           const res = await fetch(url.toString(), {
             method: 'POST',
@@ -72,15 +88,10 @@ export function useRoom(appConfig: AppConfig) {
               'X-Sandbox-Id': appConfig.sandboxId ?? '',
             },
             body: JSON.stringify({
-              room_id: roomId,
-              room_config: appConfig.agentName
-                ? {
-                    agents: [{ agent_name: appConfig.agentName }],
-                  }
-                : undefined,
+              sessionId,
             }),
           });
-          return await readConnectionDetailsResponse(res);
+          return await readConnectionDetailsResponse(res, { sessionId });
         } catch (error) {
           console.error('Error fetching connection details:', error);
           if (error instanceof Error) {
@@ -92,7 +103,7 @@ export function useRoom(appConfig: AppConfig) {
     [appConfig]
   );
 
-  const startSession = useCallback(() => {
+  const startSession = useCallback(async () => {
     if (browserSourceClient.enabled && !isBrowserMediaAvailable()) {
       toastAlert({
         title: 'Camera and microphone require a secure page',
@@ -102,18 +113,35 @@ export function useRoom(appConfig: AppConfig) {
       return;
     }
 
-    const recoverFromStartError = (error: Error) => {
+    const sessionId = getVoiceSessionId();
+    sessionIdRef.current = sessionId;
+    let dispatchSessionId: string | null = sessionId;
+    let connectedRoomName: string | null = null;
+
+    const recoverFromStartError = async (error: unknown) => {
+      const startError = error instanceof Error ? error : new Error(String(error));
       browserSourceClient.stop();
       room.disconnect();
+      if (connectedRoomName) {
+        try {
+          await requestAgentSessionStop(dispatchSessionId ?? sessionIdRef.current ?? undefined, {
+            waitForRemote: true,
+          });
+        } catch (stopError) {
+          console.warn('Failed to stop remote agent session after start failure', stopError);
+        }
+      }
+      resetVoiceSessionId();
+      sessionIdRef.current = null;
       setIsSessionActive(false);
       toastAlert({
         title: 'There was an error connecting to the agent',
-        description: `${error.name}: ${error.message}`,
+        description: `${startError.name}: ${startError.message}`,
       });
     };
 
-    const handleStartError = (error: Error) => {
-      if (aborted.current) {
+    const handleStartError = async (error: unknown) => {
+      if (aborted.current || isExpectedStartCancellation(error)) {
         // Once the effect has cleaned up after itself, drop any errors
         //
         // These errors are likely caused by this effect rerunning rapidly,
@@ -122,10 +150,20 @@ export function useRoom(appConfig: AppConfig) {
         return;
       }
 
-      recoverFromStartError(error);
+      await recoverFromStartError(error);
     };
 
     setIsSessionActive(true);
+
+    const dispatchAgentSession = async () => {
+      dispatchSessionId = sessionId;
+      const signal = beginAgentSessionStart(room.name, sessionId);
+      const dispatchPromise = requestAgentSessionDispatch(appConfig.agentName, sessionId, {
+        signal,
+      });
+      registerAgentSessionDispatch(room.name, sessionId, dispatchPromise);
+      await dispatchPromise;
+    };
 
     const startDefaultMicrophone = async () => {
       await room.localParticipant.setMicrophoneEnabled(true, undefined, {
@@ -147,40 +185,48 @@ export function useRoom(appConfig: AppConfig) {
       await startDefaultMicrophone();
     };
 
-    if (room.state === 'disconnected') {
+    try {
+      await waitForAgentSessionStop();
+      await waitForRoomDisconnected(room);
+
       if (browserSourceClient.enabled || appConfig.usesServerRoomInput) {
-        tokenSource
-          .fetch({ agentName: appConfig.agentName })
-          .then((connectionDetails) =>
-            room.connect(connectionDetails.serverUrl, connectionDetails.participantToken)
-          )
-          .then(() => startLocalInput())
-          .catch(handleStartError);
-        return;
+        const connectionDetails = await tokenSource.fetch({ agentName: appConfig.agentName });
+        await room.connect(connectionDetails.serverUrl, connectionDetails.participantToken);
+        connectedRoomName = room.name;
+        await startLocalInput();
+      } else {
+        await Promise.all([
+          startDefaultMicrophone(),
+          tokenSource.fetch({ agentName: appConfig.agentName }).then(async (connectionDetails) => {
+            await room.connect(connectionDetails.serverUrl, connectionDetails.participantToken);
+            connectedRoomName = room.name;
+          }),
+        ]);
       }
 
-      Promise.all([
-        startDefaultMicrophone(),
-        tokenSource
-          .fetch({ agentName: appConfig.agentName })
-          .then((connectionDetails) =>
-            room.connect(connectionDetails.serverUrl, connectionDetails.participantToken)
-          ),
-      ]).catch(handleStartError);
-    } else {
-      startLocalInput().catch((error) => {
-        recoverFromStartError(error);
-      });
+      await dispatchAgentSession();
+    } catch (error) {
+      await handleStartError(error);
     }
   }, [room, appConfig, tokenSource, browserSourceClient]);
 
   const endSession = useCallback(() => {
     browserSourceClient.stop();
     room.disconnect();
+    resetVoiceSessionId();
+    sessionIdRef.current = null;
     setIsSessionActive(false);
   }, [browserSourceClient, room]);
+  const getCurrentSessionId = useCallback(() => sessionIdRef.current, []);
 
-  return { room, isSessionActive, startSession, endSession, browserSourceClient };
+  return {
+    room,
+    isSessionActive,
+    startSession,
+    endSession,
+    getCurrentSessionId,
+    browserSourceClient,
+  };
 }
 
 function isBrowserMediaAvailable() {
@@ -193,4 +239,13 @@ function isBrowserMediaAvailable() {
       navigator.mediaDevices &&
       typeof navigator.mediaDevices.getUserMedia === 'function'
   );
+}
+
+function isExpectedStartCancellation(error: unknown) {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const name = 'name' in error ? String(error.name) : '';
+  return name === 'AbortError' || error instanceof AgentSessionDispatchCancelledError;
 }

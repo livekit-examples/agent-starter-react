@@ -21,11 +21,17 @@ function WelcomeImage() {
 interface WelcomeViewProps {
   startButtonText: string;
   onStartCall: () => void;
+  startDisabled?: boolean;
+  startPending?: boolean;
+  startPendingLabel?: string;
 }
 
 export const WelcomeView = ({
   startButtonText,
   onStartCall,
+  startDisabled = false,
+  startPending = false,
+  startPendingLabel = 'Starting...',
   ref,
 }: React.ComponentProps<'div'> & WelcomeViewProps) => {
   return (
@@ -37,8 +43,14 @@ export const WelcomeView = ({
           Chat live with your voice AI agent
         </p>
 
-        <Button variant="primary" size="lg" onClick={onStartCall} className="mt-6 w-64 font-mono">
-          {startButtonText}
+        <Button
+          variant="primary"
+          size="lg"
+          onClick={onStartCall}
+          disabled={startDisabled}
+          className="mt-6 w-64 font-mono"
+        >
+          {startPending ? startPendingLabel : startButtonText}
         </Button>
       </section>
 

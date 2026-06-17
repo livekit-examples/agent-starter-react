@@ -1,0 +1,305 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { test } from 'node:test';
+
+test('connection details route does not dispatch agents while generating tokens', async () => {
+  const routeSource = await readFile(
+    new URL('../app/api/connection-details/route.ts', import.meta.url),
+    'utf8'
+  );
+
+  assert.doesNotMatch(routeSource, /AgentDispatchClient/);
+  assert.doesNotMatch(routeSource, /RoomServiceClient/);
+  assert.doesNotMatch(routeSource, /createRoomAndDispatchAgent/);
+  assert.doesNotMatch(routeSource, /createAgentDispatchWithRetry/);
+  assert.doesNotMatch(routeSource, /dispatchClient\.createDispatch/);
+});
+
+test('connection details route strips room-config agents from the participant token', async () => {
+  const routeSource = await readFile(
+    new URL('../app/api/connection-details/route.ts', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(routeSource, /function buildTokenRoomConfig/);
+  assert.match(routeSource, /RoomConfiguration\.fromJson/);
+  assert.match(routeSource, /agents: \[\]/);
+  assert.match(routeSource, /Explicit dispatch is handled by \/api\/session\/dispatch/);
+  assert.match(routeSource, /resolveConnectionSessionId/);
+  assert.match(routeSource, /deriveLiveKitRoomName/);
+});
+
+test('session dispatch route retries explicit agent dispatch after the browser joins', async () => {
+  const routeSource = await readFile(
+    new URL('../app/api/session/dispatch/route.ts', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(routeSource, /AgentDispatchClient/);
+  assert.match(routeSource, /RoomServiceClient/);
+  assert.match(routeSource, /AGENT_DISPATCH_TIMEOUT_MS/);
+  assert.match(routeSource, /AGENT_DISPATCH_RETRY_MS/);
+  assert.match(routeSource, /calculateDispatchRetryDelay/);
+  assert.match(routeSource, /roomHasAgentParticipant/);
+  assert.match(routeSource, /deleteDispatchQuietly/);
+  assert.match(routeSource, /dispatchClient\.createDispatch/);
+  assert.match(routeSource, /roomName is required/);
+  assert.match(routeSource, /agentName is required/);
+  assert.match(routeSource, /sessionId is required/);
+  assert.match(routeSource, /beginRoomSessionDispatch/);
+  assert.match(routeSource, /registerRoomSessionDispatchId/);
+  assert.match(routeSource, /isRoomSessionCancelled/);
+  assert.match(routeSource, /markRoomSessionRunning/);
+  assert.match(routeSource, /finishRoomSessionDispatch/);
+  assert.match(routeSource, /deriveLiveKitRoomName/);
+  assert.match(routeSource, /deriveSessionIdFromLiveKitRoomName/);
+  assert.match(routeSource, /isValidConnectionRoomId/);
+  assert.match(routeSource, /requestedSessionId && !isValidConnectionRoomId\(requestedSessionId\)/);
+  assert.match(
+    routeSource,
+    /const roomName = sessionId \? deriveLiveKitRoomName\(sessionId\) : requestedRoomName/
+  );
+});
+
+test('session dispatch retry backs off between repeated attempts', async () => {
+  const routeSource = await readFile(
+    new URL('../app/api/session/dispatch/route.ts', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(routeSource, /function calculateDispatchRetryDelay/);
+  assert.match(routeSource, /2 \*\* Math\.max\(0, attempts - 1\)/);
+  assert.match(routeSource, /Math\.min\(AGENT_DISPATCH_RETRY_MS \* multiplier/);
+  assert.match(routeSource, /calculateDispatchRetryDelay\(attempts/);
+});
+
+test('session dispatch route pins the Next.js runtime to nodejs', async () => {
+  const routeSource = await readFile(
+    new URL('../app/api/session/dispatch/route.ts', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(routeSource, /export const runtime = 'nodejs'/);
+});
+
+test('session dispatch route cleans up dispatch when the room session is cancelled', async () => {
+  const routeSource = await readFile(
+    new URL('../app/api/session/dispatch/route.ts', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(routeSource, /class RoomSessionCancelledError extends Error/);
+  assert.match(routeSource, /constructor\(session: RoomSessionToken\)/);
+  assert.match(routeSource, /session\.sessionId/);
+  assert.match(routeSource, /throwIfSessionCancelled/);
+  assert.match(
+    routeSource,
+    /await deleteDispatchQuietly\(dispatchClient,\s*dispatch\.id,\s*roomName\)/
+  );
+  assert.match(routeSource, /await deleteLiveKitRoomQuietly\(roomClient,\s*roomName\)/);
+  assert.match(routeSource, /status: 409/);
+});
+
+test('session dispatch route logs successful dispatch with canonical session identity', async () => {
+  const routeSource = await readFile(
+    new URL('../app/api/session/dispatch/route.ts', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(routeSource, /console\.info\('agent session dispatch completed'/);
+  assert.match(routeSource, /sessionId/);
+  assert.match(routeSource, /roomName/);
+});
+
+test('session dispatch route keeps pre-dispatch agent matching tied to the configured agent name', async () => {
+  const routeSource = await readFile(
+    new URL('../app/api/session/dispatch/route.ts', import.meta.url),
+    'utf8'
+  );
+  const participantMatcher = routeSource.match(/function isExpectedAgentParticipant[\s\S]*?\n}/);
+
+  assert.ok(participantMatcher, 'isExpectedAgentParticipant should be defined');
+  const participantMatcherSource = participantMatcher[0];
+  assert.match(participantMatcherSource, /attributes\['lk\.agent\.name'\] === agentName/);
+  assert.match(participantMatcherSource, /attributes\['lk\.agent_name'\] === agentName/);
+  assert.doesNotMatch(participantMatcherSource, /identity\.startsWith\(['"]agent-['"]\)/);
+});
+
+test('session dispatch route only accepts anonymous LiveKit agent fallback after explicit dispatch', async () => {
+  const routeSource = await readFile(
+    new URL('../app/api/session/dispatch/route.ts', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(
+    routeSource,
+    /const alreadyJoined = await roomHasAgentParticipant\(roomClient, roomName, agentName\);/
+  );
+  assert.match(routeSource, /type AgentParticipantMatchOptions/);
+  assert.match(routeSource, /allowAnonymousLiveKitAgentFallback/);
+  assert.match(
+    routeSource,
+    /roomHasAgentParticipant\(\s*roomClient,\s*roomName,\s*agentName,\s*\{\s*allowAnonymousLiveKitAgentFallback: true,?\s*\}\s*\)/
+  );
+  assert.match(routeSource, /function isAnonymousLiveKitAgentParticipant/);
+  assert.match(routeSource, /ParticipantInfo_Kind\.AGENT/);
+  assert.match(routeSource, /identity\.startsWith\(['"]agent-['"]\)/);
+  assert.match(routeSource, /!attributes\['lk\.agent\.name'\]/);
+  assert.match(routeSource, /!attributes\['lk\.agent_name'\]/);
+  assert.match(routeSource, /fresh per-session rooms/);
+  assert.match(routeSource, /anonymousLiveKitAgents\.length === 1/);
+});
+
+test('start call dispatches the agent with a cancellable room session id', async () => {
+  const useRoomSource = await readFile(new URL('../hooks/useRoom.ts', import.meta.url), 'utf8');
+  const dispatchAgentSessionSource =
+    useRoomSource.match(/const dispatchAgentSession = async \(\) => \{[\s\S]*?\n    \};/)?.[0] ??
+    '';
+
+  assert.match(useRoomSource, /const startSession = useCallback\(async \(\) =>/);
+  assert.match(useRoomSource, /const sessionId = getVoiceSessionId\(\)/);
+  assert.doesNotMatch(dispatchAgentSessionSource, /crypto\.randomUUID\(\)/);
+  assert.match(useRoomSource, /beginAgentSessionStart/);
+  assert.match(useRoomSource, /registerAgentSessionDispatch/);
+  assert.match(useRoomSource, /requestAgentSessionDispatch/);
+  assert.match(useRoomSource, /await dispatchPromise/);
+  assert.match(useRoomSource, /isExpectedStartCancellation/);
+  assert.match(useRoomSource, /waitForAgentSessionStop/);
+  assert.match(useRoomSource, /requestAgentSessionDispatch\(\s*appConfig\.agentName,\s*sessionId,/);
+  assert.doesNotMatch(useRoomSource, /requestAgentSessionDispatch\(\s*room\.name,/);
+});
+
+test('connection details request uses the same canonical session id as dispatch', async () => {
+  const useRoomSource = await readFile(new URL('../hooks/useRoom.ts', import.meta.url), 'utf8');
+
+  assert.match(useRoomSource, /sessionIdRef\.current/);
+  assert.match(useRoomSource, /body: JSON\.stringify\(\{\s*sessionId,\s*\}\)/);
+  assert.match(useRoomSource, /readConnectionDetailsResponse\(res,\s*\{\s*sessionId\s*\}\)/);
+  assert.doesNotMatch(useRoomSource, /room_config/);
+  assert.doesNotMatch(useRoomSource, /agents: \[\{ agent_name: appConfig\.agentName \}\]/);
+  assert.doesNotMatch(useRoomSource, /room_id: roomId/);
+});
+
+test('start call stops the remote room session when dispatch fails after connect', async () => {
+  const useRoomSource = await readFile(new URL('../hooks/useRoom.ts', import.meta.url), 'utf8');
+
+  assert.match(useRoomSource, /requestAgentSessionStop/);
+  assert.match(useRoomSource, /let dispatchSessionId: string \| null = sessionId/);
+  assert.match(
+    useRoomSource,
+    /await requestAgentSessionStop\([\s\S]*?dispatchSessionId \?\? sessionIdRef\.current \?\? undefined,[\s\S]*?waitForRemote:\s*true,[\s\S]*?\)/
+  );
+  assert.doesNotMatch(useRoomSource, /requestAgentSessionStop\(\s*connectedRoomName,/);
+});
+
+test('start call stops the remote room when browser source fails after connect', async () => {
+  const useRoomSource = await readFile(new URL('../hooks/useRoom.ts', import.meta.url), 'utf8');
+
+  assert.match(useRoomSource, /let connectedRoomName: string \| null = null/);
+  assert.match(useRoomSource, /connectedRoomName = room\.name/);
+  assert.match(
+    useRoomSource,
+    /await requestAgentSessionStop\([\s\S]*?dispatchSessionId \?\? sessionIdRef\.current \?\? undefined,[\s\S]*?waitForRemote:\s*true,[\s\S]*?\)/
+  );
+  assert.doesNotMatch(useRoomSource, /requestAgentSessionStop\(\s*connectedRoomName,/);
+});
+
+test('start call reconnects only after any previous room disconnect has completed', async () => {
+  const useRoomSource = await readFile(new URL('../hooks/useRoom.ts', import.meta.url), 'utf8');
+
+  assert.match(useRoomSource, /waitForRoomDisconnected/);
+  assert.match(
+    useRoomSource,
+    /await waitForAgentSessionStop\(\);\s*await waitForRoomDisconnected\(room\);/
+  );
+});
+
+test('room disconnect wait has a timeout fallback', async () => {
+  const roomDisconnectSource = await readFile(
+    new URL('../lib/room-disconnect.ts', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(roomDisconnectSource, /ROOM_DISCONNECT_TIMEOUT_MS/);
+  assert.match(roomDisconnectSource, /setTimeout/);
+  assert.match(roomDisconnectSource, /clearTimeout/);
+  assert.match(roomDisconnectSource, /room disconnect timed out/);
+});
+
+test('unmount cleanup requests remote session stop before disconnecting the room', async () => {
+  const useRoomSource = await readFile(new URL('../hooks/useRoom.ts', import.meta.url), 'utf8');
+  const cleanupSource =
+    useRoomSource.match(
+      /useEffect\(\(\) => \{\s*return \(\) => \{[\s\S]*?\n    \};\s*\}, \[room/
+    )?.[0] ?? '';
+
+  assert.match(
+    cleanupSource,
+    /requestAgentSessionStop\(sessionIdRef\.current,\s*\{\s*waitForRemote:\s*false/
+  );
+  assert.match(cleanupSource, /requestAgentSessionStop[\s\S]*room\.disconnect\(\)/);
+});
+
+test('disconnect control stops the current room session id from the session context', async () => {
+  const useRoomSource = await readFile(new URL('../hooks/useRoom.ts', import.meta.url), 'utf8');
+  const sessionProviderSource = await readFile(
+    new URL('../components/app/session-provider.tsx', import.meta.url),
+    'utf8'
+  );
+  const controlBarSource = await readFile(
+    new URL('../components/livekit/agent-control-bar/agent-control-bar.tsx', import.meta.url),
+    'utf8'
+  );
+  const disconnectSource =
+    controlBarSource.match(
+      /const handleDisconnect = useCallback\(async \(\) => \{[\s\S]*?\n  \);/
+    )?.[0] ?? '';
+
+  assert.match(useRoomSource, /getCurrentSessionId/);
+  assert.match(sessionProviderSource, /getCurrentSessionId/);
+  assert.match(controlBarSource, /getCurrentSessionId/);
+  assert.match(disconnectSource, /const sessionId = getCurrentSessionId\(\)/);
+  assert.match(
+    disconnectSource,
+    /getCurrentSessionId\(\) \?\? getActiveAgentSession\(\)\?\.sessionId/
+  );
+  assert.match(disconnectSource, /requestAgentSessionStop\(sessionId/);
+  assert.doesNotMatch(controlBarSource, /usesFastBrowserStop/);
+});
+
+test('browser video input shows the camera control as enabled by default', async () => {
+  const browserSourceSource = await readFile(
+    new URL('../hooks/useBrowserSourceClient.ts', import.meta.url),
+    'utf8'
+  );
+  const controlBarSource = await readFile(
+    new URL('../components/livekit/agent-control-bar/agent-control-bar.tsx', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(browserSourceSource, /const BROWSER_VIDEO_DEFAULT_ENABLED = true/);
+  assert.match(
+    controlBarSource,
+    /mediaEnabled=\{usesBrowserRawVideoInput \? browserSourceClient\.videoEnabled : undefined\}/
+  );
+});
+
+test('configurable video selector only changes externally controlled media from user toggle', async () => {
+  const selectorSource = await readFile(
+    new URL(
+      '../components/livekit/agent-control-bar/configurable-video-selector.tsx',
+      import.meta.url
+    ),
+    'utf8'
+  );
+  const disablePreviewSource =
+    selectorSource.match(/const disableTrackPreview = useCallback\([\s\S]*?\n  \);/)?.[0] ?? '';
+  const handleToggleSource =
+    selectorSource.match(/const handleToggleVideo = useCallback\([\s\S]*?\n  \);/)?.[0] ?? '';
+
+  assert.ok(disablePreviewSource, 'disableTrackPreview should be defined');
+  assert.ok(handleToggleSource, 'handleToggleVideo should be defined');
+  assert.doesNotMatch(disablePreviewSource, /onMediaEnabledChange/);
+  assert.doesNotMatch(disablePreviewSource, /setExternalMediaEnabledFromUserToggle/);
+  assert.match(handleToggleSource, /setExternalMediaEnabledFromUserToggle\(shouldEnable\)/);
+});

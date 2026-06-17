@@ -61,7 +61,11 @@ export function useBrowserSourceClient(
   { onVideoError }: BrowserSourceClientOptions = {}
 ) {
   const runtimeRef = useRef<BrowserSourceRuntime | null>(null);
-  const enabled = !!appConfig.usesBrowserRawMediaInput;
+  const audioConfigured =
+    appConfig.usesBrowserRawAudioInput ?? !!appConfig.usesBrowserRawMediaInput;
+  const videoConfigured =
+    appConfig.usesBrowserRawVideoInput ?? !!appConfig.usesBrowserRawMediaInput;
+  const enabled = audioConfigured || videoConfigured;
   const browserMediaStreamName =
     appConfig.browserMediaStreamName || DEFAULT_BROWSER_MEDIA_STREAM_NAME;
   const browserVideoFrameRate = appConfig.browserVideoFps ?? 25;
@@ -69,17 +73,19 @@ export function useBrowserSourceClient(
   const browserVideoWidth = appConfig.browserVideoWidth ?? 640;
   const browserVideoHeight = appConfig.browserVideoHeight ?? 480;
   const browserVideoStatsEnabled = appConfig.browserVideoStats || appConfig.debugVideo || false;
-  const audioEnabledRef = useRef(true);
-  const videoEnabledRef = useRef(BROWSER_VIDEO_DEFAULT_ENABLED);
-  const [audioEnabled, setAudioEnabledState] = useState(true);
-  const [videoEnabled, setVideoEnabledState] = useState(BROWSER_VIDEO_DEFAULT_ENABLED);
+  const audioEnabledRef = useRef(audioConfigured);
+  const videoEnabledRef = useRef(videoConfigured ? BROWSER_VIDEO_DEFAULT_ENABLED : false);
+  const [audioEnabled, setAudioEnabledState] = useState(audioConfigured);
+  const [videoEnabled, setVideoEnabledState] = useState(
+    videoConfigured ? BROWSER_VIDEO_DEFAULT_ENABLED : false
+  );
   const [videoTrack, setVideoTrackState] = useState<LocalVideoTrack | null>(null);
   const [audioPending, setAudioPending] = useState(false);
   const [videoPending, setVideoPending] = useState(false);
 
   const ensureAudioPublished = useCallback(async () => {
     const runtime = runtimeRef.current;
-    if (!runtime || runtime.audioTrack || !runtime.audioEnabled) {
+    if (!audioConfigured || !runtime || runtime.audioTrack || !runtime.audioEnabled) {
       return;
     }
 
@@ -102,11 +108,11 @@ export function useBrowserSourceClient(
       audioTrack.stop();
       throw error;
     }
-  }, [browserMediaStreamName, room]);
+  }, [audioConfigured, browserMediaStreamName, room]);
 
   const ensureVideoPublished = useCallback(async () => {
     const runtime = runtimeRef.current;
-    if (!runtime || runtime.videoTrack || !runtime.videoEnabled) {
+    if (!videoConfigured || !runtime || runtime.videoTrack || !runtime.videoEnabled) {
       return;
     }
 
@@ -151,6 +157,7 @@ export function useBrowserSourceClient(
     browserVideoStatsEnabled,
     browserVideoWidth,
     room,
+    videoConfigured,
   ]);
 
   const unpublishAudio = useCallback(
@@ -233,6 +240,9 @@ export function useBrowserSourceClient(
 
   const setAudioEnabled = useCallback(
     async (nextEnabled: boolean) => {
+      if (!audioConfigured) {
+        return;
+      }
       setAudioPending(true);
       const previousEnabled = audioEnabledRef.current;
       const runtime = runtimeRef.current;
@@ -276,11 +286,14 @@ export function useBrowserSourceClient(
         setAudioPending(false);
       }
     },
-    [ensureAudioPublished, unpublishAudio]
+    [audioConfigured, ensureAudioPublished, unpublishAudio]
   );
 
   const setVideoEnabled = useCallback(
     async (nextEnabled: boolean) => {
+      if (!videoConfigured) {
+        return;
+      }
       setVideoPending(true);
       const previousEnabled = videoEnabledRef.current;
       const runtime = runtimeRef.current;
@@ -322,7 +335,7 @@ export function useBrowserSourceClient(
         setVideoPending(false);
       }
     },
-    [ensureVideoPublished, unpublishVideo]
+    [ensureVideoPublished, unpublishVideo, videoConfigured]
   );
 
   useEffect(() => stop, [stop]);

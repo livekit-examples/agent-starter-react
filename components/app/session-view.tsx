@@ -79,7 +79,9 @@ export const SessionView = ({
 
   const controls: ControlBarControls = {
     leave: true,
-    microphone: !appConfig.usesServerRoomInput,
+    microphone:
+      !!(appConfig.usesBrowserRawAudioInput ?? appConfig.usesBrowserRawMediaInput) ||
+      !appConfig.usesServerRoomInput,
     chat: appConfig.supportsChatInput,
     camera: appConfig.supportsVideoInput,
     screenShare: appConfig.supportsScreenShare,

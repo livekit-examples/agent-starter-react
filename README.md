@@ -30,19 +30,17 @@ agent-starter-react/
 ├── app/
 │   ├── (app)/
 │   ├── api/
-│   ├── components/
-│   ├── fonts/
-│   ├── globals.css
+│   ├── ui/
 │   └── layout.tsx
 ├── components/
+│   ├── app/
 │   ├── livekit/
-│   ├── ui/
-│   ├── app.tsx
-│   ├── session-view.tsx
-│   └── welcome.tsx
+│   └── ...
 ├── hooks/
 ├── lib/
 ├── public/
+├── styles/
+│   └── globals.css
 └── package.json
 ```
 
@@ -59,7 +57,19 @@ Run the following command to automatically clone this template.
 lk app create --template agent-starter-react
 ```
 
-Then run the app with:
+For integrated LexVoice runs, configure `../lex-voice/.env` and start the
+frontend through the LexVoice runtime scripts. `../lex-voice/run.sh` injects
+LiveKit, room-input, input-source, role-device, agent, media, and debug settings
+into this Next.js process.
+
+The session lifecycle API keeps start/stop state in memory, so integrated
+deployments should route `/api/session/*` to a single Next.js instance or sticky routing.
+If you replace the custom connection details endpoint, it must echo the requested
+`sessionId` and derive the same room name so dispatch and stop calls coordinate
+with the connected room.
+
+For standalone frontend development, install dependencies and run the dev
+server directly:
 
 ```bash
 pnpm install
@@ -68,7 +78,8 @@ pnpm dev
 
 And open http://localhost:3000 in your browser.
 
-You'll also need an agent to speak with. Try our starter agent for [Python](https://github.com/livekit-examples/agent-starter-python), [Node.js](https://github.com/livekit-examples/agent-starter-node), or [create your own from scratch](https://docs.livekit.io/agents/start/voice-ai/).
+You'll also need a LiveKit server and an agent worker. In this workspace, those
+are normally provided by the sibling `../lex-voice` project.
 
 ## Configuration
 
@@ -107,7 +118,10 @@ You can update these values in [`app-config.ts`](./app-config.ts) to customize b
 
 #### Environment Variables
 
-You'll also need to configure your LiveKit credentials in `.env.local` (copy `.env.example` if you don't have one):
+Integrated runs should keep runtime variables in `../lex-voice/.env`; this
+repository's `.env.example` is documentation-only. Only create
+`agent-starter-react/.env.local` for standalone frontend development launched
+directly with `pnpm dev`.
 
 ```env
 LIVEKIT_API_KEY=your_livekit_api_key
@@ -115,7 +129,32 @@ LIVEKIT_API_SECRET=your_livekit_api_secret
 LIVEKIT_URL=https://your-livekit-server-url
 ```
 
-These are required for the voice agent functionality to work with your LiveKit project.
+The frontend defaults to the browser camera/microphone input when no input
+source is provided. Configure `INPUT_SOURCE` only in `../lex-voice/.env` for
+integrated backend runs. The LiveKit variables above are required for
+standalone voice agent functionality to work with your LiveKit project.
+
+When `AGENT_NAME` is unset, the frontend derives the dispatch target from the
+input source as `lexvoice-${INPUT_SOURCE}-agent`; an explicit `AGENT_NAME`
+always wins. Standalone deployments that do not run a matching agent worker
+should set `AGENT_NAME` to the worker name they expect to dispatch.
+
+Vision-related frontend variables use the `*_VISION_*` names. The older
+`*_VIDEO_*` names are still accepted as migration fallbacks, but new
+configuration should use the current names:
+
+| Current name                         | Legacy fallback                     |
+| ------------------------------------ | ----------------------------------- |
+| `BROWSER_VISION_WIDTH`               | `BROWSER_VIDEO_WIDTH`               |
+| `BROWSER_VISION_HEIGHT`              | `BROWSER_VIDEO_HEIGHT`              |
+| `BROWSER_VISION_FPS`                 | `BROWSER_VIDEO_FPS`                 |
+| `BROWSER_VISION_MAX_BITRATE`         | `BROWSER_VIDEO_MAX_BITRATE`         |
+| `BROWSER_VISION_STATS`               | `BROWSER_VIDEO_STATS`               |
+| `REMOTE_VISION_WIDTH`                | `REMOTE_VIDEO_WIDTH`                |
+| `REMOTE_VISION_HEIGHT`               | `REMOTE_VIDEO_HEIGHT`               |
+| `REMOTE_VISION_FPS`                  | `REMOTE_VIDEO_FPS`                  |
+| `DEBUG_VISION`                       | `DEBUG_VIDEO`                       |
+| `NEXT_PUBLIC_ROOM_VISION_TRACK_NAME` | `NEXT_PUBLIC_ROOM_VIDEO_TRACK_NAME` |
 
 ## Contributing
 

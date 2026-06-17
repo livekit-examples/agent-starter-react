@@ -9,6 +9,11 @@ import { TrackToggle } from '@/components/livekit/agent-control-bar/track-toggle
 import { toastAlert } from '@/components/livekit/alert-toast';
 import { Button } from '@/components/livekit/button';
 import { Toggle } from '@/components/livekit/toggle';
+import {
+  getActiveAgentSession,
+  registerAgentSessionLocalCleanup,
+  requestAgentSessionStop,
+} from '@/lib/session-stop-client';
 import { cn } from '@/lib/utils';
 import { ChatInput } from './chat-input';
 import { ConfigurableVideoSelector } from './configurable-video-selector';
@@ -53,18 +58,23 @@ export function AgentControlBar({
   const participants = useRemoteParticipants();
   const [uncontrolledChatOpen, setUncontrolledChatOpen] = useState(defaultChatOpen);
   const publishPermissions = usePublishPermissions();
-  const { appConfig, isSessionActive, endSession, browserSourceClient } = useSession();
+  const { appConfig, isSessionActive, endSession, getCurrentSessionId, browserSourceClient } =
+    useSession();
   const isChatControlled = controlledChatOpen !== undefined;
   const chatOpen = controlledChatOpen ?? uncontrolledChatOpen;
-  const usesBrowserRawMediaInput =
-    !!appConfig.usesBrowserRawMediaInput && browserSourceClient.enabled;
+  const usesBrowserRawAudioInput =
+    !!(appConfig.usesBrowserRawAudioInput ?? appConfig.usesBrowserRawMediaInput) &&
+    browserSourceClient.enabled;
+  const usesBrowserRawVideoInput =
+    !!(appConfig.usesBrowserRawVideoInput ?? appConfig.usesBrowserRawMediaInput) &&
+    browserSourceClient.enabled;
   const browserRawVideoTracks = useMemo(() => {
-    if (!usesBrowserRawMediaInput || !browserSourceClient.videoTrack) {
+    if (!usesBrowserRawVideoInput || !browserSourceClient.videoTrack) {
       return undefined;
     }
 
     return new Map([[BROWSER_VIDEO_TRACK_NAME, browserSourceClient.videoTrack]]);
-  }, [usesBrowserRawMediaInput, browserSourceClient.videoTrack]);
+  }, [usesBrowserRawVideoInput, browserSourceClient.videoTrack]);
   const handleDeviceError = useCallback(
     (deviceError: { source: Track.Source; error: Error }) => {
       if (onDeviceError) {
@@ -106,9 +116,14 @@ export function AgentControlBar({
   );
 
   const handleDisconnect = useCallback(async () => {
-    endSession();
-    onDisconnect?.();
-  }, [endSession, onDisconnect]);
+    const sessionId = getCurrentSessionId() ?? getActiveAgentSession()?.sessionId;
+    const localDisconnectPromise = Promise.resolve().then(() => {
+      endSession();
+      onDisconnect?.();
+    });
+    registerAgentSessionLocalCleanup(localDisconnectPromise);
+    void requestAgentSessionStop(sessionId);
+  }, [endSession, getCurrentSessionId, onDisconnect]);
 
   const handleRawMicrophoneToggle = useCallback(
     (enabled: boolean) => {
@@ -129,16 +144,6 @@ export function AgentControlBar({
     },
     [browserSourceClient, handleDeviceError]
   );
-  const handleRawVideoPreviewToggle = useCallback(
-    async (enabled: boolean) => {
-      if (!enabled) {
-        return;
-      }
-      await handleRawVideoToggle(true);
-    },
-    [handleRawVideoToggle]
-  );
-
   const visibleControls = {
     leave: controls?.leave ?? true,
     microphone: controls?.microphone ?? publishPermissions.microphone,
@@ -176,18 +181,18 @@ export function AgentControlBar({
               aria-label="Toggle microphone"
               source={Track.Source.Microphone}
               pressed={
-                usesBrowserRawMediaInput
+                usesBrowserRawAudioInput
                   ? browserSourceClient.audioEnabled
                   : microphoneToggle.enabled
               }
               disabled={
-                usesBrowserRawMediaInput
+                usesBrowserRawAudioInput
                   ? !isSessionActive || browserSourceClient.audioPending
                   : microphoneToggle.pending
               }
-              audioTrackRef={usesBrowserRawMediaInput ? undefined : micTrackRef}
+              audioTrackRef={usesBrowserRawAudioInput ? undefined : micTrackRef}
               onPressedChange={
-                usesBrowserRawMediaInput ? handleRawMicrophoneToggle : microphoneToggle.toggle
+                usesBrowserRawAudioInput ? handleRawMicrophoneToggle : microphoneToggle.toggle
               }
               onMediaDeviceError={handleMicrophoneDeviceSelectError}
               onActiveDeviceChange={handleAudioDeviceChange}
@@ -201,15 +206,14 @@ export function AgentControlBar({
               defaultTrackId={appConfig.defaultVideoTrack}
               existingLivekitTracks={browserRawVideoTracks}
               appConfig={appConfig}
-              pressed={usesBrowserRawMediaInput ? undefined : cameraToggle.enabled}
-              pending={usesBrowserRawMediaInput ? false : cameraToggle.pending}
-              disabled={usesBrowserRawMediaInput ? !isSessionActive : cameraToggle.pending}
-              mediaPending={usesBrowserRawMediaInput ? browserSourceClient.videoPending : undefined}
+              pressed={usesBrowserRawVideoInput ? undefined : cameraToggle.enabled}
+              pending={usesBrowserRawVideoInput ? false : cameraToggle.pending}
+              disabled={usesBrowserRawVideoInput ? !isSessionActive : cameraToggle.pending}
+              mediaEnabled={usesBrowserRawVideoInput ? browserSourceClient.videoEnabled : undefined}
+              mediaPending={usesBrowserRawVideoInput ? browserSourceClient.videoPending : undefined}
               autoPreviewLivekitTracks
-              onMediaEnabledChange={
-                usesBrowserRawMediaInput ? handleRawVideoPreviewToggle : undefined
-              }
-              onPressedChange={usesBrowserRawMediaInput ? undefined : cameraToggle.toggle}
+              onMediaEnabledChange={usesBrowserRawVideoInput ? handleRawVideoToggle : undefined}
+              onPressedChange={usesBrowserRawVideoInput ? undefined : cameraToggle.toggle}
               onMediaDeviceError={handleCameraDeviceSelectError}
               onTrackChange={handleVideoDeviceChange}
             />
