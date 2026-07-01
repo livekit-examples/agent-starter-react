@@ -17,21 +17,21 @@ const DEFAULT_BROWSER_SOURCE_CLIENT: BrowserSourceClient = {
   setAudioEnabled: async () => {},
   setVideoEnabled: async () => {},
   start: async () => {},
-  stop: () => {},
+  stop: async () => {},
 };
 
 const SessionContext = createContext<{
   appConfig: AppConfig;
   isSessionActive: boolean;
   startSession: () => Promise<void>;
-  endSession: () => void;
+  endSession: () => Promise<void>;
   getCurrentSessionId: () => string | null;
   browserSourceClient: BrowserSourceClient;
 }>({
   appConfig: APP_CONFIG_DEFAULTS,
   isSessionActive: false,
   startSession: async () => {},
-  endSession: () => {},
+  endSession: async () => {},
   getCurrentSessionId: () => null,
   browserSourceClient: DEFAULT_BROWSER_SOURCE_CLIENT,
 });

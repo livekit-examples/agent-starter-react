@@ -37,12 +37,12 @@ export function useExcludedVideoTracks({
   // 检查轨道是否应该被排除
   const shouldExcludeTrack = useMemo(() => {
     return (trackName: string): boolean => {
-      return excludedTrackNames.some(
-        (excludeName) =>
-          trackName === excludeName ||
-          trackName.includes(excludeName) ||
-          excludeName.includes(trackName)
-      );
+      return excludedTrackNames.some((excludeName) => {
+        if (!excludeName) {
+          return false;
+        }
+        return trackName.includes(excludeName) || excludeName.includes(trackName);
+      });
     };
   }, [excludedTrackNames]);
 

@@ -31,12 +31,12 @@ export function useAudioTrackFilter({
   const shouldExcludeTrack = useCallback(
     (publication: TrackPublication): boolean => {
       const trackName = publication.trackName || publication.trackSid;
-      return excludeTrackNames.some(
-        (excludeName) =>
-          trackName.includes(excludeName) ||
-          trackName === excludeName ||
-          publication.trackSid === excludeName
-      );
+      return excludeTrackNames.some((excludeName) => {
+        if (!excludeName) {
+          return false;
+        }
+        return trackName.includes(excludeName) || publication.trackSid === excludeName;
+      });
     },
     [excludeTrackNames]
   );

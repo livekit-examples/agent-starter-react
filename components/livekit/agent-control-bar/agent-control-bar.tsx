@@ -117,8 +117,8 @@ export function AgentControlBar({
 
   const handleDisconnect = useCallback(async () => {
     const sessionId = getCurrentSessionId() ?? getActiveAgentSession()?.sessionId;
-    const localDisconnectPromise = Promise.resolve().then(() => {
-      endSession();
+    const localDisconnectPromise = Promise.resolve().then(async () => {
+      await endSession();
       onDisconnect?.();
     });
     registerAgentSessionLocalCleanup(localDisconnectPromise);

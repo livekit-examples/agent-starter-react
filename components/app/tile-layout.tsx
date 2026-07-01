@@ -12,6 +12,7 @@ import { APP_CONFIG_DEFAULTS, type VideoTrackConfig } from '@/app-config';
 import { useSelectedVideoTrack } from '@/hooks/useSelectedVideoTrack';
 import { useSmartVoiceAssistant } from '@/hooks/useSmartVoiceAssistant';
 import { cn } from '@/lib/utils';
+import { resolveCameraPreviewTrack } from '@/lib/video-preview-selection';
 
 function debugVideoLog(enabled: boolean | undefined, ...args: unknown[]) {
   if (enabled) {
@@ -183,11 +184,20 @@ export function TileLayout({
     videoTrackConfigs,
   ]);
 
+  const selectedTrackType = useMemo(() => {
+    if (!selectedTrackId) return null;
+    return videoTrackConfigs.find((config) => config.id === selectedTrackId)?.type ?? null;
+  }, [selectedTrackId, videoTrackConfigs]);
+
   const canShowDefaultCameraPreview = showDefaultCameraPreview && !isPreviewDisabled;
-  const cameraTrack =
-    selectedTrack ||
-    (canShowDefaultCameraPreview && selectedTrackId === null ? configuredCameraTrack : undefined) ||
-    (canShowDefaultCameraPreview ? defaultCameraTrack : undefined);
+  const cameraTrack = resolveCameraPreviewTrack<TrackReference>({
+    selectedTrack,
+    selectedTrackId,
+    selectedTrackType,
+    canShowDefaultCameraPreview,
+    configuredCameraTrack,
+    defaultCameraTrack,
+  });
 
   const isCameraEnabled = Boolean(cameraTrack?.publication && !cameraTrack.publication.isMuted);
   const isScreenShareEnabled = Boolean(screenShareTrack && !screenShareTrack.publication.isMuted);

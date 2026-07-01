@@ -8,6 +8,7 @@ import {
   useTranscriptions,
 } from '@livekit/components-react';
 import { type AppConfig } from '@/app-config';
+import { isRenderableChatMessage } from '@/lib/chat-message-filter';
 
 function transcriptionToChatMessage(
   textStream: TextStreamData,
@@ -105,7 +106,10 @@ export function useChatMessages(
       return chatMessage;
     });
 
-    const merged: Array<ReceivedChatMessage> = [...transcriptionMessages, ...processedChatMessages];
+    const merged: Array<ReceivedChatMessage> = [
+      ...transcriptionMessages,
+      ...processedChatMessages,
+    ].filter(isRenderableChatMessage);
 
     return merged.sort((a, b) => a.timestamp - b.timestamp);
   }, [transcriptions, chat.chatMessages, room, config]);

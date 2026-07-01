@@ -304,6 +304,10 @@ export function getClientConfigFromEnv(): AppConfig {
       ['DEBUG_VISION', 'NEXT_PUBLIC_DEBUG_VISION', 'NEXT_PUBLIC_LEXVOICE_DEBUG_VISION'],
       ['DEBUG_VIDEO', 'NEXT_PUBLIC_DEBUG_VIDEO', 'NEXT_PUBLIC_LEXVOICE_DEBUG_VIDEO']
     ),
+    observabilityEnabled: readBooleanEnv(
+      APP_CONFIG_DEFAULTS.observabilityEnabled ?? false,
+      'OBSERVABILITY_ENABLED'
+    ),
   };
 }
 

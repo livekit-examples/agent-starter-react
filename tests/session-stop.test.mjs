@@ -1,22 +1,8 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
-import ts from 'typescript';
 import { readAgentWorkerStateFromLog } from '../lib/agent-worker-readiness.ts';
-
-async function loadSessionStopModule() {
-  const source = await readFile(new URL('../lib/session-stop.ts', import.meta.url), 'utf8');
-  const { outputText } = ts.transpileModule(source, {
-    compilerOptions: {
-      module: ts.ModuleKind.ESNext,
-      target: ts.ScriptTarget.ES2022,
-    },
-  });
-
-  return import(`data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`);
-}
-
-const { resolveLiveKitHttpUrl } = await loadSessionStopModule();
+import { resolveLiveKitHttpUrl, resolveRoomInputStopUrls } from '../lib/session-stop.ts';
 
 test('parses the latest target agent worker state from LiveKit server logs', () => {
   const source = [
@@ -35,16 +21,57 @@ test('maps livekit websocket URLs to server API URLs', () => {
   assert.equal(resolveLiveKitHttpUrl('https://livekit.example'), 'https://livekit.example');
 });
 
-test('session stop route does not call the room-input control endpoint', async () => {
+test('room input stop URL resolver ignores primebot non-server input', () => {
+  assert.deepEqual(
+    resolveRoomInputStopUrls({
+      inputSource: 'primebot',
+      roomInputUrl: 'http://room-input.local/start',
+      roomAudioInputUrl: 'http://audio.local/start',
+      roomVisionInputUrl: 'http://vision.local/start',
+      frontdeskInputParticipantUrl: 'http://xunfei.local/start',
+      faceServiceUrl: 'http://face.local/start',
+      genericCameraParticipantUrl: 'http://generic.local/start',
+    }),
+    []
+  );
+});
+
+test('room input stop URL resolver only stops selected mixed server roles', () => {
+  assert.deepEqual(
+    resolveRoomInputStopUrls({
+      inputSource: 'mixed',
+      audioInputDevice: 'xunfei',
+      visionInputDevice: 'browser',
+      roomAudioInputUrl: 'http://xunfei-audio.local/start',
+      roomVisionInputUrl: 'http://unused-vision.local/start',
+      roomInputUrl: 'http://fallback.local/start',
+      frontdeskInputParticipantUrl: 'http://frontdesk.local/start',
+      faceServiceUrl: 'http://face.local/start',
+      genericCameraParticipantUrl: 'http://generic.local/start',
+    }),
+    ['http://xunfei-audio.local/stop', 'http://frontdesk.local/stop', 'http://face.local/stop']
+  );
+});
+
+test('session stop route can call the room-input control endpoint before deleting the room', async () => {
   const routeSource = await readFile(
     new URL('../app/api/session/stop/route.ts', import.meta.url),
     'utf8'
   );
 
-  assert.doesNotMatch(routeSource, /process\.env\.ROOM_INPUT_URL/);
-  assert.doesNotMatch(routeSource, /resolveRoomInputStopUrl/);
-  assert.doesNotMatch(routeSource, /stopRoomInput/);
-  assert.doesNotMatch(routeSource, /GENERIC_CAMERA_PARTICIPANT_URL/);
+  const cleanupSource = routeSource.match(/async function runRemoteSessionCleanup[\s\S]*?\n}/)?.[0];
+
+  assert.ok(cleanupSource, 'runRemoteSessionCleanup should be defined');
+  assert.match(routeSource, /readStopEnv\('ROOM_INPUT_URL'\)/);
+  assert.match(routeSource, /resolveRoomInputStopUrls/);
+  assert.match(routeSource, /stopRoomInput/);
+  assert.match(routeSource, /FRONTDESK_INPUT_PARTICIPANT_URL/);
+  assert.match(routeSource, /FACE_SERVICE_URL/);
+  assert.match(routeSource, /GENERIC_CAMERA_PARTICIPANT_URL/);
+  assert.match(
+    cleanupSource,
+    /const roomInputResults = await stopRoomInput\(roomName, sessionId\);[\s\S]*const liveKitRoomResult = await deleteLiveKitRoom\(roomName\);/
+  );
 });
 
 test('session stop route cancels room session before remote cleanup', async () => {
@@ -84,6 +111,7 @@ test('session stop route deletes the LiveKit room after the dispatch barrier', a
   );
 
   assert.match(routeSource, /await waitForPendingDispatches\(roomName, sessionId\)/);
+  assert.match(routeSource, /await stopRoomInput\(roomName, sessionId\)/);
   assert.match(routeSource, /deleteLiveKitRoom\(roomName\)/);
 });
 
@@ -105,7 +133,7 @@ test('session stop route waits for local agent worker readiness before finishing
   assert.match(cleanupSource, /await waitForLocalAgentWorkerReadiness\(\)/);
   assert.match(
     cleanupSource,
-    /const cleanupResults = \[dispatchBarrierResult, liveKitRoomResult, agentWorkerReadinessResult\]/
+    /const cleanupResults = \[\s*dispatchBarrierResult,\s*\.\.\.roomInputResults,\s*liveKitRoomResult,\s*agentWorkerReadinessResult,\s*\]/
   );
 });
 
@@ -147,6 +175,7 @@ test('session stop route closes the registry even when remote cleanup is partial
 
   assert.ok(cleanupSource, 'runRemoteSessionCleanup should be defined');
   assert.match(cleanupSource, /const failures = results\.filter/);
+  assert.match(cleanupSource, /result\.fatal !== false/);
   assert.match(
     cleanupSource,
     /markRoomSessionStopped\(roomName, sessionId\);\s*return \{ results, failures \};/

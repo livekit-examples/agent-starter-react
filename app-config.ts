@@ -1,3 +1,10 @@
+import {
+  type RoleInputDeviceOptions,
+  normalizeInputSource,
+  resolveRoleInputDevices,
+  usesServerRoomInputDevice,
+} from './lib/input-device-config';
+
 export interface VideoTrackConfig {
   id: string;
   label: string;
@@ -49,6 +56,7 @@ export interface AppConfig {
   showAudioFilterDebug?: boolean;
   debugAudio?: boolean;
   debugVideo?: boolean;
+  observabilityEnabled?: boolean;
 
   // 全局调试配置
   enableGlobalDebug?: boolean; // 全局调试开关，控制所有调试信息的显示
@@ -74,16 +82,9 @@ const ROOM_INPUT_VIDEO_TRACK_NAME =
   'room_video';
 const BROWSER_VIDEO_TRACK_NAME = 'browser_video_track';
 
-const DEFAULT_ROLE_INPUT_DEVICE = 'xunfei';
-const VALID_INPUT_DEVICES = new Set(['xunfei', 'generic', 'primebot', 'browser']);
-const SERVER_ROOM_INPUT_DEVICES = new Set(['xunfei', 'generic']);
+export { normalizeInputSource };
 
-export interface InputDeviceConfigOptions {
-  inputSource?: string | null;
-  audioInputDevice?: string | null;
-  visionInputDevice?: string | null;
-  outputDevice?: string | null;
-}
+export type InputDeviceConfigOptions = RoleInputDeviceOptions;
 
 export interface InputDeviceConfig {
   inputSource: string;
@@ -98,43 +99,23 @@ export interface InputDeviceConfig {
   showDefaultCameraPreview: boolean;
 }
 
-export function normalizeInputSource(inputSource?: string | null) {
-  const normalized = (inputSource || '').trim().toLowerCase();
-  return normalized || 'browser';
-}
-
-function normalizeRoleInputDevice(inputDevice: string | null | undefined, fallback: string) {
-  const normalized = (inputDevice || '').trim().toLowerCase();
-  if (VALID_INPUT_DEVICES.has(normalized)) {
-    return normalized;
-  }
-  return fallback;
-}
-
-function usesServerRoomInputDevice(inputDevice: string) {
-  return SERVER_ROOM_INPUT_DEVICES.has(inputDevice);
-}
-
 export function resolveInputDeviceConfig({
   inputSource,
   audioInputDevice,
   visionInputDevice,
   outputDevice,
 }: InputDeviceConfigOptions = {}): InputDeviceConfig {
-  const normalizedInputSource = normalizeInputSource(inputSource);
-  const isMixedInputSource = normalizedInputSource === 'mixed';
-  const baseInputDevice = isMixedInputSource
-    ? DEFAULT_ROLE_INPUT_DEVICE
-    : normalizeRoleInputDevice(normalizedInputSource, DEFAULT_ROLE_INPUT_DEVICE);
-  const resolvedAudioInputDevice = isMixedInputSource
-    ? normalizeRoleInputDevice(audioInputDevice, baseInputDevice)
-    : baseInputDevice;
-  const resolvedVisionInputDevice = isMixedInputSource
-    ? normalizeRoleInputDevice(visionInputDevice, baseInputDevice)
-    : baseInputDevice;
-  const resolvedOutputDevice = isMixedInputSource
-    ? normalizeRoleInputDevice(outputDevice, baseInputDevice)
-    : baseInputDevice;
+  const {
+    inputSource: normalizedInputSource,
+    audioInputDevice: resolvedAudioInputDevice,
+    visionInputDevice: resolvedVisionInputDevice,
+    outputDevice: resolvedOutputDevice,
+  } = resolveRoleInputDevices({
+    inputSource,
+    audioInputDevice,
+    visionInputDevice,
+    outputDevice,
+  });
   const usesBrowserRawAudioInput = resolvedAudioInputDevice === 'browser';
   const usesBrowserRawVideoInput = resolvedVisionInputDevice === 'browser';
   const usesBrowserRawMediaInput = usesBrowserRawAudioInput || usesBrowserRawVideoInput;
@@ -259,6 +240,7 @@ export const APP_CONFIG_DEFAULTS: AppConfig = {
   showAudioFilterDebug: process.env.NEXT_PUBLIC_SHOW_AUDIO_DEBUG === 'true' || false, // 是否显示音频过滤调试组件
   debugAudio: false,
   debugVideo: false,
+  observabilityEnabled: false,
 
   // 全局调试配置
   enableGlobalDebug: process.env.NEXT_PUBLIC_ENABLE_GLOBAL_DEBUG === 'true' || false, // 全局调试开关

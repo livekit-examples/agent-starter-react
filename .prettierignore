@@ -4,6 +4,7 @@ node_modules/
 pnpm-lock.yaml
 .next/
 .env*
-
+public/onnxruntime-web/
+public/vad-web/
 
 

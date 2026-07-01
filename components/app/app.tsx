@@ -22,6 +22,7 @@ export function App({ appConfig }: AppProps) {
       <FilteredAudioRenderer
         excludeTrackNames={appConfig.excludeAudioTracks}
         debugAudio={appConfig.debugAudio}
+        observabilityEnabled={appConfig.observabilityEnabled}
       />
       <AudioFilterDebug
         excludeTrackNames={appConfig.excludeAudioTracks}
