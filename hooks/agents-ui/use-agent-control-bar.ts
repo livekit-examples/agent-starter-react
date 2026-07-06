@@ -22,6 +22,18 @@ const trackSourceToProtocol = (source: Track.Source) => {
   }
 };
 
+const canAccessLocalStorage = () => {
+  try {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+    window.localStorage.getItem('__lk_storage_check__');
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 export interface PublishPermissions {
   camera: boolean;
   microphone: boolean;
@@ -93,7 +105,7 @@ export function useInputControls({
     saveVideoInputEnabled,
     saveAudioInputDeviceId,
     saveVideoInputDeviceId,
-  } = usePersistentUserChoices({ preventSave: !saveUserChoices });
+  } = usePersistentUserChoices({ preventSave: !saveUserChoices || !canAccessLocalStorage() });
 
   const handleAudioDeviceChange = useCallback(
     (deviceId: string) => {
