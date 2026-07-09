@@ -1,11 +1,17 @@
 import { NextResponse } from 'next/server';
 import { AgentDispatchClient, RoomServiceClient } from 'livekit-server-sdk';
-import { type ParticipantInfo, ParticipantInfo_Kind } from '@livekit/protocol';
+import { type ParticipantInfo } from '@livekit/protocol';
 import {
   deriveLiveKitRoomName,
   deriveSessionIdFromLiveKitRoomName,
   isValidConnectionRoomId,
 } from '@/lib/connection-room-id';
+import {
+  type AgentParticipantMatchOptions,
+  type ReusableAgentParticipantOptions,
+  findAgentParticipantInList,
+  findReusableAgentParticipant as findReusableAgentParticipantInList,
+} from '@/lib/session-dispatch-readiness';
 import { resolveLiveKitHttpUrl } from '@/lib/session-stop';
 import {
   type RoomSessionToken,
@@ -22,10 +28,6 @@ const AGENT_DISPATCH_POLL_MS = readPositiveIntEnv('AGENT_DISPATCH_POLL_MS', 200)
 
 export const runtime = 'nodejs';
 export const revalidate = 0;
-
-type AgentParticipantMatchOptions = {
-  allowAnonymousLiveKitAgentFallback?: boolean;
-};
 
 class RoomSessionCancelledError extends Error {
   constructor(session: RoomSessionToken) {
@@ -44,6 +46,8 @@ export async function POST(req: Request) {
     agent_name?: string;
     sessionId?: string;
     session_id?: string;
+    requireRoomVideoInputReady?: boolean;
+    require_room_video_input_ready?: boolean;
   };
   try {
     body = await req.json();
@@ -72,6 +76,8 @@ export async function POST(req: Request) {
   if (!sessionId) {
     return NextResponse.json({ status: 'error', error: 'sessionId is required' }, { status: 400 });
   }
+  const requireRoomVideoInputReady =
+    body.requireRoomVideoInputReady === true || body.require_room_video_input_ready === true;
 
   const liveKitHttpUrl = resolveLiveKitHttpUrl(process.env.LIVEKIT_URL);
   const apiKey = process.env.LIVEKIT_API_KEY;
@@ -93,7 +99,8 @@ export async function POST(req: Request) {
         roomClient,
         roomName,
         agentName,
-        session
+        session,
+        { requireRoomVideoInputReady }
       );
       console.info('agent session dispatch completed', {
         roomName,
@@ -147,7 +154,8 @@ async function createAgentDispatchWithRetry(
   roomClient: RoomServiceClient,
   roomName: string,
   agentName: string,
-  session: RoomSessionToken
+  session: RoomSessionToken,
+  reusableAgentOptions: ReusableAgentParticipantOptions = {}
 ) {
   const startedAt = Date.now();
   let lastError: unknown;
@@ -157,11 +165,20 @@ async function createAgentDispatchWithRetry(
     try {
       throwIfSessionCancelled(session);
 
-      const alreadyJoined = await roomHasAgentParticipant(roomClient, roomName, agentName);
+      const alreadyJoined = await findReusableAgentParticipant(
+        roomClient,
+        roomName,
+        agentName,
+        reusableAgentOptions
+      );
       throwIfSessionCancelled(session);
       if (alreadyJoined) {
         markRoomSessionRunning(session);
-        return { attempts, alreadyJoined: true };
+        return {
+          attempts,
+          alreadyJoined: true,
+          agentParticipant: summarizeAgentParticipant(alreadyJoined),
+        };
       }
 
       const dispatch = await dispatchClient.createDispatch(roomName, agentName);
@@ -174,21 +191,28 @@ async function createAgentDispatchWithRetry(
         throw new RoomSessionCancelledError(session);
       }
 
-      if (
-        await waitForAgentParticipant(
-          roomClient,
-          roomName,
-          agentName,
-          remainingDispatchTime(startedAt),
-          session
-        )
-      ) {
+      // A successful LiveKit dispatch often needs multiple seconds before the
+      // agent worker joins the room. Wait for the full remaining session-start
+      // budget here; the retry loop is for API/listParticipants failures, not
+      // for repeatedly recreating a healthy dispatch every retry interval.
+      const agentParticipant = await waitForAgentParticipant(
+        roomClient,
+        roomName,
+        agentName,
+        remainingDispatchTime(startedAt),
+        session
+      );
+      if (agentParticipant) {
         if (isRoomSessionCancelled(session)) {
           await deleteLiveKitRoomQuietly(roomClient, roomName);
           throw new RoomSessionCancelledError(session);
         }
         markRoomSessionRunning(session);
-        return { attempts, dispatchId: dispatch.id };
+        return {
+          attempts,
+          dispatchId: dispatch.id,
+          agentParticipant: summarizeAgentParticipant(agentParticipant),
+        };
       }
 
       lastError = new Error('agent participant did not join before retry');
@@ -231,17 +255,16 @@ async function waitForAgentParticipant(
   maxWaitMs: number,
   session: RoomSessionToken
 ) {
-  const deadline = Date.now() + Math.min(maxWaitMs, AGENT_DISPATCH_RETRY_MS);
+  const deadline = Date.now() + maxWaitMs;
 
   do {
     throwIfSessionCancelled(session);
-    if (
-      await roomHasAgentParticipant(roomClient, roomName, agentName, {
-        allowAnonymousLiveKitAgentFallback: true,
-      })
-    ) {
+    const participant = await findAgentParticipant(roomClient, roomName, agentName, {
+      allowAnonymousLiveKitAgentFallback: true,
+    });
+    if (participant) {
       throwIfSessionCancelled(session);
-      return true;
+      return participant;
     }
 
     const waitMs = Math.min(AGENT_DISPATCH_POLL_MS, deadline - Date.now());
@@ -251,43 +274,39 @@ async function waitForAgentParticipant(
   } while (Date.now() < deadline);
 
   throwIfSessionCancelled(session);
-  return roomHasAgentParticipant(roomClient, roomName, agentName, {
+  return findAgentParticipant(roomClient, roomName, agentName, {
     allowAnonymousLiveKitAgentFallback: true,
   });
 }
 
-async function roomHasAgentParticipant(
+async function findAgentParticipant(
   roomClient: RoomServiceClient,
   roomName: string,
   agentName: string,
   options: AgentParticipantMatchOptions = {}
 ) {
   const participants = await roomClient.listParticipants(roomName);
-  if (participants.some((participant) => isExpectedAgentParticipant(participant, agentName))) {
-    return true;
-  }
-  if (!options.allowAnonymousLiveKitAgentFallback) {
-    return false;
-  }
-
-  // Local LiveKit may omit agent attributes; fresh per-session rooms keep this fallback bounded.
-  const anonymousLiveKitAgents = participants.filter(isAnonymousLiveKitAgentParticipant);
-  return anonymousLiveKitAgents.length === 1;
+  return findAgentParticipantInList(participants, agentName, options);
 }
 
-function isExpectedAgentParticipant(participant: ParticipantInfo, agentName: string) {
-  const attributes = participant.attributes ?? {};
-  return attributes['lk.agent.name'] === agentName || attributes['lk.agent_name'] === agentName;
+async function findReusableAgentParticipant(
+  roomClient: RoomServiceClient,
+  roomName: string,
+  agentName: string,
+  options: ReusableAgentParticipantOptions = {}
+) {
+  const participants = await roomClient.listParticipants(roomName);
+  return findReusableAgentParticipantInList(participants, agentName, options);
 }
 
-function isAnonymousLiveKitAgentParticipant(participant: ParticipantInfo) {
-  const attributes = participant.attributes ?? {};
-  return (
-    participant.kind === ParticipantInfo_Kind.AGENT &&
-    participant.identity.startsWith('agent-') &&
-    !attributes['lk.agent.name'] &&
-    !attributes['lk.agent_name']
-  );
+function summarizeAgentParticipant(participant: ParticipantInfo | null) {
+  if (!participant) {
+    return null;
+  }
+
+  return {
+    identity: participant.identity,
+  };
 }
 
 async function deleteDispatchQuietly(

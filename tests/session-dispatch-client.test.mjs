@@ -42,3 +42,28 @@ test('agent session dispatch sends only canonical session id to Next API', async
     globalThis.fetch = originalFetch;
   }
 });
+
+test('agent session dispatch can require room video input readiness', async () => {
+  const originalFetch = globalThis.fetch;
+  let postedBody;
+  globalThis.fetch = async (_url, init) => {
+    postedBody = JSON.parse(String(init.body));
+    return { ok: true, status: 200 };
+  };
+
+  try {
+    const { requestAgentSessionDispatch } = await loadSessionDispatchClientModule();
+
+    await requestAgentSessionDispatch('agent-a', '11111111-2222-4333-8444-555555555555', {
+      requireRoomVideoInputReady: true,
+    });
+
+    assert.deepEqual(postedBody, {
+      agentName: 'agent-a',
+      sessionId: '11111111-2222-4333-8444-555555555555',
+      requireRoomVideoInputReady: true,
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

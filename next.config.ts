@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ['liveavatar.lexmount.cn'],
+  allowedDevOrigins: ['liveavatar.local.lexmount.net'],
 };
 
 export default nextConfig;

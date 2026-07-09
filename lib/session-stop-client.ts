@@ -62,7 +62,7 @@ function endStopRequestPending() {
 
 async function sendAgentSessionStop(
   sessionId: string,
-  options: AgentSessionStopOptions = {}
+  options: AgentSessionStopOptions
 ): Promise<void> {
   const response = await fetch('/api/session/stop', {
     method: 'POST',
@@ -87,7 +87,7 @@ async function waitForAgentWorkerSettle(): Promise<void> {
 
 async function sendAgentSessionStopAndSettle(
   sessionId: string,
-  options: AgentSessionStopOptions = {}
+  options: AgentSessionStopOptions
 ): Promise<void> {
   try {
     await sendAgentSessionStop(sessionId, options);
@@ -100,7 +100,7 @@ async function sendAgentSessionStopAndSettle(
 
 function sendAgentSessionStopInBackground(
   sessionId: string,
-  options: AgentSessionStopOptions = {}
+  options: AgentSessionStopOptions
 ): void {
   void sendAgentSessionStop(sessionId, options).catch((error: unknown) => {
     console.warn('Failed to stop remote agent session', error);

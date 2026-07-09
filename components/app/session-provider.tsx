@@ -14,6 +14,7 @@ const DEFAULT_BROWSER_SOURCE_CLIENT: BrowserSourceClient = {
   videoTrack: null,
   audioPending: false,
   videoPending: false,
+  setAudioDeviceId: async () => {},
   setAudioEnabled: async () => {},
   setVideoEnabled: async () => {},
   start: async () => {},

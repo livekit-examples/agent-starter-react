@@ -68,6 +68,7 @@ export function TrackSelector({
         size="sm"
         kind={kind}
         requestPermissions={false}
+        alwaysVisible={kind === 'audioinput'}
         onMediaDeviceError={onMediaDeviceError}
         onActiveDeviceChange={onActiveDeviceChange}
         className={cn([

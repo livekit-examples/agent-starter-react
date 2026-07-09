@@ -18,10 +18,13 @@ type DeviceSelectProps = React.ComponentProps<typeof SelectTrigger> & {
   variant?: 'default' | 'small';
   track?: LocalAudioTrack | LocalVideoTrack | undefined;
   requestPermissions?: boolean;
+  alwaysVisible?: boolean;
   onMediaDeviceError?: (error: Error) => void;
   onDeviceListChange?: (devices: MediaDeviceInfo[]) => void;
   onActiveDeviceChange?: (deviceId: string) => void;
 };
+
+const PERMISSION_PROMPT_DEVICE_VALUE = '__request_media_device_permission__';
 
 const selectVariants = cva(
   'w-full rounded-full px-3 py-2 text-sm cursor-pointer disabled:not-allowed',
@@ -43,6 +46,7 @@ export function TrackDeviceSelect({
   track,
   size = 'default',
   requestPermissions = false,
+  alwaysVisible = false,
   onMediaDeviceError,
   onDeviceListChange,
   onActiveDeviceChange,
@@ -72,20 +76,28 @@ export function TrackDeviceSelect({
   }, [open]);
 
   const handleActiveDeviceChange = (deviceId: string) => {
+    if (deviceId === PERMISSION_PROMPT_DEVICE_VALUE) {
+      setRequestPermissionsState(true);
+      return;
+    }
+
     setActiveMediaDevice(deviceId);
     onActiveDeviceChange?.(deviceId);
   };
 
   const filteredDevices = useMemo(() => devices.filter((d) => d.deviceId !== ''), [devices]);
 
-  if (filteredDevices.length < 2) {
+  if (!alwaysVisible && filteredDevices.length < 2) {
     return null;
   }
+
+  const selectedDeviceId =
+    activeDeviceId || filteredDevices[0]?.deviceId || PERMISSION_PROMPT_DEVICE_VALUE;
 
   return (
     <Select
       open={open}
-      value={activeDeviceId}
+      value={selectedDeviceId}
       onOpenChange={setOpen}
       onValueChange={handleActiveDeviceChange}
     >
@@ -95,12 +107,23 @@ export function TrackDeviceSelect({
         )}
       </SelectTrigger>
       <SelectContent>
-        {filteredDevices.map((device) => (
+        {filteredDevices.length === 0 && (
+          <SelectItem value={PERMISSION_PROMPT_DEVICE_VALUE} className="font-mono text-xs">
+            Allow {kind === 'audioinput' ? 'microphone' : 'camera'} access
+          </SelectItem>
+        )}
+        {filteredDevices.map((device, index) => (
           <SelectItem key={device.deviceId} value={device.deviceId} className="font-mono text-xs">
-            {device.label}
+            {device.label || getFallbackDeviceLabel(kind, index)}
           </SelectItem>
         ))}
       </SelectContent>
     </Select>
   );
+}
+
+function getFallbackDeviceLabel(kind: MediaDeviceKind, index: number) {
+  const label = kind === 'audioinput' ? 'Microphone' : kind === 'videoinput' ? 'Camera' : 'Device';
+
+  return index === 0 ? `Default ${label.toLowerCase()}` : `${label} ${index + 1}`;
 }

@@ -71,6 +71,137 @@ test('agent session stop sends only canonical session id to Next API', async () 
   }
 });
 
+test('agent session stop does not release gateway sandbox sessions by default on public paths', async () => {
+  const originalFetch = globalThis.fetch;
+  const originalWindow = globalThis.window;
+  const calls = [];
+  globalThis.window = {
+    location: {
+      pathname: '/s/abc123/live',
+    },
+  };
+  globalThis.fetch = async (url, init = {}) => {
+    calls.push({ url, method: init.method });
+    return { ok: true, status: 200 };
+  };
+
+  try {
+    const { requestAgentSessionStop } = await loadSessionStopClientModule();
+
+    await requestAgentSessionStop('11111111-2222-4333-8444-555555555555');
+
+    assert.deepEqual(calls, [{ url: '/api/session/stop', method: 'POST' }]);
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (originalWindow === undefined) {
+      delete globalThis.window;
+    } else {
+      globalThis.window = originalWindow;
+    }
+  }
+});
+
+test('agent session stop ignores public sandbox paths during local cleanup', async () => {
+  const originalFetch = globalThis.fetch;
+  const originalWindow = globalThis.window;
+  const calls = [];
+  globalThis.window = {
+    location: {
+      pathname: '/',
+    },
+  };
+  globalThis.fetch = async (url, init = {}) => {
+    calls.push({ url, method: init.method });
+    return { ok: true, status: 200 };
+  };
+
+  try {
+    const { beginAgentSessionStart, requestAgentSessionStop } = await loadSessionStopClientModule();
+    const sessionId = '11111111-2222-4333-8444-555555555555';
+
+    beginAgentSessionStart('room-a', sessionId);
+    globalThis.window.location.pathname = '/s/abc123/live';
+
+    await requestAgentSessionStop(sessionId);
+
+    assert.deepEqual(calls, [{ url: '/api/session/stop', method: 'POST' }]);
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (originalWindow === undefined) {
+      delete globalThis.window;
+    } else {
+      globalThis.window = originalWindow;
+    }
+  }
+});
+
+test('background agent session stop does not release gateway sandbox sessions', async () => {
+  const originalFetch = globalThis.fetch;
+  const originalWindow = globalThis.window;
+  const calls = [];
+  globalThis.window = {
+    location: {
+      pathname: '/s/abc123/live',
+    },
+  };
+  globalThis.fetch = async (url, init = {}) => {
+    calls.push({ url, method: init.method });
+    return { ok: true, status: 200 };
+  };
+
+  try {
+    const { beginAgentSessionStart, requestAgentSessionStop } = await loadSessionStopClientModule();
+    const sessionId = '11111111-2222-4333-8444-555555555555';
+
+    beginAgentSessionStart('room-a', sessionId);
+    await requestAgentSessionStop(sessionId, {
+      waitForRemote: false,
+    });
+    for (let i = 0; i < 8 && calls.length < 1; i++) {
+      await Promise.resolve();
+    }
+
+    assert.deepEqual(calls, [{ url: '/api/session/stop', method: 'POST' }]);
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (originalWindow === undefined) {
+      delete globalThis.window;
+    } else {
+      globalThis.window = originalWindow;
+    }
+  }
+});
+
+test('agent session stop skips gateway release outside public sandbox paths', async () => {
+  const originalFetch = globalThis.fetch;
+  const originalWindow = globalThis.window;
+  const calls = [];
+  globalThis.window = {
+    location: {
+      pathname: '/',
+    },
+  };
+  globalThis.fetch = async (url, init = {}) => {
+    calls.push({ url, method: init.method });
+    return { ok: true, status: 200 };
+  };
+
+  try {
+    const { requestAgentSessionStop } = await loadSessionStopClientModule();
+
+    await requestAgentSessionStop('11111111-2222-4333-8444-555555555555');
+
+    assert.deepEqual(calls, [{ url: '/api/session/stop', method: 'POST' }]);
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (originalWindow === undefined) {
+      delete globalThis.window;
+    } else {
+      globalThis.window = originalWindow;
+    }
+  }
+});
+
 test('clears visible stop pending while keeping start gated during worker settle', async () => {
   const originalFetch = globalThis.fetch;
   const originalSetTimeout = globalThis.setTimeout;
@@ -199,7 +330,7 @@ test('view controller disables start while a session is active', async () => {
   assert.match(source, /startDisabled=\{isStartDisabled\}/);
 });
 
-test('session lifecycle cancels in-flight dispatch before stop releases next start', async () => {
+test('session lifecycle cancels in-flight dispatch before allowing next start', async () => {
   const source = await readFile(new URL('../lib/session-stop-client.ts', import.meta.url), 'utf8');
 
   assert.match(source, /beginAgentSessionStart/);
@@ -228,6 +359,7 @@ test('disconnect control exits the local session before remote stop finishes', a
   assert.match(controlBarSource, /getCurrentSessionId/);
   assert.match(controlBarSource, /registerAgentSessionLocalCleanup/);
   assert.match(controlBarSource, /requestAgentSessionStop\(sessionId\)/);
+  assert.doesNotMatch(controlBarSource, /releaseGatewaySession/);
   assert.doesNotMatch(controlBarSource, /usesFastBrowserStop/);
   assert.doesNotMatch(controlBarSource, /waitForRemote:\s*!/);
   assert.doesNotMatch(controlBarSource, /await requestAgentSessionStop\(room\.name\)/);

@@ -134,6 +134,20 @@ export function AgentControlBar({
     [browserSourceClient, handleDeviceError]
   );
 
+  const handleAudioDeviceSelect = useCallback(
+    (deviceId: string) => {
+      handleAudioDeviceChange(deviceId);
+      if (!usesBrowserRawAudioInput) {
+        return;
+      }
+
+      void browserSourceClient.setAudioDeviceId(deviceId).catch((error) => {
+        handleDeviceError({ source: Track.Source.Microphone, error });
+      });
+    },
+    [browserSourceClient, handleAudioDeviceChange, handleDeviceError, usesBrowserRawAudioInput]
+  );
+
   const handleRawVideoToggle = useCallback(
     async (enabled: boolean) => {
       try {
@@ -195,7 +209,7 @@ export function AgentControlBar({
                 usesBrowserRawAudioInput ? handleRawMicrophoneToggle : microphoneToggle.toggle
               }
               onMediaDeviceError={handleMicrophoneDeviceSelectError}
-              onActiveDeviceChange={handleAudioDeviceChange}
+              onActiveDeviceChange={handleAudioDeviceSelect}
             />
           )}
 

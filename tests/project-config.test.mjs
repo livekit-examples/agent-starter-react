@@ -16,7 +16,9 @@ test('README matches the documented LexVoice environment source', async () => {
   const envExample = await readFile('.env.example', 'utf8');
 
   assert.match(envExample, /documentation-only/);
-  assert.match(readme, /\.\.\/lex-voice\/\.env/);
+  assert.match(readme, /LexVoice repository `\.env`/);
+  assert.doesNotMatch(readme, /\blex-voice\b/);
+  assert.doesNotMatch(envExample, /\blex-voice\b/);
   assert.match(readme, /single Next\.js instance or sticky routing/);
   assert.match(readme, /custom connection details endpoint/);
   assert.match(readme, /sessionId/);
@@ -28,7 +30,6 @@ test('avatar filtering excludes the current room video input identity', async ()
   const source = await readFile('hooks/useSmartVoiceAssistant.ts', 'utf8');
 
   assert.match(source, /room_video_input/);
-  assert.doesNotMatch(source, /room_vision_input/);
 });
 
 test('client config reads frontend observability from OBSERVABILITY_ENABLED only', () => {

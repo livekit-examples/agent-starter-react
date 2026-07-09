@@ -5,6 +5,8 @@ import { toastAlert } from '@/components/livekit/alert-toast';
 import { useBrowserSourceClient } from '@/hooks/useBrowserSourceClient';
 import { getVoiceSessionId, resetVoiceSessionId } from '@/lib/browser-room-session';
 import { readConnectionDetailsResponse } from '@/lib/connection-details-response';
+import { isValidConnectionRoomId } from '@/lib/connection-room-id';
+import { usesServerRoomInputDevice } from '@/lib/input-device-config';
 import { FRONTEND_EVENTS, publishFrontendObservabilityEvent } from '@/lib/observability';
 import { waitForRoomDisconnected } from '@/lib/room-disconnect';
 import {
@@ -17,6 +19,12 @@ import {
   requestAgentSessionStop,
   waitForAgentSessionStop,
 } from '@/lib/session-stop-client';
+
+function requiresRoomVideoInputReady(appConfig: AppConfig) {
+  return appConfig.visionInputDevice
+    ? usesServerRoomInputDevice(appConfig.visionInputDevice)
+    : false;
+}
 
 export function useRoom(appConfig: AppConfig) {
   const aborted = useRef(false);
@@ -38,6 +46,13 @@ export function useRoom(appConfig: AppConfig) {
   const browserSourceClient = useBrowserSourceClient(room, appConfig, {
     onVideoError: handleBrowserVideoError,
   });
+  const resolveVoiceSessionId = useCallback(() => {
+    const configuredSessionId = appConfig.voiceSessionId?.trim();
+    if (isValidConnectionRoomId(configuredSessionId)) {
+      return configuredSessionId;
+    }
+    return getVoiceSessionId();
+  }, [appConfig.voiceSessionId]);
   const recordFrontendObservability = useCallback(
     (name: string, attributes?: Record<string, string | number | boolean | null>) => {
       void publishFrontendObservabilityEvent({
@@ -92,7 +107,7 @@ export function useRoom(appConfig: AppConfig) {
         );
 
         try {
-          const sessionId = sessionIdRef.current ?? getVoiceSessionId();
+          const sessionId = sessionIdRef.current ?? resolveVoiceSessionId();
           sessionIdRef.current = sessionId;
 
           const res = await fetch(url.toString(), {
@@ -114,7 +129,7 @@ export function useRoom(appConfig: AppConfig) {
           throw new Error('Error fetching connection details!');
         }
       }),
-    [appConfig]
+    [appConfig, resolveVoiceSessionId]
   );
 
   const startSession = useCallback(async () => {
@@ -127,7 +142,7 @@ export function useRoom(appConfig: AppConfig) {
       return;
     }
 
-    const sessionId = getVoiceSessionId();
+    const sessionId = resolveVoiceSessionId();
     sessionIdRef.current = sessionId;
     let dispatchSessionId: string | null = sessionId;
     let connectedRoomName: string | null = null;
@@ -178,6 +193,7 @@ export function useRoom(appConfig: AppConfig) {
       dispatchSessionId = sessionId;
       const signal = beginAgentSessionStart(room.name, sessionId);
       const dispatchPromise = requestAgentSessionDispatch(appConfig.agentName, sessionId, {
+        requireRoomVideoInputReady: requiresRoomVideoInputReady(appConfig),
         signal,
       });
       registerAgentSessionDispatch(room.name, sessionId, dispatchPromise);
@@ -229,7 +245,14 @@ export function useRoom(appConfig: AppConfig) {
     } catch (error) {
       await handleStartError(error);
     }
-  }, [room, appConfig, tokenSource, browserSourceClient, recordFrontendObservability]);
+  }, [
+    room,
+    appConfig,
+    tokenSource,
+    browserSourceClient,
+    resolveVoiceSessionId,
+    recordFrontendObservability,
+  ]);
 
   const endSession = useCallback(async () => {
     try {

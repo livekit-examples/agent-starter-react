@@ -46,6 +46,7 @@ export interface AppConfig {
 
   // for LiveKit Cloud Sandbox
   sandboxId?: string;
+  voiceSessionId?: string;
   agentName?: string;
   inputSource?: string;
   audioInputDevice?: string;
@@ -227,6 +228,7 @@ export const APP_CONFIG_DEFAULTS: AppConfig = {
 
   // for LiveKit Cloud Sandbox
   sandboxId: undefined,
+  voiceSessionId: undefined,
   agentName: undefined,
   inputSource: undefined,
   audioInputDevice: undefined,

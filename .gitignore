@@ -13,6 +13,12 @@
 # testing
 /coverage
 
+# Legacy sandbox gateway artifacts from pre-migration local runs
+/.sandbox-gateway/
+/logs/direct-proxy.log
+/logs/sandbox-gateway*.log
+/logs/sandbox-gateway.pid
+
 # next.js
 /.next/
 /out/

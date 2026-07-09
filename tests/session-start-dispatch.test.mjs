@@ -40,7 +40,8 @@ test('session dispatch route retries explicit agent dispatch after the browser j
   assert.match(routeSource, /AGENT_DISPATCH_TIMEOUT_MS/);
   assert.match(routeSource, /AGENT_DISPATCH_RETRY_MS/);
   assert.match(routeSource, /calculateDispatchRetryDelay/);
-  assert.match(routeSource, /roomHasAgentParticipant/);
+  assert.match(routeSource, /findAgentParticipant/);
+  assert.match(routeSource, /summarizeAgentParticipant/);
   assert.match(routeSource, /deleteDispatchQuietly/);
   assert.match(routeSource, /dispatchClient\.createDispatch/);
   assert.match(routeSource, /roomName is required/);
@@ -111,17 +112,37 @@ test('session dispatch route logs successful dispatch with canonical session ide
   assert.match(routeSource, /roomName/);
 });
 
-test('session dispatch route keeps pre-dispatch agent matching tied to the configured agent name', async () => {
+test('session dispatch response does not expose raw agent attributes', async () => {
   const routeSource = await readFile(
     new URL('../app/api/session/dispatch/route.ts', import.meta.url),
     'utf8'
   );
-  const participantMatcher = routeSource.match(/function isExpectedAgentParticipant[\s\S]*?\n}/);
+  const summarySource =
+    routeSource.match(
+      /function summarizeAgentParticipant[\s\S]*?\n}\n\nasync function deleteDispatchQuietly/
+    )?.[0] ?? '';
+
+  assert.match(summarySource, /identity: participant\.identity/);
+  assert.doesNotMatch(summarySource, /participant\.kind/);
+  assert.doesNotMatch(summarySource, /participant\.attributes/);
+  assert.doesNotMatch(summarySource, /attributes:/);
+});
+
+test('session dispatch readiness keeps agent matching tied to the configured agent name', async () => {
+  const readinessSource = await readFile(
+    new URL('../lib/session-dispatch-readiness.ts', import.meta.url),
+    'utf8'
+  );
+  const participantMatcher = readinessSource.match(
+    /function isExpectedAgentParticipant[\s\S]*?\n}/
+  );
 
   assert.ok(participantMatcher, 'isExpectedAgentParticipant should be defined');
   const participantMatcherSource = participantMatcher[0];
-  assert.match(participantMatcherSource, /attributes\['lk\.agent\.name'\] === agentName/);
-  assert.match(participantMatcherSource, /attributes\['lk\.agent_name'\] === agentName/);
+  assert.match(participantMatcherSource, /readAgentNameAttribute/);
+  assert.match(readinessSource, /attributes\['lk\.agent\.name'\]/);
+  assert.match(readinessSource, /attributes\['lk\.agent_name'\]/);
+  assert.match(readinessSource, /attributes\.lkAgentName/);
   assert.doesNotMatch(participantMatcherSource, /identity\.startsWith\(['"]agent-['"]\)/);
 });
 
@@ -130,24 +151,31 @@ test('session dispatch route only accepts anonymous LiveKit agent fallback after
     new URL('../app/api/session/dispatch/route.ts', import.meta.url),
     'utf8'
   );
+  const readinessSource = await readFile(
+    new URL('../lib/session-dispatch-readiness.ts', import.meta.url),
+    'utf8'
+  );
 
+  assert.match(routeSource, /findReusableAgentParticipant/);
   assert.match(
     routeSource,
-    /const alreadyJoined = await roomHasAgentParticipant\(roomClient, roomName, agentName\);/
+    /const alreadyJoined = await findReusableAgentParticipant\(\s*roomClient,\s*roomName,\s*agentName,\s*reusableAgentOptions\s*\);/
   );
-  assert.match(routeSource, /type AgentParticipantMatchOptions/);
-  assert.match(routeSource, /allowAnonymousLiveKitAgentFallback/);
+  assert.match(routeSource, /requireRoomVideoInputReady/);
+  assert.match(routeSource, /require_room_video_input_ready/);
+  assert.match(readinessSource, /type AgentParticipantMatchOptions/);
+  assert.match(readinessSource, /type ReusableAgentParticipantOptions/);
+  assert.match(readinessSource, /allowAnonymousLiveKitAgentFallback/);
   assert.match(
     routeSource,
-    /roomHasAgentParticipant\(\s*roomClient,\s*roomName,\s*agentName,\s*\{\s*allowAnonymousLiveKitAgentFallback: true,?\s*\}\s*\)/
+    /findAgentParticipant\(\s*roomClient,\s*roomName,\s*agentName,\s*\{\s*allowAnonymousLiveKitAgentFallback: true,?\s*\}\s*\)/
   );
-  assert.match(routeSource, /function isAnonymousLiveKitAgentParticipant/);
-  assert.match(routeSource, /ParticipantInfo_Kind\.AGENT/);
-  assert.match(routeSource, /identity\.startsWith\(['"]agent-['"]\)/);
-  assert.match(routeSource, /!attributes\['lk\.agent\.name'\]/);
-  assert.match(routeSource, /!attributes\['lk\.agent_name'\]/);
-  assert.match(routeSource, /fresh per-session rooms/);
-  assert.match(routeSource, /anonymousLiveKitAgents\.length === 1/);
+  assert.match(readinessSource, /function isAnonymousLiveKitAgentParticipant/);
+  assert.match(readinessSource, /ParticipantInfo_Kind\.AGENT/);
+  assert.match(readinessSource, /identity\.startsWith\(['"]agent-['"]\)/);
+  assert.match(readinessSource, /!readAgentNameAttribute\(attributes\)/);
+  assert.match(readinessSource, /fresh per-session rooms/);
+  assert.match(readinessSource, /anonymousLiveKitAgents\.length === 1/);
 });
 
 test('start call dispatches the agent with a cancellable room session id', async () => {
@@ -157,7 +185,9 @@ test('start call dispatches the agent with a cancellable room session id', async
     '';
 
   assert.match(useRoomSource, /const startSession = useCallback\(async \(\) =>/);
-  assert.match(useRoomSource, /const sessionId = getVoiceSessionId\(\)/);
+  assert.match(useRoomSource, /const sessionId = resolveVoiceSessionId\(\)/);
+  assert.match(useRoomSource, /appConfig\.voiceSessionId/);
+  assert.match(useRoomSource, /isValidConnectionRoomId\(configuredSessionId\)/);
   assert.doesNotMatch(dispatchAgentSessionSource, /crypto\.randomUUID\(\)/);
   assert.match(useRoomSource, /beginAgentSessionStart/);
   assert.match(useRoomSource, /registerAgentSessionDispatch/);
@@ -166,6 +196,10 @@ test('start call dispatches the agent with a cancellable room session id', async
   assert.match(useRoomSource, /isExpectedStartCancellation/);
   assert.match(useRoomSource, /waitForAgentSessionStop/);
   assert.match(useRoomSource, /requestAgentSessionDispatch\(\s*appConfig\.agentName,\s*sessionId,/);
+  assert.match(
+    useRoomSource,
+    /requireRoomVideoInputReady: requiresRoomVideoInputReady\(appConfig\)/
+  );
   assert.doesNotMatch(useRoomSource, /requestAgentSessionDispatch\(\s*room\.name,/);
 });
 
@@ -282,6 +316,46 @@ test('browser video input shows the camera control as enabled by default', async
     controlBarSource,
     /mediaEnabled=\{usesBrowserRawVideoInput \? browserSourceClient\.videoEnabled : undefined\}/
   );
+});
+
+test('microphone device selector remains visible before media permission is granted', async () => {
+  const trackSelectorSource = await readFile(
+    new URL('../components/livekit/agent-control-bar/track-selector.tsx', import.meta.url),
+    'utf8'
+  );
+  const deviceSelectSource = await readFile(
+    new URL('../components/livekit/agent-control-bar/track-device-select.tsx', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(trackSelectorSource, /alwaysVisible=\{kind === 'audioinput'\}/);
+  assert.match(deviceSelectSource, /alwaysVisible = false/);
+  assert.match(deviceSelectSource, /!alwaysVisible && filteredDevices\.length < 2/);
+  assert.match(deviceSelectSource, /setRequestPermissionsState\(true\)/);
+});
+
+test('raw browser audio applies the selected microphone device to capture', async () => {
+  const browserSourceSource = await readFile(
+    new URL('../hooks/useBrowserSourceClient.ts', import.meta.url),
+    'utf8'
+  );
+  const sessionProviderSource = await readFile(
+    new URL('../components/app/session-provider.tsx', import.meta.url),
+    'utf8'
+  );
+  const controlBarSource = await readFile(
+    new URL('../components/livekit/agent-control-bar/agent-control-bar.tsx', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(browserSourceSource, /setAudioDeviceId: \(deviceId: string\) => Promise<void>/);
+  assert.match(browserSourceSource, /const audioDeviceIdRef = useRef<string \| null>\(null\)/);
+  assert.match(browserSourceSource, /buildAudioCaptureOptions\(audioDeviceIdRef\.current\)/);
+  assert.match(browserSourceSource, /deviceId: \{ exact: deviceId \}/);
+  assert.match(sessionProviderSource, /setAudioDeviceId: async \(\) => \{\}/);
+  assert.match(controlBarSource, /const handleAudioDeviceSelect = useCallback/);
+  assert.match(controlBarSource, /browserSourceClient\.setAudioDeviceId\(deviceId\)/);
+  assert.match(controlBarSource, /onActiveDeviceChange=\{handleAudioDeviceSelect\}/);
 });
 
 test('configurable video selector only changes externally controlled media from user toggle', async () => {
