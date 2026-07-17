@@ -29,6 +29,8 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@radix-ui/react-use-controllable-state": "^1.2.2",
     "@rive-app/react-webgl2": "^4.26.1",
+    "@spatius/avatarkit": "^1.3.0",
+    "@spatius/avatarkit-rtc": "^1.1.0",
     "@xyflow/react": "^12.10.0",
     "ai": "^5.0.105",
     "buffer-image-size": "^0.6.4",
@@ -37,7 +39,7 @@
     "cmdk": "^1.1.1",
     "embla-carousel-react": "^8.6.0",
     "jose": "^6.0.12",
-    "livekit-client": "^2.17.2",
+    "livekit-client": "2.16.1",
     "livekit-server-sdk": "^2.13.3",
     "lucide-react": "^0.555.0",
     "media-chrome": "^4.17.2",
@@ -63,6 +65,7 @@
     "@types/node": "^22.0.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@webgpu/types": "^0.1.65",
     "eslint": "^9",
     "eslint-config-next": "15.5.2",
     "eslint-config-prettier": "^10.1.5",
@@ -74,5 +77,10 @@
     "tw-animate-css": "^1.3.0",
     "typescript": "^5"
   },
-  "packageManager": "pnpm@9.15.9"
+  "packageManager": "pnpm@9.15.9",
+  "pnpm": {
+    "overrides": {
+      "livekit-client": "2.16.1"
+    }
+  }
 }

@@ -21,16 +21,19 @@ function WelcomeImage() {
 interface WelcomeViewProps {
   startButtonText: string;
   onStartCall: () => void;
+  /** Optional pre-connect settings rendered below the start button (e.g. avatar source). */
+  configSlot?: React.ReactNode;
 }
 
 export const WelcomeView = ({
   startButtonText,
   onStartCall,
+  configSlot,
   ref,
 }: React.ComponentProps<'div'> & WelcomeViewProps) => {
   return (
     <div ref={ref}>
-      <section className="bg-background flex flex-col items-center justify-center text-center">
+      <section className="bg-background flex flex-col items-center justify-center px-4 text-center">
         <WelcomeImage />
 
         <p className="text-foreground max-w-prose pt-1 leading-6 font-medium">
@@ -44,6 +47,8 @@ export const WelcomeView = ({
         >
           {startButtonText}
         </Button>
+
+        {configSlot && <div className="mt-8 w-full">{configSlot}</div>}
       </section>
 
       <div className="fixed bottom-5 left-0 flex w-full items-center justify-center">

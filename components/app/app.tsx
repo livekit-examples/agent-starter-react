@@ -1,64 +1,75 @@
 'use client';
 
-import { useMemo } from 'react';
-import { TokenSource } from 'livekit-client';
-import { useSession } from '@livekit/components-react';
-import { WarningIcon } from '@phosphor-icons/react/dist/ssr';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import dynamic from 'next/dynamic';
 import type { AppConfig } from '@/app-config';
-import { AgentSessionProvider } from '@/components/agents-ui/agent-session-provider';
-import { StartAudioButton } from '@/components/agents-ui/start-audio-button';
-import { ViewController } from '@/components/app/view-controller';
-import { Toaster } from '@/components/ui/sonner';
-import { useAgentErrors } from '@/hooks/useAgentErrors';
-import { useDebugMode } from '@/hooks/useDebug';
-import { getSandboxTokenSource } from '@/lib/utils';
+import { SpatiusConfigForm } from '@/components/app/spatius-config-form';
+import { StandardApp } from '@/components/app/standard-app';
+import { SpatiusAvatarContext } from '@/components/spatius-avatar/spatius-avatar-context';
+import { type SpatiusSupport, detectSpatiusSupport } from '@/lib/spatius/capabilities';
+import {
+  type SpatiusSettings,
+  defaultSpatiusSettings,
+  isSpatiusEnabled,
+  loadSpatiusSettings,
+  saveSpatiusSettings,
+} from '@/lib/spatius/config';
 
-const IN_DEVELOPMENT = process.env.NODE_ENV !== 'production';
-
-function AppSetup() {
-  useDebugMode({ enabled: IN_DEVELOPMENT });
-  useAgentErrors();
-
-  return null;
-}
+// Lazily loaded, client-only: keeps the Spatius WASM decoder (and its global
+// `RTCPeerConnection` patch) out of the bundle unless the avatar path is active.
+const SpatiusApp = dynamic(() => import('@/components/app/spatius-app').then((m) => m.SpatiusApp), {
+  ssr: false,
+});
 
 interface AppProps {
   appConfig: AppConfig;
 }
 
 export function App({ appConfig }: AppProps) {
-  const tokenSource = useMemo(() => {
-    return typeof process.env.NEXT_PUBLIC_CONN_DETAILS_ENDPOINT === 'string'
-      ? getSandboxTokenSource(appConfig)
-      : TokenSource.endpoint('/api/token');
+  const [settings, setSettings] = useState<SpatiusSettings>(() =>
+    defaultSpatiusSettings(appConfig)
+  );
+  const [support, setSupport] = useState<SpatiusSupport | null>(null);
+  const [hydrated, setHydrated] = useState(false);
+
+  // Resolve per-browser settings + browser capabilities on the client only. The
+  // first render matches SSR (defaults + standard app) to avoid a hydration
+  // mismatch, then we reconcile here.
+  useEffect(() => {
+    setSettings(loadSpatiusSettings(defaultSpatiusSettings(appConfig)));
+    setSupport(detectSpatiusSupport());
+    setHydrated(true);
   }, [appConfig]);
 
-  const session = useSession(
-    tokenSource,
-    appConfig.agentName ? { agentName: appConfig.agentName } : undefined
+  const handleSettingsChange = useCallback((next: SpatiusSettings) => {
+    setSettings(next);
+    saveSpatiusSettings(next);
+  }, []);
+
+  const welcomeSlot = useMemo(
+    () => <SpatiusConfigForm settings={settings} onChange={handleSettingsChange} />,
+    [settings, handleSettingsChange]
   );
 
-  return (
-    <AgentSessionProvider session={session}>
-      <AppSetup />
-      <main className="grid h-svh grid-cols-1 place-content-center">
-        <ViewController appConfig={appConfig} />
-      </main>
-      <StartAudioButton label="Start Audio" />
-      <Toaster
-        icons={{
-          warning: <WarningIcon weight="bold" />,
+  // Standard path (default, SSR-safe, and until the client reconciles).
+  if (!hydrated || !isSpatiusEnabled(settings)) {
+    return <StandardApp appConfig={appConfig} welcomeSlot={welcomeSlot} />;
+  }
+
+  // Spatius selected but the browser can't render it: keep the standard
+  // connection but force the audio-only tile with an explanatory notice.
+  if (support && !support.supported) {
+    return (
+      <SpatiusAvatarContext.Provider
+        value={{
+          renderMode: 'audio-only',
+          notice: support.reason ?? 'Avatar rendering is not supported in this browser.',
         }}
-        position="top-center"
-        className="toaster group"
-        style={
-          {
-            '--normal-bg': 'var(--popover)',
-            '--normal-text': 'var(--popover-foreground)',
-            '--normal-border': 'var(--border)',
-          } as React.CSSProperties
-        }
-      />
-    </AgentSessionProvider>
-  );
+      >
+        <StandardApp appConfig={appConfig} welcomeSlot={welcomeSlot} />
+      </SpatiusAvatarContext.Provider>
+    );
+  }
+
+  return <SpatiusApp appConfig={appConfig} settings={settings} welcomeSlot={welcomeSlot} />;
 }

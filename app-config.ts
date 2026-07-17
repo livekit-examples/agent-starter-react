@@ -30,6 +30,12 @@ export interface AppConfig {
 
   // LiveKit Cloud Sandbox configuration
   sandboxId?: string;
+
+  // Spatius avatar (optional): default values used to pre-fill the in-app avatar
+  // config form. The active provider/appId/avatarId are stored per-browser in
+  // localStorage (see lib/spatius/config.ts) and can be changed at runtime.
+  spatiusAppId?: string;
+  spatiusAvatarId?: string;
 }
 
 export const APP_CONFIG_DEFAULTS: AppConfig = {
@@ -69,4 +75,8 @@ export const APP_CONFIG_DEFAULTS: AppConfig = {
 
   // LiveKit Cloud Sandbox configuration
   sandboxId: undefined,
+
+  // Spatius avatar defaults (optional)
+  spatiusAppId: process.env.NEXT_PUBLIC_SPATIUS_APP_ID || undefined,
+  spatiusAvatarId: process.env.NEXT_PUBLIC_SPATIUS_AVATAR_ID || undefined,
 };

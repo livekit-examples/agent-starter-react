@@ -8,6 +8,15 @@ import {
   useTracks,
   useVoiceAssistant,
 } from '@livekit/components-react';
+// Import the SDK-free pieces directly (NOT via the barrel) so the Spatius WASM
+// decoder is never pulled into the standard bundle.
+import { SpatiusAvatarCanvas } from '@/components/spatius-avatar/spatius-avatar-canvas';
+import { useMaybeSpatiusAvatarContext } from '@/components/spatius-avatar/spatius-avatar-context';
+import {
+  SpatiusAvatarError,
+  SpatiusAvatarLoading,
+  SpatiusAvatarNotice,
+} from '@/components/spatius-avatar/spatius-avatar-overlays';
 import { cn } from '@/lib/shadcn/utils';
 import { AudioVisualizer } from './audio-visualizer';
 
@@ -105,6 +114,15 @@ export function TileLayout({
   const videoWidth = agentVideoTrack?.publication.dimensions?.width ?? 0;
   const videoHeight = agentVideoTrack?.publication.dimensions?.height ?? 0;
 
+  // Spatius avatar integration: when a Spatius context is present, render their
+  // WebGPU canvas (the agent "video" track is fake-VP8 motion data, not real
+  // video) or, on unsupported browsers, force the audio visualizer + a notice.
+  const spatius = useMaybeSpatiusAvatarContext();
+  const spatiusCanvas = spatius?.renderMode === 'canvas' ? spatius : null;
+  const forceAudioOnly = spatius?.renderMode === 'audio-only';
+  const showVisualizer = !spatiusCanvas && (!isAvatar || forceAudioOnly);
+  const showStandardVideo = !spatiusCanvas && !forceAudioOnly && isAvatar;
+
   return (
     <div className="absolute inset-x-0 top-8 bottom-32 z-50 md:top-12 md:bottom-40">
       <div className="relative mx-auto h-full max-w-2xl px-4 md:px-0">
@@ -119,7 +137,7 @@ export function TileLayout({
             ])}
           >
             <AnimatePresence mode="popLayout">
-              {!isAvatar && (
+              {showVisualizer && (
                 // Audio Agent
                 <motion.div
                   key="agent"
@@ -160,7 +178,7 @@ export function TileLayout({
                 </motion.div>
               )}
 
-              {isAvatar && (
+              {showStandardVideo && (
                 // Avatar Agent
                 <motion.div
                   key="avatar"
@@ -201,7 +219,40 @@ export function TileLayout({
                   />
                 </motion.div>
               )}
+
+              {spatiusCanvas && (
+                // Spatius avatar (WebGPU motion decode)
+                <motion.div
+                  key="avatar"
+                  layoutId="avatar"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1, borderRadius: chatOpen ? 6 : 12 }}
+                  transition={{ ...ANIMATION_TRANSITION, delay: animationDelay }}
+                  className={cn(
+                    'relative overflow-hidden bg-black drop-shadow-xl/80',
+                    // Definite size (not `w-full`): the agent cell is a
+                    // `place-content-center` grid, so a percentage width collapses
+                    // to 0 and the WebGPU canvas container never gets a size.
+                    chatOpen ? 'size-[90px]' : 'aspect-[3/4] h-[70vh] max-h-[34rem]'
+                  )}
+                >
+                  <SpatiusAvatarCanvas
+                    containerRef={spatiusCanvas.containerRef}
+                    className="rounded-[inherit]"
+                  />
+                  <SpatiusAvatarLoading
+                    status={spatiusCanvas.status}
+                    downloadProgress={spatiusCanvas.downloadProgress}
+                    isConnected={spatiusCanvas.isConnected}
+                  />
+                  <SpatiusAvatarError error={spatiusCanvas.error} />
+                </motion.div>
+              )}
             </AnimatePresence>
+
+            {forceAudioOnly && spatius?.notice && (
+              <SpatiusAvatarNotice>{spatius.notice}</SpatiusAvatarNotice>
+            )}
           </div>
 
           <div

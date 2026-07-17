@@ -20,6 +20,9 @@
 # production
 /build
 
+# spatius avatarkit WASM (auto-copied by withAvatarkit at build time)
+/public/_avatarkit/
+
 # misc
 .DS_Store
 *.pem
