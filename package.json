@@ -9,7 +9,7 @@
     "lint": "next lint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "shadcn:install": "pnpm dlx shadcn@latest add --yes --overwrite @agents-ui/all && pnpm format"
+    "shadcn:install": "pnpm dlx shadcn@latest add --yes @agents-ui/all && pnpm format"
   },
   "dependencies": {
     "@livekit/components-react": "^2.9.20",
