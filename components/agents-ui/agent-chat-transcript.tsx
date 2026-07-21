@@ -2,14 +2,19 @@
 
 import { type ComponentProps } from 'react';
 import { AnimatePresence } from 'motion/react';
+import { Streamdown } from 'streamdown';
 import { type AgentState, type ReceivedMessage } from '@livekit/components-react';
 import { AgentChatIndicator } from '@/components/agents-ui/agent-chat-indicator';
+import { Bubble, BubbleContent } from '@/components/ui/bubble';
+import { Message, MessageContent } from '@/components/ui/message';
 import {
-  Conversation,
-  ConversationContent,
-  ConversationScrollButton,
-} from '@/components/ai-elements/conversation';
-import { Message, MessageContent, MessageResponse } from '@/components/ai-elements/message';
+  MessageScroller,
+  MessageScrollerButton,
+  MessageScrollerContent,
+  MessageScrollerItem,
+  MessageScrollerProvider,
+  MessageScrollerViewport,
+} from '@/components/ui/message-scroller';
 
 /**
  * Props for the AgentChatTranscript component.
@@ -52,28 +57,41 @@ export function AgentChatTranscript({
   ...props
 }: AgentChatTranscriptProps) {
   return (
-    <Conversation className={className} {...props}>
-      <ConversationContent>
-        {messages.map((receivedMessage) => {
-          const { id, timestamp, from, message } = receivedMessage;
-          const locale = navigator?.language ?? 'en-US';
-          const messageOrigin = from?.isLocal ? 'user' : 'assistant';
-          const time = new Date(timestamp);
-          const title = time.toLocaleTimeString(locale, { timeStyle: 'full' });
+    <MessageScrollerProvider autoScroll defaultScrollPosition="last-anchor">
+      <MessageScroller className={className} {...props}>
+        <MessageScrollerViewport>
+          <MessageScrollerContent aria-busy={agentState === 'thinking'}>
+            {messages.map((receivedMessage) => {
+              const { id, timestamp, from, message } = receivedMessage;
+              const time = new Date(timestamp);
+              const isUser = from?.isLocal;
+              const locale = typeof navigator !== 'undefined' ? navigator.language : 'en-US';
+              const title = time.toLocaleTimeString(locale, { timeStyle: 'full' });
 
-          return (
-            <Message key={id} title={title} from={messageOrigin}>
-              <MessageContent>
-                <MessageResponse>{message}</MessageResponse>
-              </MessageContent>
-            </Message>
-          );
-        })}
-        <AnimatePresence>
-          {agentState === 'thinking' && <AgentChatIndicator size="sm" />}
-        </AnimatePresence>
-      </ConversationContent>
-      <ConversationScrollButton />
-    </Conversation>
+              return (
+                <MessageScrollerItem key={id} messageId={id} scrollAnchor={isUser}>
+                  <Message align={isUser ? 'end' : 'start'} title={title}>
+                    <MessageContent>
+                      <Bubble
+                        align={isUser ? 'end' : 'start'}
+                        variant={isUser ? 'secondary' : 'ghost'}
+                      >
+                        <BubbleContent>
+                          <Streamdown>{message}</Streamdown>
+                        </BubbleContent>
+                      </Bubble>
+                    </MessageContent>
+                  </Message>
+                </MessageScrollerItem>
+              );
+            })}
+            <AnimatePresence>
+              {agentState === 'thinking' && <AgentChatIndicator size="sm" />}
+            </AnimatePresence>
+          </MessageScrollerContent>
+        </MessageScrollerViewport>
+        <MessageScrollerButton />
+      </MessageScroller>
+    </MessageScrollerProvider>
   );
 }
