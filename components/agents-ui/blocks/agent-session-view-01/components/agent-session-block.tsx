@@ -209,23 +209,21 @@ export function AgentSessionView_01({
     >
       <Fade top className="absolute inset-x-4 top-0 z-10 h-40" />
       {/* transcript */}
+      <AnimatePresence>
+        {isChatOpen && (
+          <motion.div
+            {...CHAT_MOTION_PROPS}
+            className="absolute inset-x-0 top-0 bottom-[135px] overflow-hidden md:bottom-[170px]"
+          >
+            <AgentChatTranscript
+              agentState={agentState}
+              messages={messages}
+              className="mx-auto max-w-2xl **:data-[slot=message-scroller-content]:p-4 **:data-[slot=message-scroller-content]:pt-40! md:**:data-[slot=message-scroller-content]:p-6"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      <div className="absolute top-0 bottom-[135px] flex w-full flex-col md:bottom-[170px]">
-        <AnimatePresence>
-          {isChatOpen && (
-            <motion.div
-              {...CHAT_MOTION_PROPS}
-              className="h-full w-full transition-opacity duration-300 ease-out"
-            >
-              <AgentChatTranscript
-                agentState={agentState}
-                messages={messages}
-                className="mx-auto w-full max-w-2xl px-4 **:data-[slot=message-scroller-content]:pt-40 **:data-[slot=message-scroller-content]:pb-4 md:px-6"
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
       {/* Tile layout */}
       <TileLayout
         isChatOpen={isChatOpen}

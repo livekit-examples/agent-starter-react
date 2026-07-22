@@ -1,11 +1,11 @@
 'use client';
 
 import { type ComponentProps } from 'react';
-import { AnimatePresence } from 'motion/react';
 import { Streamdown } from 'streamdown';
 import { type AgentState, type ReceivedMessage } from '@livekit/components-react';
 import { AgentChatIndicator } from '@/components/agents-ui/agent-chat-indicator';
 import { Bubble, BubbleContent } from '@/components/ui/bubble';
+import { Marker, MarkerContent, MarkerIcon } from '@/components/ui/marker';
 import { Message, MessageContent } from '@/components/ui/message';
 import {
   MessageScroller,
@@ -57,7 +57,11 @@ export function AgentChatTranscript({
   ...props
 }: AgentChatTranscriptProps) {
   return (
-    <MessageScrollerProvider autoScroll defaultScrollPosition="last-anchor">
+    <MessageScrollerProvider
+      autoScroll
+      scrollEdgeThreshold={20}
+      defaultScrollPosition="last-anchor"
+    >
       <MessageScroller className={className} {...props}>
         <MessageScrollerViewport>
           <MessageScrollerContent aria-busy={agentState === 'thinking'}>
@@ -67,9 +71,10 @@ export function AgentChatTranscript({
               const isUser = from?.isLocal;
               const locale = typeof navigator !== 'undefined' ? navigator.language : 'en-US';
               const title = time.toLocaleTimeString(locale, { timeStyle: 'full' });
+              const isScrollAnchor = isUser;
 
               return (
-                <MessageScrollerItem key={id} messageId={id} scrollAnchor={isUser}>
+                <MessageScrollerItem key={id} messageId={id} scrollAnchor={isScrollAnchor}>
                   <Message align={isUser ? 'end' : 'start'} title={title}>
                     <MessageContent>
                       <Bubble
@@ -85,9 +90,18 @@ export function AgentChatTranscript({
                 </MessageScrollerItem>
               );
             })}
-            <AnimatePresence>
-              {agentState === 'thinking' && <AgentChatIndicator size="sm" />}
-            </AnimatePresence>
+
+            {/* Agent is thinking indicator */}
+            {agentState === 'thinking' && (
+              <MessageScrollerItem>
+                <Marker role="status">
+                  <MarkerIcon>
+                    <AgentChatIndicator size="sm" />
+                  </MarkerIcon>
+                  <MarkerContent className="shimmer">Thinking...</MarkerContent>
+                </Marker>
+              </MessageScrollerItem>
+            )}
           </MessageScrollerContent>
         </MessageScrollerViewport>
         <MessageScrollerButton />
