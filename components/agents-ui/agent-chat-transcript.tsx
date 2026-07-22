@@ -71,10 +71,9 @@ export function AgentChatTranscript({
               const isUser = from?.isLocal;
               const locale = typeof navigator !== 'undefined' ? navigator.language : 'en-US';
               const title = time.toLocaleTimeString(locale, { timeStyle: 'full' });
-              const isScrollAnchor = isUser;
 
               return (
-                <MessageScrollerItem key={id} messageId={id} scrollAnchor={isScrollAnchor}>
+                <MessageScrollerItem key={id} messageId={id}>
                   <Message align={isUser ? 'end' : 'start'} title={title}>
                     <MessageContent>
                       <Bubble
