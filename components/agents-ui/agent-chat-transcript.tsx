@@ -103,7 +103,7 @@ export function AgentChatTranscript({
             )}
           </MessageScrollerContent>
         </MessageScrollerViewport>
-        <MessageScrollerButton />
+        <MessageScrollerButton variant="outline" className="rounded-full" />
       </MessageScroller>
     </MessageScrollerProvider>
   );
