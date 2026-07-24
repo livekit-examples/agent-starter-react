@@ -17,6 +17,7 @@ const MotionAgentAudioVisualizerRadial = motion.create(AgentAudioVisualizerRadia
 const MotionAgentAudioVisualizerWave = motion.create(AgentAudioVisualizerWave);
 
 interface AudioVisualizerProps extends MotionProps {
+  themeMode?: 'dark' | 'light';
   isChatOpen: boolean;
   audioVisualizerType?: 'bar' | 'wave' | 'grid' | 'radial' | 'aura';
   audioVisualizerColor?: `#${string}`;
@@ -31,6 +32,8 @@ interface AudioVisualizerProps extends MotionProps {
 }
 
 export function AudioVisualizer({
+  themeMode,
+  isChatOpen,
   audioVisualizerType = 'bar',
   audioVisualizerColor,
   audioVisualizerColorShift = 0.3,
@@ -40,7 +43,6 @@ export function AudioVisualizer({
   audioVisualizerGridRowCount = 15,
   audioVisualizerGridColumnCount = 15,
   audioVisualizerWaveLineWidth = 3,
-  isChatOpen,
   className,
   ...props
 }: AudioVisualizerProps) {
@@ -54,6 +56,7 @@ export function AudioVisualizer({
           audioTrack={audioTrack}
           color={audioVisualizerColor}
           colorShift={audioVisualizerColorShift}
+          themeMode={themeMode}
           className={cn('size-[300px] md:size-[450px]', className)}
           {...props}
         />
