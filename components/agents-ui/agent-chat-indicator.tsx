@@ -15,7 +15,7 @@ const motionAnimationProps = {
     },
     visible: {
       opacity: [0.5, 1],
-      scale: [1, 1.2],
+      scale: [0.9, 1],
       transition: {
         type: 'spring' as const,
         bounce: 0,
@@ -33,7 +33,7 @@ const motionAnimationProps = {
 const agentChatIndicatorVariants = cva('bg-muted-foreground inline-block size-2.5 rounded-full', {
   variants: {
     size: {
-      sm: 'size-2.5',
+      sm: 'size-3',
       md: 'size-4',
       lg: 'size-6',
     },
