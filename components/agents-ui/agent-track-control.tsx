@@ -74,6 +74,18 @@ const selectVariants = cva(
 type TrackDeviceSelectProps = React.ComponentProps<typeof SelectTrigger> &
   VariantProps<typeof selectVariants> & {
     /**
+     * The type of media device (audioinput or videoinput).
+     */
+    kind: MediaDeviceKind;
+    /**
+     * Array of available devices
+     */
+    devices: MediaDeviceInfo[];
+    /**
+     * Active device ID
+     */
+    activeDeviceId?: string;
+    /**
      * The size of the select.
      * @defaultValue 'default'
      */
@@ -84,25 +96,13 @@ type TrackDeviceSelectProps = React.ComponentProps<typeof SelectTrigger> &
      */
     variant?: 'default' | 'outline' | null;
     /**
-     * The type of media device (audioinput or videoinput).
-     */
-    kind: MediaDeviceKind;
-    /**
-     * The track source to control (Microphone, Camera, or ScreenShare).
-     */
-    track?: LocalAudioTrack | LocalVideoTrack | undefined;
-    /**
      * Whether to request permissions for the media device.
      */
     requestPermissions?: boolean;
     /**
-     * Callback when a media device error occurs.
+     * Callback when the select is opened or closed.
      */
-    onMediaDeviceError?: (error: Error) => void;
-    /**
-     * Callback when the device list changes.
-     */
-    onDeviceListChange?: (devices: MediaDeviceInfo[]) => void;
+    onOpen: (open: boolean) => void;
     /**
      * Callback when the active device changes.
      */
@@ -120,52 +120,32 @@ type TrackDeviceSelectProps = React.ComponentProps<typeof SelectTrigger> &
  *   size="sm"
  *   variant="outline"
  *   kind="audioinput"
- *   track={micTrackRef}
+ *   devices={devices}
+ *   activeDeviceId={activeDeviceId}
+ *   onOpen={setOpen}
+ *   onActiveDeviceChange={setActiveDeviceId}
  * />
  * ```
  */
 function TrackDeviceSelect({
   kind,
-  track,
+  devices,
+  activeDeviceId,
   size = 'default',
   variant = 'default',
   className,
-  requestPermissions = false,
-  onMediaDeviceError,
-  onDeviceListChange,
+  onOpen,
   onActiveDeviceChange,
   ...props
 }: TrackDeviceSelectProps) {
-  const room = useMaybeRoomContext();
   const [open, setOpen] = useState(false);
-  const [requestPermissionsState, setRequestPermissionsState] = useState(requestPermissions);
-  const { devices, activeDeviceId, setActiveMediaDevice } = useMediaDeviceSelect({
-    room,
-    kind,
-    track,
-    requestPermissions: requestPermissionsState,
-    onError: onMediaDeviceError,
-  });
-
-  useEffect(() => {
-    onDeviceListChange?.(devices);
-  }, [devices, onDeviceListChange]);
 
   const handleOpenChange = (open: boolean) => {
     setOpen(open);
-    if (open) {
-      setRequestPermissionsState(true);
-    }
+    onOpen(open);
   };
 
-  const handleActiveDeviceChange = (deviceId: string) => {
-    setActiveMediaDevice(deviceId);
-    onActiveDeviceChange?.(deviceId);
-  };
-
-  const filteredDevices = useMemo(() => devices.filter((d) => d.deviceId !== ''), [devices]);
-
-  if (filteredDevices.length < 2) {
+  if (devices.length < 2) {
     return null;
   }
 
@@ -174,7 +154,7 @@ function TrackDeviceSelect({
       open={open}
       value={activeDeviceId}
       onOpenChange={handleOpenChange}
-      onValueChange={handleActiveDeviceChange}
+      onValueChange={onActiveDeviceChange}
     >
       <SelectTrigger className={cn(selectVariants({ size, variant }), className)} {...props}>
         {size !== 'sm' && (
@@ -182,7 +162,7 @@ function TrackDeviceSelect({
         )}
       </SelectTrigger>
       <SelectContent position="popper">
-        {filteredDevices.map((device) => (
+        {devices.map((device) => (
           <SelectItem key={device.deviceId} value={device.deviceId} className="font-mono text-xs">
             {device.label}
           </SelectItem>
@@ -217,13 +197,13 @@ export type AgentTrackControlProps = VariantProps<typeof toggleVariants> & {
    */
   disabled?: boolean;
   /**
-   * Additional CSS class names to apply to the container.
-   */
-  className?: string;
-  /**
    * The audio track reference for visualization (only for microphone).
    */
   audioTrack?: TrackReferenceOrPlaceholder;
+  /**
+   * Additional CSS class names to apply to the container.
+   */
+  className?: string;
   /**
    * Callback when the pressed state changes.
    */
@@ -268,6 +248,45 @@ export function AgentTrackControl({
   onMediaDeviceError,
   onActiveDeviceChange,
 }: AgentTrackControlProps) {
+  const room = useMaybeRoomContext();
+  const [requestPermissionsState, setRequestPermissionsState] = useState(false);
+  const { devices, activeDeviceId, setActiveMediaDevice } = useMediaDeviceSelect({
+    room,
+    kind,
+    requestPermissions: requestPermissionsState,
+    onError: onMediaDeviceError,
+  });
+
+  useEffect(() => {
+    // A track was already acquired elsewhere (e.g. session.start()), so permission is already
+    // granted — safe to fetch labeled devices without a second getUserMedia prompt. Without
+    // this, the list stays label-less until a page reload, since the device observer only
+    // re-fetches when `requestPermissions` changes value. Screen share has no `kind` and no
+    // associated device list, so it should never trigger a mic/camera permission request.
+    if (pressed && kind) {
+      setRequestPermissionsState(true);
+    }
+  }, [pressed, kind]);
+
+  const handleOpenChange = (open: boolean) => {
+    if (open) {
+      setRequestPermissionsState(true);
+    }
+  };
+
+  const handleActiveDeviceChange = (deviceId: string) => {
+    setActiveMediaDevice(deviceId);
+    onActiveDeviceChange?.(deviceId);
+  };
+
+  const filteredDevices = useMemo(() => devices.filter((d) => d.deviceId !== ''), [devices]);
+  // Before permission is granted, the browser reports devices with blank ids, which get filtered
+  // out here — that's an *unknown* device count, not a confirmed empty one. Only treat it as
+  // "no devices" once a permission-gated check has actually run and still come up empty;
+  // otherwise the toggle disables itself before the user ever gets a chance to grant permission.
+  const noDevices = Boolean(kind) && requestPermissionsState && filteredDevices.length === 0;
+  const resolvedPressed = pressed && !noDevices;
+
   return (
     <div
       className={cn(
@@ -277,11 +296,11 @@ export function AgentTrackControl({
       )}
     >
       <AgentTrackToggle
-        variant={variant ?? 'default'}
         source={source}
-        pressed={pressed}
         pending={pending}
-        disabled={disabled}
+        variant={variant ?? 'default'}
+        pressed={resolvedPressed}
+        disabled={noDevices || disabled}
         onPressedChange={onPressedChange}
         className="peer/track group/track focus:z-10 has-[.audiovisualizer]:w-auto has-[.audiovisualizer]:px-3 has-[~_button]:rounded-r-none has-[~_button]:border-r-0 has-[~_button]:pr-2 has-[~_button]:pl-3"
       >
@@ -289,8 +308,8 @@ export function AgentTrackControl({
           <AgentAudioVisualizerBar
             size="icon"
             barCount={3}
-            state={pressed ? 'speaking' : 'disconnected'}
-            audioTrack={pressed ? audioTrack : undefined}
+            state={resolvedPressed ? 'speaking' : 'disconnected'}
+            audioTrack={resolvedPressed ? audioTrack : undefined}
             className="audiovisualizer flex h-6 w-auto items-center justify-center gap-0.5"
           >
             <span
@@ -308,13 +327,14 @@ export function AgentTrackControl({
           size="sm"
           kind={kind}
           variant={variant}
-          requestPermissions={false}
-          onMediaDeviceError={onMediaDeviceError}
-          onActiveDeviceChange={onActiveDeviceChange}
+          devices={filteredDevices}
+          activeDeviceId={activeDeviceId}
+          onOpen={handleOpenChange}
+          onActiveDeviceChange={handleActiveDeviceChange}
           className={cn([
             'relative',
             'before:bg-border before:absolute before:inset-y-0 before:left-0 before:my-2.5 before:w-px has-[~_button]:before:content-[""]',
-            !pressed && 'before:bg-destructive/20',
+            !resolvedPressed && 'before:bg-destructive/20',
           ])}
         />
       )}
