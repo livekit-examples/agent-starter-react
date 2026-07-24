@@ -8,11 +8,8 @@ import {
   AgentControlBar,
   type AgentControlBarControls,
 } from '@/components/agents-ui/agent-control-bar';
-import { Shimmer } from '@/components/ai-elements/shimmer';
 import { cn } from '@/lib/shadcn/utils';
 import { TileLayout } from './tile-view';
-
-const MotionMessage = motion.create(Shimmer);
 
 const BOTTOM_VIEW_MOTION_PROPS: MotionProps = {
   variants: {
@@ -103,6 +100,12 @@ export function Fade({ top = false, bottom = false, className }: FadeProps) {
 
 export interface AgentSessionView_01Props {
   /**
+   * Theme mode forwarded to the aura visualizer (`audioVisualizerType="aura"`) so
+   * the shader's blend mode adapts to the theme mode.
+   * Ignored by other visualizer types.
+   */
+  themeMode?: 'dark' | 'light';
+  /**
    * Message shown above the controls before the first chat message is sent.
    *
    * @default 'Agent is listening, ask it a question'
@@ -161,7 +164,6 @@ export function AgentSessionView_01({
   supportsVideoInput = true,
   supportsScreenShare = true,
   isPreConnectBufferEnabled = true,
-
   audioVisualizerType,
   audioVisualizerColor,
   audioVisualizerColorShift,
@@ -171,13 +173,14 @@ export function AgentSessionView_01({
   audioVisualizerRadialBarCount,
   audioVisualizerRadialRadius,
   audioVisualizerWaveLineWidth,
+  themeMode,
   ref,
   className,
   ...props
 }: React.ComponentProps<'section'> & AgentSessionView_01Props) {
   const session = useSessionContext();
   const { messages } = useSessionMessages(session);
-  const [chatOpen, setChatOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { state: agentState } = useAgent();
 
@@ -206,26 +209,25 @@ export function AgentSessionView_01({
     >
       <Fade top className="absolute inset-x-4 top-0 z-10 h-40" />
       {/* transcript */}
+      <AnimatePresence>
+        {isChatOpen && (
+          <motion.div
+            {...CHAT_MOTION_PROPS}
+            className="absolute inset-x-0 top-0 bottom-[135px] overflow-hidden md:bottom-[170px]"
+          >
+            <AgentChatTranscript
+              agentState={agentState}
+              messages={messages}
+              className="mx-auto max-w-2xl **:data-[slot=message-scroller-content]:p-4 **:data-[slot=message-scroller-content]:pt-40! md:**:data-[slot=message-scroller-content]:p-6"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      <div className="absolute top-0 bottom-[135px] flex w-full flex-col md:bottom-[170px]">
-        <AnimatePresence>
-          {chatOpen && (
-            <motion.div
-              {...CHAT_MOTION_PROPS}
-              className="flex h-full w-full flex-col gap-4 space-y-3 transition-opacity duration-300 ease-out"
-            >
-              <AgentChatTranscript
-                agentState={agentState}
-                messages={messages}
-                className="mx-auto w-full max-w-2xl [&_.is-user>div]:rounded-[22px] [&>div>div]:px-4 [&>div>div]:pt-40 md:[&>div>div]:px-6"
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
       {/* Tile layout */}
       <TileLayout
-        chatOpen={chatOpen}
+        isChatOpen={isChatOpen}
+        themeMode={themeMode}
         audioVisualizerType={audioVisualizerType}
         audioVisualizerColor={audioVisualizerColor}
         audioVisualizerColorShift={audioVisualizerColorShift}
@@ -245,27 +247,25 @@ export function AgentSessionView_01({
         {isPreConnectBufferEnabled && (
           <AnimatePresence>
             {messages.length === 0 && (
-              <MotionMessage
+              <motion.p
                 key="pre-connect-message"
-                duration={2}
                 aria-hidden={messages.length > 0}
                 {...SHIMMER_MOTION_PROPS}
-                className="pointer-events-none mx-auto block w-full max-w-2xl pb-4 text-center text-sm font-semibold"
+                className="shimmer shimmer-duration-2000 pointer-events-none mx-auto block w-full max-w-2xl pb-4 text-center text-sm font-semibold"
               >
                 {preConnectMessage}
-              </MotionMessage>
+              </motion.p>
             )}
           </AnimatePresence>
         )}
         <div className="bg-background relative mx-auto max-w-2xl pb-3 md:pb-12">
-          <Fade bottom className="absolute inset-x-0 top-0 h-4 -translate-y-full" />
           <AgentControlBar
             variant="livekit"
             controls={controls}
-            isChatOpen={chatOpen}
+            isChatOpen={isChatOpen}
             isConnected={session.isConnected}
             onDisconnect={session.end}
-            onIsChatOpenChange={setChatOpen}
+            onIsChatOpenChange={setIsChatOpen}
           />
         </div>
       </motion.div>

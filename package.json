@@ -2,6 +2,9 @@
   "name": "agent-starter-react",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
@@ -9,7 +12,7 @@
     "lint": "next lint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "shadcn:install": "pnpm dlx shadcn@latest add --yes --overwrite @agents-ui/agent-audio-visualizer-bar @agents-ui/agent-audio-visualizer-grid @agents-ui/agent-audio-visualizer-radial @agents-ui/agent-control-bar @agents-ui/agent-session-provider @agents-ui/agent-track-control @agents-ui/agent-track-toggle @agents-ui/agent-chat-transcript @agents-ui/agent-chat-indicator @agents-ui/start-audio-button @agents-ui/agent-audio-visualizer-aura @agents-ui/agent-audio-visualizer-wave @agents-ui/nextjs-api-token-route @agents-ui/agent-session-view-01 && pnpm format"
+    "shadcn:install": "pnpm dlx shadcn@latest add --yes @agents-ui/all && pnpm format"
   },
   "dependencies": {
     "@livekit/components-react": "^2.9.20",
@@ -29,6 +32,7 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@radix-ui/react-use-controllable-state": "^1.2.2",
     "@rive-app/react-webgl2": "^4.26.1",
+    "@shadcn/react": "^0.2.1",
     "@xyflow/react": "^12.10.0",
     "ai": "^5.0.105",
     "buffer-image-size": "^0.6.4",
@@ -60,7 +64,7 @@
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@trivago/prettier-plugin-sort-imports": "^5.2.2",
-    "@types/node": "^22.0.0",
+    "@types/node": "^24.0.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
