@@ -8,18 +8,6 @@ import { ReactShaderToy } from '@/components/agents-ui/react-shader-toy';
 import { useAgentAudioVisualizerAura } from '@/hooks/agents-ui/use-agent-audio-visualizer-aura';
 import { cn } from '@/lib/shadcn/utils';
 
-/**
- * @license
- *
- * Originally developed for Unicorn Studio
- * https://unicorn.studio
- *
- * Licensed under the Polyform Non-Resale License 1.0.0
- * https://polyformproject.org/licenses/non-resale/1.0.0/
- *
- * © 2026 UNCRN LLC
- */
-
 const DEFAULT_COLOR = '#1FD5F9';
 
 function hexToRgb(hexColor: string) {

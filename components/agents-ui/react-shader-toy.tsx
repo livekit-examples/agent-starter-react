@@ -791,7 +791,9 @@ export function ReactShaderToy({
     }
     if (uniformsRef.current.iFrame?.isNeeded) {
       const timeDeltaUniform = gl.getUniformLocation(shaderProgramRef.current, UNIFORM_FRAME);
-      gl.uniform1i(timeDeltaUniform, (uniformsRef.current.iFrame.value as number)++);
+      const frame = uniformsRef.current.iFrame.value as number;
+      gl.uniform1i(timeDeltaUniform, frame);
+      uniformsRef.current.iFrame.value = frame + 1;
     }
     if (texturesArrRef.current.length > 0) {
       for (let index = 0; index < texturesArrRef.current.length; index++) {
