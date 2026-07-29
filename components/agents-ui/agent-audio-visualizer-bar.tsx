@@ -17,7 +17,7 @@ import {
   useMultibandTrackVolume,
 } from '@livekit/components-react';
 import { useAgentAudioVisualizerBarAnimator } from '@/hooks/agents-ui/use-agent-audio-visualizer-bar';
-import { cn } from '@/lib/shadcn/utils';
+import { cn, normalizeVolumeBands } from '@/lib/shadcn/utils';
 
 function cloneSingleChild(
   children: ReactNode | ReactNode[],
@@ -107,6 +107,11 @@ export interface AgentAudioVisualizerBarProps {
    */
   audioTrack?: LocalAudioTrack | RemoteAudioTrack | TrackReferenceOrPlaceholder;
   /**
+   * Volume values (0-1) to use instead of the values computed from the audioTrack.
+   * The volumeBands.length should match barCount.
+   */
+  volumeBands?: number[];
+  /**
    * Additional CSS class names to apply to the container.
    */
   className?: string;
@@ -139,6 +144,7 @@ export function AgentAudioVisualizerBar({
   color,
   barCount,
   audioTrack,
+  volumeBands,
   className,
   children,
   style,
@@ -159,11 +165,14 @@ export function AgentAudioVisualizerBar({
     }
   }, [barCount, size]);
 
-  const volumeBands = useMultibandTrackVolume(audioTrack, {
+  const multibandVolume = useMultibandTrackVolume(audioTrack, {
     bands: _barCount,
     loPass: 100,
     hiPass: 200,
   });
+  const resolvedVolumeBands = volumeBands
+    ? normalizeVolumeBands(volumeBands, _barCount)
+    : multibandVolume;
 
   const sequencerInterval = useMemo(() => {
     switch (state) {
@@ -187,8 +196,8 @@ export function AgentAudioVisualizerBar({
   );
 
   const bands = useMemo(
-    () => (state === 'speaking' ? volumeBands : new Array(_barCount).fill(0)),
-    [state, volumeBands, _barCount]
+    () => (state === 'speaking' ? resolvedVolumeBands : new Array(_barCount).fill(0)),
+    [state, resolvedVolumeBands, _barCount]
   );
 
   if (children && Array.isArray(children)) {

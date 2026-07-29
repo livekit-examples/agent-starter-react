@@ -38,21 +38,24 @@ function useAnimatedValue<T>(initialValue: T) {
 interface UseAgentAudioVisualizerWaveAnimatorArgs {
   state?: AgentState;
   audioTrack?: LocalAudioTrack | RemoteAudioTrack | TrackReferenceOrPlaceholder;
+  volume?: number;
 }
 
 export function useAgentAudioVisualizerWave({
   state,
   audioTrack,
+  volume: volumeProp,
 }: UseAgentAudioVisualizerWaveAnimatorArgs) {
   const [speed, setSpeed] = useState(DEFAULT_SPEED);
   const { value: amplitude, animate: animateAmplitude } = useAnimatedValue(DEFAULT_AMPLITUDE);
   const { value: frequency, animate: animateFrequency } = useAnimatedValue(DEFAULT_FREQUENCY);
   const { value: opacity, animate: animateOpacity } = useAnimatedValue(1.0);
 
-  const volume = useTrackVolume(audioTrack as TrackReference, {
+  const trackVolume = useTrackVolume(audioTrack as TrackReference, {
     fftSize: 512,
     smoothingTimeConstant: 0.55,
   });
+  const volume = volumeProp ?? trackVolume;
 
   useEffect(() => {
     switch (state) {
