@@ -220,9 +220,9 @@ export const APP_CONFIG_DEFAULTS: AppConfig = {
   remoteVideoHeight: 480,
   remoteVideoFps: 25,
 
-  logo: '/lk-logo.png',
+  logo: 'lk-logo.png',
   accent: '#002cf2',
-  logoDark: '/lk-logo-dark.png',
+  logoDark: 'lk-logo-dark.png',
   accentDark: '#1fd5f9',
   startButtonText: 'Start call',
 

@@ -37,6 +37,20 @@ test('frontend keeps explicit AGENT_NAME as an override', async () => {
   assert.equal(resolveAgentNameForInputSource('generic', 'custom-agent'), 'custom-agent');
 });
 
+test('frontend exposes the server-owned voice session id to dispatch callers', async () => {
+  const previousEnv = { ...process.env };
+
+  try {
+    process.env.LIVEAVATAR_VOICE_SESSION_ID = 'sandbox-session-123';
+
+    const { getClientConfigFromEnv } = await loadUtilsModule();
+
+    assert.equal(getClientConfigFromEnv().voiceSessionId, 'sandbox-session-123');
+  } finally {
+    restoreEnv(previousEnv);
+  }
+});
+
 test('frontend defaults to browser input when INPUT_SOURCE is unset', async () => {
   const { normalizeInputSource, resolveInputDeviceConfig } = await loadAppConfigModule();
 

@@ -64,3 +64,35 @@ test('ending a voice session clears the reusable session id', async () => {
   assert.match(useRoomSource, /resetVoiceSessionId/);
   assert.doesNotMatch(useRoomSource, /if \(appConfig\.usesBrowserRawMediaInput\)/);
 });
+
+test('sandbox browser starts media and dispatch concurrently without changing local order', async () => {
+  const useRoomSource = await readFile(new URL('../hooks/useRoom.ts', import.meta.url), 'utf8');
+  const browserSourceSource = await readFile(
+    new URL('../hooks/useBrowserSourceClient.ts', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(
+    useRoomSource,
+    /await room\.connect[\s\S]*connectedRoomName = room\.name;[\s\S]*await Promise\.allSettled\(\[[\s\S]*startLocalInputOrCancelDispatch\(\),[\s\S]*dispatchAgentSession\(\),[\s\S]*\]\)/
+  );
+  assert.match(
+    useRoomSource,
+    /usesSandboxConcurrentStartup = Boolean\(appConfig\.sandboxId\) && usesManagedRoomInput/
+  );
+  assert.match(
+    useRoomSource,
+    /const startLocalInputOrCancelDispatch = async \(\) => \{[\s\S]*await startLocalInput\(\);[\s\S]*catch \(error\) \{[\s\S]*cancelAgentSessionStart\(sessionId\);[\s\S]*throw error;/
+  );
+  assert.match(useRoomSource, /localInputResult\.status === 'rejected'/);
+  assert.match(useRoomSource, /dispatchResult\.status === 'rejected'/);
+  assert.match(
+    useRoomSource,
+    /localInputResult\.status === 'rejected'[\s\S]*dispatchResult\.status === 'rejected'[\s\S]*console\.warn/
+  );
+  assert.match(
+    browserSourceSource,
+    /if \(!appConfig\.sandboxId\) \{[\s\S]*await ensureAudioPublished\(\)[\s\S]*await ensureVideoPublished\(\)[\s\S]*return;/
+  );
+  assert.match(browserSourceSource, /Promise\.allSettled\(\[audioStart, videoStart\]\)/);
+});

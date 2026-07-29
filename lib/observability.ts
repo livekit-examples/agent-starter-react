@@ -4,7 +4,17 @@ export const OBSERVABILITY_EVENT_TYPES = {
 } as const;
 
 export const FRONTEND_EVENTS = {
+  CONNECTION_DETAILS_STARTED: 'frontend.connection_details.started',
+  CONNECTION_DETAILS_FINISHED: 'frontend.connection_details.finished',
+  ROOM_CONNECT_STARTED: 'frontend.room_connect.started',
+  ROOM_CONNECT_FINISHED: 'frontend.room_connect.finished',
   ROOM_CONNECTED: 'frontend.room.connected',
+  DISPATCH_STARTED: 'frontend.dispatch.started',
+  DISPATCH_FINISHED: 'frontend.dispatch.finished',
+  BROWSER_AUDIO_CAPTURE_STARTED: 'frontend.browser_audio.capture_started',
+  BROWSER_AUDIO_CAPTURE_FINISHED: 'frontend.browser_audio.capture_finished',
+  BROWSER_AUDIO_PUBLISH_STARTED: 'frontend.browser_audio.publish_started',
+  BROWSER_AUDIO_PUBLISH_FINISHED: 'frontend.browser_audio.publish_finished',
   BROWSER_AUDIO_TRACK_PUBLISHED: 'frontend.browser_audio.track_published',
   BROWSER_AUDIO_TRACK_UNPUBLISHED: 'frontend.browser_audio.track_unpublished',
   BROWSER_AUDIO_TRACK_MUTED: 'frontend.browser_audio.track_muted',
@@ -12,6 +22,11 @@ export const FRONTEND_EVENTS = {
   BROWSER_AUDIO_VAD_SPEECH_STARTED: 'frontend.browser_audio.vad_speech_started',
   BROWSER_AUDIO_VAD_SPEECH_ENDED: 'frontend.browser_audio.vad_speech_ended',
   BROWSER_AUDIO_VAD_PROBE_UNAVAILABLE: 'frontend.browser_audio.vad_probe_unavailable',
+  BROWSER_VIDEO_CAPTURE_STARTED: 'frontend.browser_video.capture_started',
+  BROWSER_VIDEO_CAPTURE_FINISHED: 'frontend.browser_video.capture_finished',
+  BROWSER_VIDEO_PUBLISH_STARTED: 'frontend.browser_video.publish_started',
+  BROWSER_VIDEO_PUBLISH_FINISHED: 'frontend.browser_video.publish_finished',
+  BROWSER_VIDEO_TRACK_PUBLISHED: 'frontend.browser_video.track_published',
   REPLY_AUDIO_PLAYBACK_STARTED: 'frontend.reply_audio.playback_started',
   REPLY_AUDIO_PLAYBACK_ENDED: 'frontend.reply_audio.playback_ended',
   REPLY_AUDIO_PLAYBACK_ERROR: 'frontend.reply_audio.playback_error',
@@ -57,7 +72,7 @@ export interface BackendObservabilityMarker {
 
 const MAX_BACKEND_MARKER_NAME_LENGTH = 128;
 
-type PublishableRoom = {
+export type PublishableRoom = {
   name?: string;
   localParticipant?: {
     identity?: string;
@@ -74,6 +89,7 @@ interface PublishFrontendObservabilityEventOptions {
   name: string;
   attributes?: Record<string, ObservabilityAttribute>;
   wallTimeUnixMs?: number;
+  performanceNowMs?: number;
   now?: () => number;
   performanceNow?: () => number;
 }
@@ -84,6 +100,7 @@ export async function publishFrontendObservabilityEvent({
   name,
   attributes,
   wallTimeUnixMs,
+  performanceNowMs,
   now = () => Date.now(),
   performanceNow = defaultPerformanceNow,
 }: PublishFrontendObservabilityEventOptions) {
@@ -99,7 +116,7 @@ export async function publishFrontendObservabilityEvent({
     type: OBSERVABILITY_EVENT_TYPES.FRONTEND_EVENT,
     name,
     wall_time_unix_ms: wallTimeUnixMs ?? now(),
-    performance_now_ms: performanceNow(),
+    performance_now_ms: performanceNowMs ?? performanceNow(),
     room_name: room.name || undefined,
     participant_identity: room.localParticipant?.identity || undefined,
     attributes: attributes ?? {},
@@ -109,6 +126,89 @@ export async function publishFrontendObservabilityEvent({
     topic: FRONTEND_OBSERVABILITY_TOPIC,
   });
   return true;
+}
+
+interface BufferedFrontendObservabilityEvent {
+  name: string;
+  attributes?: Record<string, ObservabilityAttribute>;
+  wallTimeUnixMs: number;
+  performanceNowMs: number;
+}
+
+interface FrontendObservabilitySession {
+  live: boolean;
+  events: BufferedFrontendObservabilityEvent[];
+}
+
+const frontendObservabilitySessions = new WeakMap<PublishableRoom, FrontendObservabilitySession>();
+
+export function beginFrontendObservabilitySession(room: PublishableRoom) {
+  frontendObservabilitySessions.set(room, { live: false, events: [] });
+}
+
+export function endFrontendObservabilitySession(room: PublishableRoom) {
+  frontendObservabilitySessions.delete(room);
+}
+
+export async function recordFrontendObservabilityEvent({
+  enabled,
+  room,
+  name,
+  attributes,
+  wallTimeUnixMs = Date.now(),
+  performanceNowMs = defaultPerformanceNow(),
+}: Omit<PublishFrontendObservabilityEventOptions, 'now' | 'performanceNow'>) {
+  if (!enabled) {
+    return false;
+  }
+
+  const session = frontendObservabilitySessions.get(room);
+  if (session && !session.live) {
+    session.events.push({ name, attributes, wallTimeUnixMs, performanceNowMs });
+    return true;
+  }
+
+  return publishFrontendObservabilityEvent({
+    enabled,
+    room,
+    name,
+    attributes,
+    wallTimeUnixMs,
+    performanceNowMs,
+  });
+}
+
+export async function flushFrontendObservabilityEvents({
+  enabled,
+  room,
+}: {
+  enabled: boolean;
+  room: PublishableRoom;
+}) {
+  if (!enabled) {
+    return 0;
+  }
+
+  const session = frontendObservabilitySessions.get(room);
+  if (!session || session.live) {
+    return 0;
+  }
+
+  let published = 0;
+  while (session.events.length > 0) {
+    const event = session.events[0];
+    try {
+      if (await publishFrontendObservabilityEvent({ enabled, room, ...event })) {
+        published += 1;
+      }
+    } catch (error) {
+      console.warn('[frontend-observability] failed to flush startup event', error);
+    } finally {
+      session.events.shift();
+    }
+  }
+  session.live = true;
+  return published;
 }
 
 export function parseBackendObservabilityMarkerPayload(

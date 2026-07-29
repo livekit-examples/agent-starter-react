@@ -112,4 +112,20 @@ test('session registry documents its process-local deployment constraint', async
 
   assert.match(source, /process-local/);
   assert.match(source, /sticky routing/);
+  assert.match(source, /globalThis/);
+});
+
+test('session registry state is shared across server module instances', async () => {
+  const first = await import('../app/api/session/session-registry.ts?chunk=registry-a');
+  const second = await import('../app/api/session/session-registry.ts?chunk=registry-b');
+  const roomName = 'room-cross-chunk';
+  const sessionId = 'session-cross-chunk';
+  const token = first.beginRoomSessionDispatch(roomName, sessionId, 'agent-cross-chunk');
+
+  assert.equal(second.getRoomSessionSnapshot(roomName).sessionId, sessionId);
+  second.markRoomSessionStopping(roomName, sessionId);
+  assert.equal(first.isRoomSessionCancelled(token), true);
+
+  first.finishRoomSessionDispatch(token);
+  second.markRoomSessionStopped(roomName, sessionId);
 });

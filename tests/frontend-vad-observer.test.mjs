@@ -1,7 +1,24 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-const { startMediaTrackVadObserver } = await import('../lib/frontend-vad-observer.ts');
+const { resolveVadAssetBasePaths, startMediaTrackVadObserver } = await import(
+  '../lib/frontend-vad-observer.ts'
+);
+
+test('vad asset paths stay local and become session scoped behind the gateway', () => {
+  assert.deepEqual(resolveVadAssetBasePaths(), {
+    baseAssetPath: '/vad-web/',
+    onnxWASMBasePath: '/onnxruntime-web/',
+  });
+  assert.deepEqual(resolveVadAssetBasePaths('/sandbox-session'), {
+    baseAssetPath: '/sandbox-session/vad-web/',
+    onnxWASMBasePath: '/sandbox-session/onnxruntime-web/',
+  });
+  assert.deepEqual(resolveVadAssetBasePaths('/s/sandbox-session/'), {
+    baseAssetPath: '/s/sandbox-session/vad-web/',
+    onnxWASMBasePath: '/s/sandbox-session/onnxruntime-web/',
+  });
+});
 
 test('media track vad observer uses the supplied track and emits speech events', async () => {
   const originalMediaStream = globalThis.MediaStream;

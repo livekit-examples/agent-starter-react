@@ -10,9 +10,14 @@ export type AgentParticipantMatchOptions = {
 };
 
 export type ReusableAgentParticipantOptions = AgentParticipantMatchOptions & {
+  requireAgentSessionReady?: boolean;
   requireRoomVideoInputReady?: boolean;
+  requireRoomInputParticipantsReady?: boolean;
 };
 
+export const AGENT_SESSION_READY_ATTRIBUTE = 'liveavatar.agent.session_ready';
+
+const ROOM_AUDIO_INPUT_IDENTITY = 'room_audio_input';
 const ROOM_VIDEO_INPUT_IDENTITY = 'room_video_input';
 
 function readRoomInputVideoTrackName() {
@@ -28,17 +33,44 @@ export function findReusableAgentParticipant(
   agentName: string,
   options: ReusableAgentParticipantOptions = {}
 ): ParticipantInfo | null {
-  const { requireRoomVideoInputReady = false, ...matchOptions } = options;
+  const {
+    requireAgentSessionReady = false,
+    requireRoomVideoInputReady = false,
+    requireRoomInputParticipantsReady = false,
+    ...matchOptions
+  } = options;
   const expectedAgent = findAgentParticipantInList(participants, agentName, matchOptions);
-  if (!expectedAgent) {
+  if (!expectedAgent || (requireAgentSessionReady && !isAgentSessionReady(expectedAgent))) {
     return null;
   }
 
   if (!requireRoomVideoInputReady) {
-    return expectedAgent;
+    return requireRoomInputParticipantsReady && !hasReadyRoomInputParticipants(participants)
+      ? null
+      : expectedAgent;
   }
 
-  return hasReadyRoomVideoInput(participants) ? expectedAgent : null;
+  if (!hasReadyRoomVideoInput(participants)) {
+    return null;
+  }
+  return requireRoomInputParticipantsReady && !hasReadyRoomInputParticipants(participants)
+    ? null
+    : expectedAgent;
+}
+
+export function summarizeRoomInputReadiness(participants: ParticipantInfo[]) {
+  return {
+    audioParticipantReady: hasActiveParticipant(participants, ROOM_AUDIO_INPUT_IDENTITY),
+    visionParticipantReady: hasActiveParticipant(participants, ROOM_VIDEO_INPUT_IDENTITY),
+  };
+}
+
+export function summarizePrewarmReadiness(participants: ParticipantInfo[], agentName: string) {
+  const agent = findAgentParticipantInList(participants, agentName);
+  return {
+    agentSessionReady: agent !== null && isAgentSessionReady(agent),
+    ...summarizeRoomInputReadiness(participants),
+  };
 }
 
 export function findAgentParticipantInList(
@@ -76,11 +108,26 @@ function hasReadyRoomVideoInput(participants: ParticipantInfo[]) {
   );
 }
 
+function hasReadyRoomInputParticipants(participants: ParticipantInfo[]) {
+  const readiness = summarizeRoomInputReadiness(participants);
+  return readiness.audioParticipantReady && readiness.visionParticipantReady;
+}
+
+function hasActiveParticipant(participants: ParticipantInfo[], identity: string) {
+  return participants.some(
+    (participant) => participant.identity === identity && isParticipantActive(participant)
+  );
+}
+
 function isExpectedAgentParticipant(participant: ParticipantInfo, agentName: string) {
   return (
     isParticipantActive(participant) &&
     readAgentNameAttribute(participant.attributes ?? {}) === agentName
   );
+}
+
+function isAgentSessionReady(participant: ParticipantInfo) {
+  return participant.attributes?.[AGENT_SESSION_READY_ATTRIBUTE] === 'true';
 }
 
 function isAnonymousLiveKitAgentParticipant(participant: ParticipantInfo) {

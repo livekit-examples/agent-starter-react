@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import localFont from 'next/font/local';
 import { headers } from 'next/headers';
 import { ApplyThemeScript, ThemeToggle } from '@/components/app/theme-toggle';
 import { cn, getAppConfig, getStyles } from '@/lib/utils';
@@ -13,33 +12,6 @@ export const metadata: Metadata = {
   metadataBase: new URL(metadataBaseUrl),
 };
 
-const commitMono = localFont({
-  display: 'swap',
-  variable: '--font-commit-mono',
-  src: [
-    {
-      path: '../fonts/CommitMono-400-Regular.otf',
-      weight: '400',
-      style: 'normal',
-    },
-    {
-      path: '../fonts/CommitMono-700-Regular.otf',
-      weight: '700',
-      style: 'normal',
-    },
-    {
-      path: '../fonts/CommitMono-400-Italic.otf',
-      weight: '400',
-      style: 'italic',
-    },
-    {
-      path: '../fonts/CommitMono-700-Italic.otf',
-      weight: '700',
-      style: 'italic',
-    },
-  ],
-});
-
 interface RootLayoutProps {
   children: React.ReactNode;
 }
@@ -51,11 +23,7 @@ export default async function RootLayout({ children }: RootLayoutProps) {
   const styles = getStyles(appConfig);
 
   return (
-    <html
-      lang="en"
-      suppressHydrationWarning
-      className={cn(commitMono.variable, 'scroll-smooth font-sans antialiased')}
-    >
+    <html lang="en" suppressHydrationWarning className={cn('scroll-smooth font-sans antialiased')}>
       <head>
         {styles && <style>{styles}</style>}
         <title>{pageTitle}</title>

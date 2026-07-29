@@ -176,6 +176,7 @@ export function getClientConfigFromEnv(): AppConfig {
     usesBrowserRawAudioInput: inputDeviceConfig.usesBrowserRawAudioInput,
     usesBrowserRawVideoInput: inputDeviceConfig.usesBrowserRawVideoInput,
     usesServerRoomInput: inputDeviceConfig.usesServerRoomInput,
+    voiceSessionId: readEnv('LIVEAVATAR_VOICE_SESSION_ID') || undefined,
     agentName: resolveAgentNameForInputSource(inputSource, agentName),
     inputSource: inputDeviceConfig.inputSource,
     audioInputDevice: inputDeviceConfig.audioInputDevice,
@@ -334,6 +335,8 @@ export const getAppConfig = cache(async (headers: Headers): Promise<AppConfig> =
 
       for (const [key, entry] of Object.entries(remoteConfig)) {
         if (entry === null) continue;
+        // The per-sandbox identity must stay aligned with the server-side prewarm route.
+        if (key === 'voiceSessionId') continue;
         // Only include app config entries declared in defaults and matching the
         // expected type. Structured fields get extra shape checks above.
         if (hasAppConfigKey(key) && canApplySandboxConfigEntry(key, entry)) {

@@ -11,11 +11,11 @@ import {
   createLocalVideoTrack,
 } from 'livekit-client';
 import type { AppConfig } from '@/app-config';
-import { startMediaTrackVadObserver } from '@/lib/frontend-vad-observer';
+import { resolveVadAssetBasePaths, startMediaTrackVadObserver } from '@/lib/frontend-vad-observer';
 import {
   FRONTEND_EVENTS,
   OBSERVABILITY_ATTRS,
-  publishFrontendObservabilityEvent,
+  recordFrontendObservabilityEvent,
 } from '@/lib/observability';
 
 const BROWSER_AUDIO_TRACK_NAME = 'browser_audio_track';
@@ -102,7 +102,7 @@ export function useBrowserSourceClient(
       attributes?: Record<string, string | number | boolean | null>,
       options?: { wallTimeUnixMs?: number }
     ) => {
-      void publishFrontendObservabilityEvent({
+      void recordFrontendObservabilityEvent({
         enabled: !!appConfig.observabilityEnabled,
         room,
         name,
@@ -128,18 +128,22 @@ export function useBrowserSourceClient(
       [OBSERVABILITY_ATTRS.TRACK_SID]: null,
       [OBSERVABILITY_ATTRS.TRACK_STREAM_NAME]: browserMediaStreamName,
     };
+    recordFrontendObservability(FRONTEND_EVENTS.BROWSER_AUDIO_CAPTURE_STARTED);
     const audioTrack = await createLocalAudioTrack(
       buildAudioCaptureOptions(audioDeviceIdRef.current)
     );
+    recordFrontendObservability(FRONTEND_EVENTS.BROWSER_AUDIO_CAPTURE_FINISHED);
     const captureTrack = audioTrack.mediaStreamTrack;
     audioTrack.mediaStreamTrack.enabled = runtime.audioEnabled;
 
     try {
+      recordFrontendObservability(FRONTEND_EVENTS.BROWSER_AUDIO_PUBLISH_STARTED);
       const publication = await room.localParticipant.publishTrack(audioTrack, {
         name: BROWSER_AUDIO_TRACK_NAME,
         source: Track.Source.Microphone,
         stream: browserMediaStreamName,
       });
+      recordFrontendObservability(FRONTEND_EVENTS.BROWSER_AUDIO_PUBLISH_FINISHED);
       runtime.audioTrack = audioTrack;
       runtime.audioPublication = publication;
       runtime.audioObserverStop = null;
@@ -150,8 +154,12 @@ export function useBrowserSourceClient(
         [OBSERVABILITY_ATTRS.TRACK_STREAM_NAME]: browserMediaStreamName,
       });
       if (appConfig.observabilityEnabled) {
+        const vadAssetBasePaths = appConfig.sandboxId
+          ? resolveVadAssetBasePaths(window.location.pathname)
+          : undefined;
         void startMediaTrackVadObserver({
           mediaStreamTrack: captureTrack,
+          ...vadAssetBasePaths,
           onSpeechStart: (event) => {
             recordFrontendObservability(
               FRONTEND_EVENTS.BROWSER_AUDIO_VAD_SPEECH_STARTED,
@@ -202,6 +210,7 @@ export function useBrowserSourceClient(
     }
   }, [
     appConfig.observabilityEnabled,
+    appConfig.sandboxId,
     audioConfigured,
     browserMediaStreamName,
     recordFrontendObservability,
@@ -214,6 +223,7 @@ export function useBrowserSourceClient(
       return;
     }
 
+    recordFrontendObservability(FRONTEND_EVENTS.BROWSER_VIDEO_CAPTURE_STARTED);
     const videoTrack = await createLocalVideoTrack({
       facingMode: 'user',
       frameRate: { ideal: browserVideoFrameRate, max: browserVideoFrameRate },
@@ -223,9 +233,11 @@ export function useBrowserSourceClient(
         frameRate: browserVideoFrameRate,
       },
     });
+    recordFrontendObservability(FRONTEND_EVENTS.BROWSER_VIDEO_CAPTURE_FINISHED);
     videoTrack.mediaStreamTrack.enabled = runtime.videoEnabled;
 
     try {
+      recordFrontendObservability(FRONTEND_EVENTS.BROWSER_VIDEO_PUBLISH_STARTED);
       const publication = await room.localParticipant.publishTrack(videoTrack, {
         name: BROWSER_VIDEO_TRACK_NAME,
         source: Track.Source.Camera,
@@ -237,9 +249,15 @@ export function useBrowserSourceClient(
           maxFramerate: browserVideoFrameRate,
         },
       });
+      recordFrontendObservability(FRONTEND_EVENTS.BROWSER_VIDEO_PUBLISH_FINISHED);
       runtime.videoTrack = videoTrack;
       runtime.videoPublication = publication;
       setVideoTrackState(videoTrack);
+      recordFrontendObservability(FRONTEND_EVENTS.BROWSER_VIDEO_TRACK_PUBLISHED, {
+        [OBSERVABILITY_ATTRS.TRACK_NAME]: BROWSER_VIDEO_TRACK_NAME,
+        [OBSERVABILITY_ATTRS.TRACK_SID]: publication.trackSid || null,
+        [OBSERVABILITY_ATTRS.TRACK_STREAM_NAME]: browserMediaStreamName,
+      });
       if (browserVideoStatsEnabled) {
         startBrowserVideoStatsLogging(runtime, videoTrack, publication, room);
       }
@@ -254,6 +272,7 @@ export function useBrowserSourceClient(
     browserVideoMaxBitrate,
     browserVideoStatsEnabled,
     browserVideoWidth,
+    recordFrontendObservability,
     room,
     videoConfigured,
   ]);
@@ -325,29 +344,61 @@ export function useBrowserSourceClient(
       audioObserverStop: null,
     };
 
-    try {
-      if (audioEnabledRef.current) {
-        await ensureAudioPublished();
+    const handleVideoStartFailure = (error: unknown) => {
+      videoEnabledRef.current = false;
+      setVideoEnabledState(false);
+      const runtime = runtimeRef.current;
+      if (runtime) {
+        runtime.videoEnabled = false;
       }
-    } catch (error) {
-      await stop();
-      throw error;
+      onVideoError?.(error as Error);
+    };
+
+    if (!appConfig.sandboxId) {
+      try {
+        if (audioEnabledRef.current) {
+          await ensureAudioPublished();
+        }
+      } catch (error) {
+        await stop();
+        throw error;
+      }
+
+      if (videoEnabledRef.current) {
+        try {
+          await ensureVideoPublished();
+        } catch (error) {
+          handleVideoStartFailure(error);
+        }
+      }
+      return;
     }
 
-    if (videoEnabledRef.current) {
-      try {
-        await ensureVideoPublished();
-      } catch (error) {
-        videoEnabledRef.current = false;
-        setVideoEnabledState(false);
-        const runtime = runtimeRef.current;
-        if (runtime) {
-          runtime.videoEnabled = false;
-        }
-        onVideoError?.(error as Error);
+    // Sandbox sessions target Chromium and keep independent capture concurrent
+    // so camera permission does not delay the microphone or agent dispatch.
+    const audioStart = audioEnabledRef.current ? ensureAudioPublished() : Promise.resolve();
+    const videoStart = videoEnabledRef.current ? ensureVideoPublished() : Promise.resolve();
+    const [audioResult, videoResult] = await Promise.allSettled([audioStart, videoStart]);
+
+    if (audioResult.status === 'rejected') {
+      if (videoResult.status === 'rejected') {
+        onVideoError?.(videoResult.reason as Error);
       }
+      await stop();
+      throw audioResult.reason;
     }
-  }, [enabled, ensureAudioPublished, ensureVideoPublished, onVideoError, stop]);
+
+    if (videoResult.status === 'rejected') {
+      handleVideoStartFailure(videoResult.reason);
+    }
+  }, [
+    appConfig.sandboxId,
+    enabled,
+    ensureAudioPublished,
+    ensureVideoPublished,
+    onVideoError,
+    stop,
+  ]);
 
   const setAudioEnabled = useCallback(
     async (nextEnabled: boolean) => {

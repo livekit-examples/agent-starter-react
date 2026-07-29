@@ -9,9 +9,13 @@ const {
   FRONTEND_EVENTS,
   OBSERVABILITY_ATTRS,
   OBSERVABILITY_EVENT_TYPES,
+  beginFrontendObservabilitySession,
+  endFrontendObservabilitySession,
+  flushFrontendObservabilityEvents,
   outputSegmentAttributesFromMarker,
   parseBackendObservabilityMarkerPayload,
   publishFrontendObservabilityEvent,
+  recordFrontendObservabilityEvent,
 } = await import('../lib/observability.ts');
 
 test('frontend observability does not publish when disabled', async () => {
@@ -133,6 +137,92 @@ test('frontend observability can publish an explicit event wall time', async () 
   const payload = JSON.parse(new TextDecoder().decode(calls[0][0]));
   assert.equal(payload.wall_time_unix_ms, 1_779_773_930_777);
   assert.equal(payload.performance_now_ms, 456.78);
+});
+
+test('frontend observability buffers startup events until the agent can receive them', async () => {
+  const calls = [];
+  const room = {
+    name: 'voice_assistant_room_a',
+    localParticipant: {
+      identity: 'voice_assistant_user_a',
+      publishData: async (...args) => {
+        calls.push(args);
+      },
+    },
+  };
+
+  beginFrontendObservabilitySession(room);
+  await recordFrontendObservabilityEvent({
+    enabled: true,
+    room,
+    name: FRONTEND_EVENTS.ROOM_CONNECT_STARTED,
+    wallTimeUnixMs: 100,
+    performanceNowMs: 10,
+  });
+  await recordFrontendObservabilityEvent({
+    enabled: true,
+    room,
+    name: FRONTEND_EVENTS.ROOM_CONNECT_FINISHED,
+    wallTimeUnixMs: 200,
+    performanceNowMs: 20,
+  });
+
+  assert.equal(calls.length, 0);
+  assert.equal(await flushFrontendObservabilityEvents({ enabled: true, room }), 2);
+  assert.equal(calls.length, 2);
+  assert.deepEqual(
+    calls.map(([payload]) => {
+      const event = JSON.parse(new TextDecoder().decode(payload));
+      return [event.name, event.wall_time_unix_ms, event.performance_now_ms];
+    }),
+    [
+      [FRONTEND_EVENTS.ROOM_CONNECT_STARTED, 100, 10],
+      [FRONTEND_EVENTS.ROOM_CONNECT_FINISHED, 200, 20],
+    ]
+  );
+
+  await recordFrontendObservabilityEvent({
+    enabled: true,
+    room,
+    name: FRONTEND_EVENTS.DISPATCH_FINISHED,
+    wallTimeUnixMs: 300,
+    performanceNowMs: 30,
+  });
+  assert.equal(calls.length, 3);
+  endFrontendObservabilitySession(room);
+});
+
+test('frontend observability flush is best effort and switches to live publishing', async () => {
+  let publishCalls = 0;
+  const room = {
+    localParticipant: {
+      publishData: async () => {
+        publishCalls += 1;
+        if (publishCalls === 1) throw new Error('participant not ready');
+      },
+    },
+  };
+  beginFrontendObservabilitySession(room);
+  await recordFrontendObservabilityEvent({
+    enabled: true,
+    room,
+    name: FRONTEND_EVENTS.ROOM_CONNECT_STARTED,
+  });
+  await recordFrontendObservabilityEvent({
+    enabled: true,
+    room,
+    name: FRONTEND_EVENTS.ROOM_CONNECT_FINISHED,
+  });
+
+  assert.equal(await flushFrontendObservabilityEvents({ enabled: true, room }), 1);
+  await recordFrontendObservabilityEvent({
+    enabled: true,
+    room,
+    name: FRONTEND_EVENTS.DISPATCH_FINISHED,
+  });
+
+  assert.equal(publishCalls, 3);
+  endFrontendObservabilitySession(room);
 });
 
 test('frontend observability parses backend output segment markers', () => {
@@ -341,9 +431,18 @@ test('frontend audio observer reuses shared observability attribute types', asyn
 
 test('room hook publishes room connected frontend observability event', async () => {
   const source = await readFile('hooks/useRoom.ts', 'utf8');
+  const recoverySource = source.slice(
+    source.indexOf('const recoverFromStartError'),
+    source.indexOf('const handleStartError')
+  );
 
   assert.match(source, /FRONTEND_EVENTS\.ROOM_CONNECTED/);
-  assert.match(source, /publishFrontendObservabilityEvent/);
+  assert.match(source, /recordFrontendObservabilityEvent/);
+  assert.match(source, /flushFrontendObservabilityEvents/);
+  assert.ok(
+    recoverySource.indexOf('flushFrontendObservabilityEvents') <
+      recoverySource.indexOf('room.disconnect()')
+  );
   assert.match(
     source,
     /const recoverFromStartError = async[\s\S]*try \{[\s\S]*await browserSourceClient\.stop\(\);[\s\S]*\} catch \(stopError\)[\s\S]*\} finally \{[\s\S]*room\.disconnect\(\);[\s\S]*\}/

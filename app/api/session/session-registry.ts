@@ -28,9 +28,24 @@ type RoomSessionRecord = {
   dispatchWaiters: Set<() => void>;
 };
 
+type RoomSessionRegistryState = {
+  sessions: Map<string, RoomSessionRecord>;
+  nextGeneration: number;
+};
+
+const globalForRoomSessionRegistry = globalThis as typeof globalThis & {
+  __liveavatarRoomSessionRegistry?: RoomSessionRegistryState;
+};
+
 // This coordination is process-local; deploy /api/session/* on one instance or use sticky routing.
-const sessions = new Map<string, RoomSessionRecord>();
-let nextGeneration = 1;
+// globalThis also keeps cancellation and generation state shared across Next.js server chunks.
+const roomSessionRegistry =
+  globalForRoomSessionRegistry.__liveavatarRoomSessionRegistry ??
+  (globalForRoomSessionRegistry.__liveavatarRoomSessionRegistry = {
+    sessions: new Map(),
+    nextGeneration: 1,
+  });
+const sessions = roomSessionRegistry.sessions;
 
 function normalize(value: string | null | undefined): string {
   return String(value ?? '').trim();
@@ -114,7 +129,7 @@ export function beginRoomSessionDispatch(
     roomName: normalizedRoomName,
     sessionId: normalizedSessionId,
     agentName: normalizedAgentName,
-    generation: nextGeneration++,
+    generation: roomSessionRegistry.nextGeneration++,
     state: 'starting',
     cancelled: false,
     dispatchIds: new Set(),
@@ -174,7 +189,7 @@ export function markRoomSessionStopping(
       roomName: normalizedRoomName,
       sessionId: normalizedSessionId,
       agentName: '',
-      generation: nextGeneration++,
+      generation: roomSessionRegistry.nextGeneration++,
       state: 'stopping',
       cancelled: true,
       dispatchIds: new Set(),

@@ -64,7 +64,7 @@ async function sendAgentSessionStop(
   sessionId: string,
   options: AgentSessionStopOptions
 ): Promise<void> {
-  const response = await fetch('/api/session/stop', {
+  const response = await fetch('api/session/stop', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ sessionId, wait: options.waitForRemote }),

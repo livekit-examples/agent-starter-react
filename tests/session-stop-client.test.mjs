@@ -90,7 +90,7 @@ test('agent session stop does not release gateway sandbox sessions by default on
 
     await requestAgentSessionStop('11111111-2222-4333-8444-555555555555');
 
-    assert.deepEqual(calls, [{ url: '/api/session/stop', method: 'POST' }]);
+    assert.deepEqual(calls, [{ url: 'api/session/stop', method: 'POST' }]);
   } finally {
     globalThis.fetch = originalFetch;
     if (originalWindow === undefined) {
@@ -124,7 +124,7 @@ test('agent session stop ignores public sandbox paths during local cleanup', asy
 
     await requestAgentSessionStop(sessionId);
 
-    assert.deepEqual(calls, [{ url: '/api/session/stop', method: 'POST' }]);
+    assert.deepEqual(calls, [{ url: 'api/session/stop', method: 'POST' }]);
   } finally {
     globalThis.fetch = originalFetch;
     if (originalWindow === undefined) {
@@ -161,7 +161,7 @@ test('background agent session stop does not release gateway sandbox sessions', 
       await Promise.resolve();
     }
 
-    assert.deepEqual(calls, [{ url: '/api/session/stop', method: 'POST' }]);
+    assert.deepEqual(calls, [{ url: 'api/session/stop', method: 'POST' }]);
   } finally {
     globalThis.fetch = originalFetch;
     if (originalWindow === undefined) {
@@ -191,7 +191,7 @@ test('agent session stop skips gateway release outside public sandbox paths', as
 
     await requestAgentSessionStop('11111111-2222-4333-8444-555555555555');
 
-    assert.deepEqual(calls, [{ url: '/api/session/stop', method: 'POST' }]);
+    assert.deepEqual(calls, [{ url: 'api/session/stop', method: 'POST' }]);
   } finally {
     globalThis.fetch = originalFetch;
     if (originalWindow === undefined) {

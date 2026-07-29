@@ -45,6 +45,23 @@ const VAD_SPEECH_PROBABILITY_THRESHOLD = 0.5;
 const DEFAULT_VAD_ASSET_BASE_PATH = '/vad-web/';
 const DEFAULT_ONNX_WASM_BASE_PATH = '/onnxruntime-web/';
 
+export function resolveVadAssetBasePaths(sessionPathname = ''): {
+  baseAssetPath: string;
+  onnxWASMBasePath: string;
+} {
+  const sessionPath = `/${sessionPathname}`.replace(/\/{2,}/g, '/').replace(/\/+$/, '');
+  if (!sessionPath) {
+    return {
+      baseAssetPath: DEFAULT_VAD_ASSET_BASE_PATH,
+      onnxWASMBasePath: DEFAULT_ONNX_WASM_BASE_PATH,
+    };
+  }
+  return {
+    baseAssetPath: `${sessionPath}/vad-web/`,
+    onnxWASMBasePath: `${sessionPath}/onnxruntime-web/`,
+  };
+}
+
 export async function startMediaTrackVadObserver({
   mediaStreamTrack,
   onSpeechStart,

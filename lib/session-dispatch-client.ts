@@ -21,7 +21,7 @@ export async function requestAgentSessionDispatch(
     return;
   }
 
-  const response = await fetch('/api/session/dispatch', {
+  const response = await fetch('api/session/dispatch', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
