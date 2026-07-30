@@ -11,7 +11,7 @@ import React, {
   useMemo,
 } from 'react';
 import { type VariantProps, cva } from 'class-variance-authority';
-import { LocalAudioTrack, RemoteAudioTrack } from 'livekit-client';
+import type { LocalAudioTrack, RemoteAudioTrack } from 'livekit-client';
 import {
   type AgentState,
   type TrackReferenceOrPlaceholder,
@@ -22,6 +22,18 @@ import {
   useAgentAudioVisualizerGridAnimator,
 } from '@/hooks/agents-ui/use-agent-audio-visualizer-grid';
 import { cn } from '@/lib/shadcn/utils';
+
+/**
+ * Resizes an array of per-band volume values to exactly `count` entries.
+ * Excess values are trimmed from the end; if there are too few, the last
+ * value is duplicated to fill the remainder. An empty array is padded with 0s.
+ */
+export function normalizeVolumeBands(bands: number[], count: number): number[] {
+  if (bands.length === count) return bands;
+  if (bands.length > count) return bands.slice(0, count);
+  const lastValue = bands[bands.length - 1] ?? 0;
+  return [...bands, ...new Array(count - bands.length).fill(lastValue)];
+}
 
 function cloneSingleChild(
   children: ReactNode | ReactNode[],
@@ -207,6 +219,11 @@ export type AgentAudioVisualizerGridProps = GridOptions & {
    */
   audioTrack?: LocalAudioTrack | RemoteAudioTrack | TrackReferenceOrPlaceholder;
   /**
+   * Volume values (0-1) to use instead of the values computed from the audioTrack.
+   * The volumeBands.length should match columnCount.
+   */
+  volumeBands?: number[];
+  /**
    * Additional CSS class names to apply to the container.
    */
   className?: string;
@@ -246,6 +263,7 @@ export function AgentAudioVisualizerGrid({
   className,
   children,
   audioTrack,
+  volumeBands,
   style,
   ...props
 }: AgentAudioVisualizerGridProps & ComponentProps<'div'>) {
@@ -257,11 +275,14 @@ export function AgentAudioVisualizerGrid({
     interval,
     radius
   );
-  const volumeBands = useMultibandTrackVolume(audioTrack, {
+  const multibandVolume = useMultibandTrackVolume(audioTrack, {
     bands: columnCount,
     loPass: 100,
     hiPass: 200,
   });
+  const resolvedVolumeBands = volumeBands
+    ? normalizeVolumeBands(volumeBands, columnCount)
+    : multibandVolume;
 
   if (children && Array.isArray(children)) {
     throw new Error('AgentAudioVisualizerGrid children must be a single element.');
@@ -284,7 +305,7 @@ export function AgentAudioVisualizerGrid({
           interval={interval}
           rowCount={rowCount}
           columnCount={columnCount}
-          volumeBands={volumeBands}
+          volumeBands={resolvedVolumeBands}
           highlightedCoordinate={highlightedCoordinate}
         >
           {children ?? <div className={AgentAudioVisualizerGridCellVariants({ size })} />}
