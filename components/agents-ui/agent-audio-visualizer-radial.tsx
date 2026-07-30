@@ -11,6 +11,18 @@ import {
 import { useAgentAudioVisualizerRadialAnimator } from '@/hooks/agents-ui/use-agent-audio-visualizer-radial';
 import { cn } from '@/lib/shadcn/utils';
 
+/**
+ * Resizes an array of per-band volume values to exactly `count` entries.
+ * Excess values are trimmed from the end; if there are too few, the last
+ * value is duplicated to fill the remainder. An empty array is padded with 0s.
+ */
+export function normalizeVolumeBands(bands: number[], count: number): number[] {
+  if (bands.length === count) return bands;
+  if (bands.length > count) return bands.slice(0, count);
+  const lastValue = bands[bands.length - 1] ?? 0;
+  return [...bands, ...new Array(count - bands.length).fill(lastValue)];
+}
+
 export const AgentAudioVisualizerRadialVariants = cva(
   [
     'relative flex items-center justify-center',
@@ -72,6 +84,11 @@ export interface AgentAudioVisualizerRadialProps {
    */
   audioTrack?: LocalAudioTrack | RemoteAudioTrack | TrackReferenceOrPlaceholder;
   /**
+   * Volume values (0-1) to use instead of the values computed from the audioTrack.
+   * The volumeBands.length should match barCount.
+   */
+  volumeBands?: number[];
+  /**
    * Additional CSS class names to apply to the container.
    */
   className?: string;
@@ -101,6 +118,7 @@ export function AgentAudioVisualizerRadial({
   radius,
   barCount,
   audioTrack,
+  volumeBands,
   className,
   style,
   ...props
@@ -120,11 +138,14 @@ export function AgentAudioVisualizerRadial({
     }
   }, [barCount, size]);
 
-  const volumeBands = useMultibandTrackVolume(audioTrack, {
+  const multibandVolume = useMultibandTrackVolume(audioTrack, {
     bands: _barCount,
     loPass: 100,
     hiPass: 200,
   });
+  const resolvedVolumeBands = volumeBands
+    ? normalizeVolumeBands(volumeBands, _barCount)
+    : multibandVolume;
 
   const sequencerInterval = useMemo(() => {
     switch (state) {
@@ -168,10 +189,6 @@ export function AgentAudioVisualizerRadial({
     _barCount,
     sequencerInterval
   );
-  const bands = useMemo(
-    () => (audioTrack ? volumeBands : new Array(_barCount).fill(0)),
-    [audioTrack, volumeBands, _barCount]
-  );
 
   const dotSize = useMemo(() => {
     return (distanceFromCenter * Math.PI) / _barCount;
@@ -184,7 +201,7 @@ export function AgentAudioVisualizerRadial({
       style={{ ...style, color } as CSSProperties}
       {...props}
     >
-      {bands.map((band, idx) => {
+      {resolvedVolumeBands.map((band, idx) => {
         const angle = (idx / _barCount) * Math.PI * 2;
 
         return (

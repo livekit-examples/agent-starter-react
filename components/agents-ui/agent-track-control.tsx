@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { type VariantProps, cva } from 'class-variance-authority';
-import { LocalAudioTrack, LocalVideoTrack } from 'livekit-client';
 import {
   type TrackReferenceOrPlaceholder,
   useMaybeRoomContext,
@@ -17,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { toggleVariants } from '@/components/ui/toggle';
+import { type toggleVariants } from '@/components/ui/toggle';
 import { cn } from '@/lib/shadcn/utils';
 
 const selectVariants = cva(
