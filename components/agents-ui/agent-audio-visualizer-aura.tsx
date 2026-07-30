@@ -1,13 +1,5 @@
 'use client';
 
-import React, { type ComponentProps, useMemo } from 'react';
-import { type VariantProps, cva } from 'class-variance-authority';
-import { type LocalAudioTrack, type RemoteAudioTrack } from 'livekit-client';
-import { type AgentState, type TrackReferenceOrPlaceholder } from '@livekit/components-react';
-import { ReactShaderToy } from '@/components/agents-ui/react-shader-toy';
-import { useAgentAudioVisualizerAura } from '@/hooks/agents-ui/use-agent-audio-visualizer-aura';
-import { cn } from '@/lib/shadcn/utils';
-
 /**
  * @license
  *
@@ -19,6 +11,13 @@ import { cn } from '@/lib/shadcn/utils';
  *
  * © 2026 UNCRN LLC
  */
+import React, { type ComponentProps, useMemo } from 'react';
+import { type VariantProps, cva } from 'class-variance-authority';
+import { type LocalAudioTrack, type RemoteAudioTrack } from 'livekit-client';
+import { type AgentState, type TrackReferenceOrPlaceholder } from '@livekit/components-react';
+import { ReactShaderToy } from '@/components/agents-ui/react-shader-toy';
+import { useAgentAudioVisualizerAura } from '@/hooks/agents-ui/use-agent-audio-visualizer-aura';
+import { cn } from '@/lib/shadcn/utils';
 
 const DEFAULT_COLOR = '#1FD5F9';
 
@@ -105,21 +104,21 @@ vec2 turb(vec2 pos, float t, float it) {
   mat2 rotation = mat2(0.6, -0.25, 0.25, 0.9);
   // Secondary rotation applied each iteration (approx 53 degree rotation)
   mat2 layerRotation = mat2(0.6, -0.8, 0.8, 0.6);
-  
+
   float frequency = mix(2.0, 15.0, uFrequency);
   float amplitude = uAmplitude;
   float frequencyGrowth = 1.4;
   float animTime = t * 0.1 * uSpeed;
-  
+
   const int LAYERS = 4;
   for(int i = 0; i < LAYERS; i++) {
     // Calculate wave displacement for this layer
     vec2 rotatedPos = pos * rotation;
     vec2 wave = sin(frequency * rotatedPos + float(i) * animTime + it);
-    
+
     // Apply displacement along rotation direction
     pos += (amplitude / frequency) * rotation[0] * wave;
-    
+
     // Evolve parameters for next layer
     rotation *= layerRotation;
     amplitude *= mix(1.0, max(wave.x, wave.y), uVariance);
@@ -133,12 +132,12 @@ const float ITERATIONS = 36.0;
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord) {
   vec2 uv = fragCoord / iResolution.xy;
-  
+
   vec3 pp = vec3(0.0);
   vec3 bloom = vec3(0.0);
   float t = iTime * 0.5;
   vec2 pos = uv - 0.5;
-      
+
   vec2 prevPos = turb(pos, t, 0.0 - 1.0 / ITERATIONS);
   float spacing = mix(1.0, TAU, uSpacing);
 
@@ -150,25 +149,25 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     prevPos = st;
     float dynamicBlur = exp2(pd * 2.0 * 1.4426950408889634) - 1.0;
     float ds = smoothstep(0.0, uBlur * 0.05 + max(dynamicBlur * uSmoothing, 0.001), d);
-    
+
     // Shift color based on iteration using uColorScale
     vec3 color = uColor;
     if(uColorShift > 0.01) {
       vec3 hsv = rgb2hsv(color);
       // Shift hue by iteration
-      hsv.x = fract(hsv.x + (1.0 - iter) * uColorShift * 0.3); 
+      hsv.x = fract(hsv.x + (1.0 - iter) * uColorShift * 0.3);
       color = hsv2rgb(hsv);
     }
-    
+
     float invd = 1.0 / max(d + dynamicBlur, 0.001);
     pp += (ds - 1.0) * color;
     bloom += clamp(invd, 0.0, 250.0) * color;
   }
 
   pp *= 1.0 / ITERATIONS;
-  
+
   vec3 color;
-  
+
   // Dark mode (default)
   if(uMode < 0.5) {
     // use bloom effect
@@ -179,32 +178,32 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     float alpha = luma(color) * uMix;
     fragColor = vec4(color * uMix, alpha);
   }
-    
-  // Light mode 
+
+  // Light mode
   else {
     // no bloom effect
     color = -pp;
     color += (randFibo(fragCoord).x - 0.5) / 255.0;
-  
+
     // Preserve hue by tone mapping brightness only
     float brightness = length(color);
     vec3 direction = brightness > 0.0 ? color / brightness : color;
-  
+
     // Reinhard on brightness
     float factor = 2.0;
     float mappedBrightness = (brightness * factor) / (1.0 + brightness * factor);
     color = direction * mappedBrightness;
-    
+
     // Boost saturation to compensate for white background bleed-through
     // When alpha < 1.0, white bleeds through making colors look desaturated
     // So we increase saturation to maintain vibrant appearance
     float gray = dot(color, vec3(0.2, 0.5, 0.1));
     float saturationBoost = 3.0;
     color = mix(vec3(gray), color, saturationBoost);
-    
+
     // Clamp between 0-1
     color = clamp(color, 0.0, 1.0);
-    
+
     float alpha = mappedBrightness * clamp(uMix, 1.0, 2.0);
     fragColor = vec4(color, alpha);
   }
@@ -391,6 +390,10 @@ export interface AgentAudioVisualizerAuraProps {
    * The audio track to visualize. Can be a local/remote audio track or a track reference.
    */
   audioTrack?: LocalAudioTrack | RemoteAudioTrack | TrackReferenceOrPlaceholder;
+  /**
+   * Volume value (0-1) to use instead of the value computed from the audioTrack.
+   */
+  volume?: number;
 }
 
 /**
@@ -415,6 +418,7 @@ export function AgentAudioVisualizerAura({
   color = DEFAULT_COLOR,
   colorShift = 0.05,
   audioTrack,
+  volume,
   themeMode,
   className,
   ref,
@@ -424,7 +428,8 @@ export function AgentAudioVisualizerAura({
   VariantProps<typeof AgentAudioVisualizerAuraVariants>) {
   const { speed, scale, amplitude, frequency, brightness } = useAgentAudioVisualizerAura(
     state,
-    audioTrack
+    audioTrack,
+    volume
   );
 
   return (
