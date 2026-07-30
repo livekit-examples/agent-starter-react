@@ -45,7 +45,8 @@ function useAnimatedValue<T>(initialValue: T) {
 
 export function useAgentAudioVisualizerAura(
   state: AgentState | undefined,
-  audioTrack?: LocalAudioTrack | RemoteAudioTrack | TrackReferenceOrPlaceholder
+  audioTrack?: LocalAudioTrack | RemoteAudioTrack | TrackReferenceOrPlaceholder,
+  volumeProp?: number
 ) {
   const [speed, setSpeed] = useState(DEFAULT_SPEED);
   const {
@@ -57,10 +58,11 @@ export function useAgentAudioVisualizerAura(
   const { value: frequency, animate: animateFrequency } = useAnimatedValue(DEFAULT_FREQUENCY);
   const { value: brightness, animate: animateBrightness } = useAnimatedValue(DEFAULT_BRIGHTNESS);
 
-  const volume = useTrackVolume(audioTrack as TrackReference, {
+  const trackVolume = useTrackVolume(audioTrack as TrackReference, {
     fftSize: 512,
     smoothingTimeConstant: 0.55,
   });
+  const volume = volumeProp ?? trackVolume;
 
   useEffect(() => {
     switch (state) {

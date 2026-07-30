@@ -73,54 +73,54 @@ float oscilloscopeWave(float x, float centerX, float time) {
   float relativeX = x - centerX;
   float maxDistance = centerX;
   float distanceFromCenter = abs(relativeX);
-  
+
   // Apply bell curve for amplitude attenuation
   float bell = bellCurve(distanceFromCenter, maxDistance);
-  
+
   // Calculate wave with uniforms and bell curve attenuation
   float wave = sin(relativeX * uFrequency + time * uSpeed) * uAmplitude * bell;
-  
+
   return wave;
 }
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord) {
   vec2 uv = fragCoord / iResolution.xy;
   vec2 pos = uv - 0.5;
-  
+
   // Calculate center and positions
   float centerX = 0.5;
   float centerY = 0.5;
   float x = uv.x;
   float y = uv.y;
-  
+
   // Convert line width from pixels to UV space
   // Use the average of width and height to handle aspect ratio
   float pixelSize = 2.0 / (iResolution.x + iResolution.y);
   float lineWidthUV = uLineWidth * pixelSize;
   float smoothingUV = uSmoothing * pixelSize;
-  
+
   // Find minimum distance to the wave by sampling nearby points
   // This gives us consistent line width without high-frequency artifacts
   const int NUM_SAMPLES = 50; // Must be const for GLSL loop
   float minDist = 1000.0;
   float sampleRange = 0.02; // Range to search for closest point
-  
+
   for(int i = 0; i < NUM_SAMPLES; i++) {
     float offset = (float(i) / float(NUM_SAMPLES - 1) - 0.5) * sampleRange;
     float sampleX = x + offset;
     float waveY = centerY + oscilloscopeWave(sampleX, centerX, iTime);
-    
+
     // Calculate distance from current pixel to this point on the wave
     vec2 wavePoint = vec2(sampleX, waveY);
     vec2 currentPoint = vec2(x, y);
     float dist = distance(currentPoint, wavePoint);
-    
+
     minDist = min(minDist, dist);
   }
-  
+
   // Solid line with smooth edges using minimum distance
   float line = smoothstep(lineWidthUV + smoothingUV, lineWidthUV - smoothingUV, minDist);
-  
+
   vec3 color = uColor;
   if(abs(uColorShift) > 0.01) {
     // Keep the center 50% at base color, then ramp shift across outer 25% on each side.
@@ -133,16 +133,16 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     hsv.x = fract(hsv.x + edgeFactor * uColorShift * 0.3);
     color = hsv2rgb(hsv);
   }
-  
+
   // Apply line intensity
   color *= line;
-  
+
   // Add dithering for smoother gradients
   // color += (randFibo(fragCoord).x - 0.5) / 255.0;
-  
+
   // Calculate alpha based on line intensity
   float alpha = line * uMix;
-  
+
   fragColor = vec4(color * uMix, alpha);
 }`;
 
@@ -289,6 +289,10 @@ export interface AgentAudioVisualizerWaveProps {
    */
   audioTrack?: LocalAudioTrack | RemoteAudioTrack | TrackReferenceOrPlaceholder;
   /**
+   * Volume value (0-1) to use instead of the value computed from the audioTrack.
+   */
+  volume?: number;
+  /**
    * Additional CSS class names to apply to the container.
    */
   className?: string;
@@ -321,6 +325,7 @@ export function AgentAudioVisualizerWave({
   lineWidth,
   blur,
   audioTrack,
+  volume,
   className,
   ref,
   ...props
@@ -343,6 +348,7 @@ export function AgentAudioVisualizerWave({
   const { speed, amplitude, frequency, opacity } = useAgentAudioVisualizerWave({
     state,
     audioTrack,
+    volume,
   });
 
   return (
