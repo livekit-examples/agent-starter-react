@@ -129,6 +129,7 @@ test('session stop route waits for local agent worker readiness before finishing
   assert.match(routeSource, /AGENT_WORKER_READINESS_TIMEOUT_MS/);
   assert.match(routeSource, /readFileTail\(logPath/);
   assert.doesNotMatch(routeSource, /readFile\(logPath,\s*'utf8'\)/);
+  assert.doesNotMatch(routeSource, /if \(state === 'unknown'\)/);
   assert.match(cleanupSource, /deleteLiveKitRoom\(roomName\)/);
   assert.match(cleanupSource, /await waitForLocalAgentWorkerReadiness\(\)/);
   assert.match(

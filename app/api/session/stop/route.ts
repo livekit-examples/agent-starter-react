@@ -226,9 +226,6 @@ async function waitForLocalAgentWorkerReadiness(): Promise<StopResult> {
     if (state === 'available') {
       return { target: 'agent_worker_readiness', ok: true };
     }
-    if (state === 'unknown') {
-      return { target: 'agent_worker_readiness', ok: true, skipped: true };
-    }
 
     const remainingMs = deadline - Date.now();
     if (remainingMs <= 0) {
