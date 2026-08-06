@@ -92,7 +92,10 @@ test('sandbox browser starts media and dispatch concurrently without changing lo
   );
   assert.match(
     browserSourceSource,
-    /if \(!appConfig\.sandboxId\) \{[\s\S]*await ensureAudioPublished\(\)[\s\S]*await ensureVideoPublished\(\)[\s\S]*return;/
+    /else \{[\s\S]*await stage\(\(\) => ensureAudioPublished\(runtime\)\);[\s\S]*if \(videoEnabledRef\.current && !videoStartAttempted\)[\s\S]*await stage\(\(\) => ensureVideoPublished\(runtime\)\)/
   );
-  assert.match(browserSourceSource, /Promise\.allSettled\(\[audioStart, videoStart\]\)/);
+  assert.match(
+    browserSourceSource,
+    /appConfig\.sandboxId && videoEnabledRef\.current[\s\S]*Promise\.allSettled\(\[[\s\S]*ensureAudioPublished\(runtime\),[\s\S]*ensureVideoPublished\(runtime\)[\s\S]*\]\)/
+  );
 });

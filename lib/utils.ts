@@ -344,6 +344,10 @@ export const getAppConfig = cache(async (headers: Headers): Promise<AppConfig> =
         }
       }
 
+      // A blank sandbox override must not remove the controller identity required by
+      // Browser audio gating and agent dispatch. Re-derive it from the final input role.
+      config.agentName = resolveAgentNameForInputSource(config.inputSource, config.agentName);
+
       return config;
     } catch (error) {
       console.error('ERROR: getAppConfig() - lib/utils.ts', error);

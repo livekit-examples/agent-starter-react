@@ -336,11 +336,15 @@ test('browser source reports video failure even when audio capture also fails', 
   );
   const audioFailureBranch =
     browserSourceSource.match(
-      /if \(audioResult\.status === 'rejected'\) \{[\s\S]*?throw audioResult\.reason;\n    \}/
+      /if \(audioResult\.status === 'rejected'\) \{[\s\S]*?throw audioResult\.reason;\n\s+\}/
     )?.[0] ?? '';
 
   assert.match(audioFailureBranch, /if \(videoResult\.status === 'rejected'\)/);
-  assert.match(audioFailureBranch, /onVideoError\?\.\(videoResult\.reason as Error\)/);
+  assert.match(audioFailureBranch, /handleVideoStartFailure\(videoResult\.reason\)/);
+  assert.match(
+    browserSourceSource,
+    /const handleVideoStartFailure = \(error: unknown\) => \{[\s\S]*onVideoError\?\.\(error as Error\)/
+  );
 });
 
 test('microphone device selector remains visible before media permission is granted', async () => {

@@ -37,6 +37,39 @@ test('frontend keeps explicit AGENT_NAME as an override', async () => {
   assert.equal(resolveAgentNameForInputSource('generic', 'custom-agent'), 'custom-agent');
 });
 
+test('frontend restores a derived agent name after a blank sandbox override', async () => {
+  const previousEnv = { ...process.env };
+  const originalFetch = globalThis.fetch;
+
+  try {
+    process.env.APP_CONFIG_ENDPOINT = 'https://config.example.test/app-config';
+    process.env.SANDBOX_ID = 'sandbox-blank-agent';
+    process.env.INPUT_SOURCE = 'browser';
+    delete process.env.AGENT_NAME;
+    delete process.env.NEXT_PUBLIC_AGENT_NAME;
+    delete process.env.NEXT_PUBLIC_LEXVOICE_AGENT_NAME;
+
+    globalThis.fetch = async (input, init) => {
+      assert.equal(String(input), process.env.APP_CONFIG_ENDPOINT);
+      assert.equal(new Headers(init?.headers).get('X-Sandbox-ID'), process.env.SANDBOX_ID);
+      return new Response(
+        JSON.stringify({
+          agentName: { type: 'string', value: '   ' },
+        }),
+        { headers: { 'content-type': 'application/json' } }
+      );
+    };
+
+    const { getAppConfig } = await import(`../lib/utils.ts?blank-agent-override=${Date.now()}`);
+    const config = await getAppConfig(new Headers());
+
+    assert.equal(config.agentName, 'lexvoice-browser-agent');
+  } finally {
+    globalThis.fetch = originalFetch;
+    restoreEnv(previousEnv);
+  }
+});
+
 test('frontend exposes the server-owned voice session id to dispatch callers', async () => {
   const previousEnv = { ...process.env };
 
