@@ -9,7 +9,7 @@ import {
   RoomEvent,
   Track,
 } from 'livekit-client';
-import { useRemoteParticipants, useRoomContext } from '@livekit/components-react';
+import { useRoomContext } from '@livekit/components-react';
 import { startMediaTrackAudioObserver } from '@/lib/frontend-audio-observer';
 import {
   FRONTEND_EVENTS,
@@ -165,7 +165,6 @@ export function FilteredAudioRenderer({
   observabilityEnabled,
 }: FilteredAudioRendererProps) {
   const room = useRoomContext();
-  const participants = useRemoteParticipants();
   const audioElementsRef = useRef<Map<string, HTMLAudioElement>>(new Map());
   const pendingPlaybackRef = useRef<Map<string, PendingPlayback>>(new Map());
   const playbackObserverStopsRef = useRef<Map<string, () => void>>(new Map());
@@ -518,9 +517,12 @@ export function FilteredAudioRenderer({
       );
     };
 
-    const participantListenerCleanups: Array<() => void> = [];
+    const participantListenerCleanups = new Map<RemoteParticipant, () => void>();
 
     const attachParticipantListeners = (participant: RemoteParticipant) => {
+      if (participantListenerCleanups.has(participant)) {
+        return;
+      }
       participant.audioTrackPublications.forEach((publication) => {
         if (publication.isSubscribed && publication.track) {
           handleAudioTrack(publication, participant.identity);
@@ -543,14 +545,19 @@ export function FilteredAudioRenderer({
       participant.on(ParticipantEvent.TrackSubscribed, onTrackSubscribed);
       participant.on(ParticipantEvent.TrackUnsubscribed, onTrackUnsubscribed);
 
-      participantListenerCleanups.push(() => {
+      participantListenerCleanups.set(participant, () => {
         participant.off(ParticipantEvent.TrackSubscribed, onTrackSubscribed);
         participant.off(ParticipantEvent.TrackUnsubscribed, onTrackUnsubscribed);
       });
     };
 
+    const detachParticipantListeners = (participant: RemoteParticipant) => {
+      participantListenerCleanups.get(participant)?.();
+      participantListenerCleanups.delete(participant);
+    };
+
     // 监听现有参与者的轨道
-    participants.forEach(attachParticipantListeners);
+    room.remoteParticipants.forEach(attachParticipantListeners);
 
     // 监听参与者变化
     const onParticipantConnected = (participant: RemoteParticipant) => {
@@ -558,6 +565,7 @@ export function FilteredAudioRenderer({
     };
 
     const onParticipantDisconnected = (participant: RemoteParticipant) => {
+      detachParticipantListeners(participant);
       // 清理该参与者的所有音频元素
       const keysToRemove: string[] = [];
       audioElements.forEach((_element, key) => {
@@ -581,8 +589,9 @@ export function FilteredAudioRenderer({
       room.off(RoomEvent.ParticipantConnected, onParticipantConnected);
       room.off(RoomEvent.ParticipantDisconnected, onParticipantDisconnected);
       participantListenerCleanups.forEach((cleanupListener) => cleanupListener());
+      participantListenerCleanups.clear();
     };
-  }, [room, participants, excludeTrackNames, volume, debugAudio]);
+  }, [room, excludeTrackNames, volume, debugAudio]);
 
   // 更新音量
   useEffect(() => {

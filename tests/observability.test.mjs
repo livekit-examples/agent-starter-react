@@ -347,6 +347,17 @@ test('filtered audio renderer reports real element playback with backend marker 
     /const handleElementPlaybackError = \(\) => \{[\s\S]*const playbackSource = activePlaybackSources\.get\(elementKey\);[\s\S]*recordPlaybackError\(\s*playbackSource\?\.diagnostics \?\? diagnostics,/
   );
   assert.doesNotMatch(source, /playbackObserverStops\.clear\(\)/);
+  assert.doesNotMatch(source, /useRemoteParticipants/);
+  assert.match(source, /room\.remoteParticipants\.forEach\(attachParticipantListeners\)/);
+  assert.match(
+    source,
+    /const participantListenerCleanups = new Map<RemoteParticipant, \(\) => void>\(\)/
+  );
+  assert.match(
+    source,
+    /const onParticipantDisconnected = \(participant: RemoteParticipant\) => \{[\s\S]*detachParticipantListeners\(participant\)/
+  );
+  assert.doesNotMatch(source, /\[room, participants,/);
   assert.match(source, /parseBackendObservabilityMarkerPayload/);
   assert.match(source, /outputSegmentAttributesFromMarker/);
   assert.match(
