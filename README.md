@@ -141,9 +141,6 @@ export const APP_CONFIG_DEFAULTS: AppConfig = {
 
   // agent dispatch configuration
   agentName: undefined,
-
-  // LiveKit Cloud Sandbox configuration
-  sandboxId: undefined,
 };
 ```
 
@@ -160,10 +157,6 @@ Set `audioVisualizerType` in [`app-config.ts`](./app-config.ts) to switch visual
 - `aura`: shader-based aura with `audioVisualizerAuraColorShift`
 
 Use `audioVisualizerColor` to set a shared accent color across all visualizer modes.
-
-> [!NOTE]
-> The `sandboxId` is for the LiveKit Cloud Sandbox environment.
-> It is not used for local development.
 
 #### Environment Variables
 

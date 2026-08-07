@@ -27,9 +27,6 @@ export interface AppConfig {
 
   // agent dispatch configuration
   agentName?: string;
-
-  // LiveKit Cloud Sandbox configuration
-  sandboxId?: string;
 }
 
 export const APP_CONFIG_DEFAULTS: AppConfig = {
@@ -66,7 +63,4 @@ export const APP_CONFIG_DEFAULTS: AppConfig = {
 
   // agent dispatch configuration
   agentName: process.env.AGENT_NAME ?? undefined,
-
-  // LiveKit Cloud Sandbox configuration
-  sandboxId: undefined,
 };

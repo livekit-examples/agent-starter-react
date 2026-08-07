@@ -1,4 +1,3 @@
-import { headers } from 'next/headers';
 import { ImageResponse } from 'next/og';
 import getImageSize from 'buffer-image-size';
 import mime from 'mime';
@@ -102,8 +101,7 @@ export const contentType = 'image/png';
 
 // Image generation
 export default async function Image() {
-  const hdrs = await headers();
-  const appConfig = await getAppConfig(hdrs);
+  const appConfig = await getAppConfig();
 
   const pageTitle = cleanPageTitle(appConfig.pageTitle);
   const logoUri = appConfig.logoDark || appConfig.logo;
@@ -111,11 +109,9 @@ export default async function Image() {
   const wordmarkUri = logoUri === APP_CONFIG_DEFAULTS.logoDark ? 'public/lk-wordmark.svg' : logoUri;
 
   // Load fonts - use file system in dev, fetch in production
-  let commitMonoData: ArrayBuffer | undefined;
   let everettLightData: ArrayBuffer | undefined;
 
   try {
-    commitMonoData = await loadFileData('public/commit-mono-400-regular.woff');
     everettLightData = await loadFileData('public/everett-light.woff');
   } catch (e) {
     console.error('Failed to load fonts:', e);
@@ -196,21 +192,6 @@ export default async function Image() {
         >
           <div
             style={{
-              backgroundColor: '#1F1F1F',
-              padding: '2px 8px',
-              borderRadius: 4,
-              width: 72,
-              fontSize: 12,
-              fontFamily: 'CommitMono',
-              fontWeight: 600,
-              color: '#999999',
-              letterSpacing: 0.8,
-            }}
-          >
-            SANDBOX
-          </div>
-          <div
-            style={{
               fontSize: 48,
               fontWeight: 300,
               fontFamily: 'Everett',
@@ -229,16 +210,6 @@ export default async function Image() {
       // size config to also set the ImageResponse's width and height.
       ...size,
       fonts: [
-        ...(commitMonoData
-          ? [
-              {
-                name: 'CommitMono',
-                data: commitMonoData,
-                style: 'normal' as const,
-                weight: 400 as const,
-              },
-            ]
-          : []),
         ...(everettLightData
           ? [
               {
