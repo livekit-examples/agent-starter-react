@@ -1,8 +1,6 @@
+import { APP_CONFIG_DEFAULTS } from '@/app-config';
 import { App } from '@/components/app/app';
-import { getAppConfig } from '@/lib/utils';
 
-export default async function Page() {
-  const appConfig = await getAppConfig();
-
-  return <App appConfig={appConfig} />;
+export default function Page() {
+  return <App appConfig={APP_CONFIG_DEFAULTS} />;
 }

@@ -1,14 +1,4 @@
-import { cache } from 'react';
-import { APP_CONFIG_DEFAULTS } from '@/app-config';
 import type { AppConfig } from '@/app-config';
-
-/**
- * Get the app configuration
- * @returns The app configuration
- */
-export const getAppConfig = cache(async (): Promise<AppConfig> => {
-  return APP_CONFIG_DEFAULTS;
-});
 
 /**
  * Get styles for the app
