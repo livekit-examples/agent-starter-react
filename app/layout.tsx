@@ -53,8 +53,6 @@ export default function RootLayout({ children }: RootLayoutProps) {
       )}
     >
       <head>
-        <style>{`:root { --primary: #002cf2; --primary-hover: color-mix(in srgb, #002cf2 80%, #000); }
-.dark { --primary: #1fd5f9; --primary-hover: color-mix(in srgb, #1fd5f9 80%, #000); }`}</style>
         <title>LiveKit Voice Agent</title>
         <meta name="description" content="A voice agent built with LiveKit" />
       </head>
