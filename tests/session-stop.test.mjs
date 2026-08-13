@@ -1,8 +1,22 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
+import { POST as stopSession } from '../app/api/session/stop/route.ts';
 import { readAgentWorkerStateFromLog } from '../lib/agent-worker-readiness.ts';
-import { resolveLiveKitHttpUrl, resolveRoomInputStopUrls } from '../lib/session-stop.ts';
+import {
+  executeRoomInputStopsSequentially,
+  resolveLiveKitHttpUrl,
+  resolveRoomInputStopUrls,
+} from '../lib/session-stop.ts';
+
+function restoreEnv(previousEnv) {
+  for (const key of Object.keys(process.env)) {
+    if (!(key in previousEnv)) {
+      delete process.env[key];
+    }
+  }
+  Object.assign(process.env, previousEnv);
+}
 
 test('parses the latest target agent worker state from LiveKit server logs', () => {
   const source = [
@@ -15,59 +29,182 @@ test('parses the latest target agent worker state from LiveKit server logs', () 
   assert.equal(readAgentWorkerStateFromLog(source, 'missing-agent'), 'unknown');
 });
 
+test('parses the latest local worker capacity state from the agent log', () => {
+  const source = [
+    'worker is at full capacity, marking as unavailable',
+    'worker is below capacity, marking as available',
+  ].join('\n');
+
+  assert.equal(readAgentWorkerStateFromLog(source, 'frontdesk-agent'), 'available');
+});
+
 test('maps livekit websocket URLs to server API URLs', () => {
   assert.equal(resolveLiveKitHttpUrl('ws://localhost:7818'), 'http://localhost:7818');
   assert.equal(resolveLiveKitHttpUrl('wss://livekit.example'), 'https://livekit.example');
   assert.equal(resolveLiveKitHttpUrl('https://livekit.example'), 'https://livekit.example');
 });
 
-test('room input stop URL resolver ignores primebot non-server input', () => {
+test('room input stop URL resolver skips browser input', () => {
   assert.deepEqual(
     resolveRoomInputStopUrls({
-      inputSource: 'primebot',
-      roomInputUrl: 'http://room-input.local/start',
-      roomAudioInputUrl: 'http://audio.local/start',
-      roomVisionInputUrl: 'http://vision.local/start',
-      frontdeskInputParticipantUrl: 'http://xunfei.local/start',
-      faceServiceUrl: 'http://face.local/start',
-      genericCameraParticipantUrl: 'http://generic.local/start',
+      inputSource: 'browser',
+      edgeMediaUrl: 'http://edge.local/start',
+      videoProcessorUrl: 'http://processor.local/start',
     }),
     []
   );
 });
 
-test('room input stop URL resolver only stops selected mixed server roles', () => {
+test('room input stop URL resolver returns processor then edge for server input', () => {
   assert.deepEqual(
     resolveRoomInputStopUrls({
-      inputSource: 'mixed',
-      audioInputDevice: 'xunfei',
-      visionInputDevice: 'browser',
-      roomAudioInputUrl: 'http://xunfei-audio.local/start',
-      roomVisionInputUrl: 'http://unused-vision.local/start',
-      roomInputUrl: 'http://fallback.local/start',
-      frontdeskInputParticipantUrl: 'http://frontdesk.local/start',
-      faceServiceUrl: 'http://face.local/start',
-      genericCameraParticipantUrl: 'http://generic.local/start',
+      inputSource: 'xunfei',
+      edgeMediaUrl: 'http://edge.local/start',
+      videoProcessorUrl: 'http://processor.local/start',
     }),
-    ['http://xunfei-audio.local/stop', 'http://frontdesk.local/stop', 'http://face.local/stop']
+    ['http://processor.local/stop', 'http://edge.local/stop']
   );
 });
 
-test('session stop route can call the room-input control endpoint before deleting the room', async () => {
+test('mixed input keeps the complete split topology when either role uses server input', () => {
+  for (const roleDevices of [
+    { audioInputDevice: 'xunfei', visionInputDevice: 'browser' },
+    { audioInputDevice: 'browser', visionInputDevice: 'generic' },
+  ]) {
+    assert.deepEqual(
+      resolveRoomInputStopUrls({
+        inputSource: 'mixed',
+        ...roleDevices,
+        edgeMediaUrl: 'http://edge.local/start',
+        videoProcessorUrl: 'http://processor.local/start',
+      }),
+      ['http://processor.local/stop', 'http://edge.local/stop']
+    );
+  }
+});
+
+test('room input stop URL resolver rejects incomplete split media configuration', () => {
+  for (const options of [
+    {},
+    { videoProcessorUrl: 'http://processor.local/start' },
+    { edgeMediaUrl: 'http://edge.local/start' },
+  ]) {
+    assert.throws(
+      () => resolveRoomInputStopUrls({ inputSource: 'xunfei', ...options }),
+      /VIDEO_PROCESSOR_URL and EDGE_MEDIA_URL are required/
+    );
+  }
+});
+
+test('room input stop URL resolver rejects duplicate split media endpoints', () => {
+  assert.throws(
+    () =>
+      resolveRoomInputStopUrls({
+        inputSource: 'xunfei',
+        videoProcessorUrl: 'http://media.local/start',
+        edgeMediaUrl: 'http://media.local/stop',
+      }),
+    /must resolve to distinct stop endpoints/
+  );
+});
+
+test('session stop reports invalid split media configuration and continues room cleanup', async () => {
+  const previousEnv = { ...process.env };
+
+  process.env.INPUT_SOURCE = 'xunfei';
+  delete process.env.VIDEO_PROCESSOR_URL;
+  delete process.env.EDGE_MEDIA_URL;
+  delete process.env.LIVEKIT_URL;
+  delete process.env.LIVEKIT_API_KEY;
+  delete process.env.LIVEKIT_API_SECRET;
+  delete process.env.LEXVOICE_RUN_LOG_DIR;
+
+  try {
+    const response = await stopSession(
+      new Request('http://localhost/api/session/stop', {
+        method: 'POST',
+        body: JSON.stringify({
+          sessionId: '00000000-0000-4000-8000-000000000020',
+          wait: true,
+        }),
+      })
+    );
+    const payload = await response.json();
+
+    assert.equal(response.status, 502);
+    assert.equal(payload.status, 'partial');
+    assert.deepEqual(
+      payload.results.find((result) => result.target === 'room_input_configuration'),
+      {
+        target: 'room_input_configuration',
+        ok: false,
+        fatal: true,
+        error: 'VIDEO_PROCESSOR_URL and EDGE_MEDIA_URL are required for server room input',
+      }
+    );
+    assert.deepEqual(
+      payload.results.find((result) => result.target === 'livekit_room'),
+      {
+        target: 'livekit_room',
+        ok: true,
+        skipped: true,
+      }
+    );
+  } finally {
+    restoreEnv(previousEnv);
+  }
+});
+
+test('room input stop executor waits for each stop before starting the next', async () => {
+  const processorUrl = 'http://processor.local/stop';
+  const edgeUrl = 'http://edge.local/stop';
+  const events = [];
+  let releaseProcessorStop = () => {};
+  const processorStopPending = new Promise((resolve) => {
+    releaseProcessorStop = resolve;
+  });
+
+  const execution = executeRoomInputStopsSequentially([processorUrl, edgeUrl], async (stopUrl) => {
+    events.push(`start:${stopUrl}`);
+    if (stopUrl === processorUrl) {
+      await processorStopPending;
+    }
+    events.push(`finish:${stopUrl}`);
+    return stopUrl;
+  });
+
+  await Promise.resolve();
+  assert.deepEqual(events, [`start:${processorUrl}`]);
+
+  releaseProcessorStop();
+  assert.deepEqual(await execution, [processorUrl, edgeUrl]);
+  assert.deepEqual(events, [
+    `start:${processorUrl}`,
+    `finish:${processorUrl}`,
+    `start:${edgeUrl}`,
+    `finish:${edgeUrl}`,
+  ]);
+});
+
+test('session stop route stops room input before deleting the room', async () => {
   const routeSource = await readFile(
     new URL('../app/api/session/stop/route.ts', import.meta.url),
     'utf8'
   );
 
   const cleanupSource = routeSource.match(/async function runRemoteSessionCleanup[\s\S]*?\n}/)?.[0];
+  const stopUrlResolverSource = routeSource.match(
+    /function resolveRoomInputStopUrls[\s\S]*?\n}/
+  )?.[0];
+  const stopRoomInputSource = routeSource.match(/async function stopRoomInput[\s\S]*?\n}/)?.[0];
 
   assert.ok(cleanupSource, 'runRemoteSessionCleanup should be defined');
-  assert.match(routeSource, /readStopEnv\('ROOM_INPUT_URL'\)/);
-  assert.match(routeSource, /resolveRoomInputStopUrls/);
-  assert.match(routeSource, /stopRoomInput/);
-  assert.match(routeSource, /FRONTDESK_INPUT_PARTICIPANT_URL/);
-  assert.match(routeSource, /FACE_SERVICE_URL/);
-  assert.match(routeSource, /GENERIC_CAMERA_PARTICIPANT_URL/);
+  assert.ok(stopUrlResolverSource, 'resolveRoomInputStopUrls should be defined');
+  assert.match(stopUrlResolverSource, /videoProcessorUrl: readStopEnv\('VIDEO_PROCESSOR_URL'\)/);
+  assert.match(stopUrlResolverSource, /edgeMediaUrl: readStopEnv\('EDGE_MEDIA_URL'\)/);
+  assert.equal((stopUrlResolverSource.match(/readStopEnv\(/g) ?? []).length, 2);
+  assert.ok(stopRoomInputSource, 'stopRoomInput should be defined');
+  assert.match(stopRoomInputSource, /executeRoomInputStopsSequentially\(stopUrls,/);
   assert.match(
     cleanupSource,
     /const roomInputResults = await stopRoomInput\(roomName, sessionId\);[\s\S]*const liveKitRoomResult = await deleteLiveKitRoom\(roomName\);/
@@ -125,7 +262,8 @@ test('session stop route waits for local agent worker readiness before finishing
   assert.ok(cleanupSource, 'runRemoteSessionCleanup should be defined');
   assert.match(routeSource, /function waitForLocalAgentWorkerReadiness/);
   assert.match(routeSource, /process\.env\.LEXVOICE_RUN_LOG_DIR/);
-  assert.match(routeSource, /server\.log/);
+  assert.match(routeSource, /live\.log/);
+  assert.doesNotMatch(routeSource, /path\.join\(runLogDir, 'server\.log'\)/);
   assert.match(routeSource, /AGENT_WORKER_READINESS_TIMEOUT_MS/);
   assert.match(routeSource, /readFileTail\(logPath/);
   assert.doesNotMatch(routeSource, /readFile\(logPath,\s*'utf8'\)/);

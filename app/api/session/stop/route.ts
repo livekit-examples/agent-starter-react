@@ -9,6 +9,7 @@ import {
   isValidConnectionRoomId,
 } from '@/lib/connection-room-id';
 import {
+  executeRoomInputStopsSequentially,
   resolveRoomInputStopUrls as resolveConfiguredRoomInputStopUrls,
   resolveLiveKitHttpUrl,
 } from '@/lib/session-stop';
@@ -158,18 +159,14 @@ function resolveRoomInputStopUrls(): string[] {
       'ROOM_VISION_INPUT_DEVICE',
       'NEXT_PUBLIC_ROOM_VISION_INPUT_DEVICE'
     ),
-    roomAudioInputUrl: readStopEnv('ROOM_AUDIO_INPUT_URL'),
-    roomVisionInputUrl: readStopEnv('ROOM_VISION_INPUT_URL'),
-    roomInputUrl: readStopEnv('ROOM_INPUT_URL'),
-    frontdeskInputParticipantUrl: readStopEnv('FRONTDESK_INPUT_PARTICIPANT_URL'),
-    faceServiceUrl: readStopEnv('FACE_SERVICE_URL'),
-    genericCameraParticipantUrl: readStopEnv('GENERIC_CAMERA_PARTICIPANT_URL'),
+    videoProcessorUrl: readStopEnv('VIDEO_PROCESSOR_URL'),
+    edgeMediaUrl: readStopEnv('EDGE_MEDIA_URL'),
   });
 }
 
-function resolveLocalLiveKitServerLogPath(): string {
+function resolveLocalAgentWorkerLogPath(): string {
   const runLogDir = process.env.LEXVOICE_RUN_LOG_DIR?.trim();
-  return runLogDir ? path.join(runLogDir, 'server.log') : '';
+  return runLogDir ? path.join(runLogDir, 'live.log') : '';
 }
 
 function sleep(ms: number): Promise<void> {
@@ -187,7 +184,7 @@ async function fileExists(filePath: string): Promise<boolean> {
   }
 }
 
-async function readAgentWorkerStateFromServerLog(
+async function readAgentWorkerStateFromLocalLog(
   logPath: string,
   agentName: string
 ): Promise<AgentWorkerState> {
@@ -214,7 +211,7 @@ async function waitForLocalAgentWorkerReadiness(): Promise<StopResult> {
     return { target: 'agent_worker_readiness', ok: true, skipped: true };
   }
 
-  const logPath = resolveLocalLiveKitServerLogPath();
+  const logPath = resolveLocalAgentWorkerLogPath();
   const agentName = readStopAgentName();
   if (!logPath || !(await fileExists(logPath))) {
     return { target: 'agent_worker_readiness', ok: true, skipped: true };
@@ -222,7 +219,7 @@ async function waitForLocalAgentWorkerReadiness(): Promise<StopResult> {
 
   const deadline = Date.now() + AGENT_WORKER_READINESS_TIMEOUT_MS;
   while (Date.now() <= deadline) {
-    const state = await readAgentWorkerStateFromServerLog(logPath, agentName);
+    const state = await readAgentWorkerStateFromLocalLog(logPath, agentName);
     if (state === 'available') {
       return { target: 'agent_worker_readiness', ok: true };
     }
@@ -341,12 +338,26 @@ async function postRoomInputStop(
 }
 
 async function stopRoomInput(roomName: string, sessionId: string): Promise<StopResult[]> {
-  const stopUrls = resolveRoomInputStopUrls();
+  let stopUrls: string[];
+  try {
+    stopUrls = resolveRoomInputStopUrls();
+  } catch (error) {
+    return [
+      {
+        target: 'room_input_configuration',
+        ok: false,
+        fatal: true,
+        error: error instanceof Error ? error.message : String(error),
+      },
+    ];
+  }
   if (stopUrls.length === 0) {
     return [{ target: 'room_input', ok: true, skipped: true }];
   }
 
-  return Promise.all(stopUrls.map((stopUrl) => postRoomInputStop(stopUrl, roomName, sessionId)));
+  return executeRoomInputStopsSequentially(stopUrls, (stopUrl) =>
+    postRoomInputStop(stopUrl, roomName, sessionId)
+  );
 }
 
 async function runRemoteSessionCleanup(
