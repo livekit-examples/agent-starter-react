@@ -16,6 +16,8 @@ export type ReusableAgentParticipantOptions = AgentParticipantMatchOptions & {
 };
 
 export const AGENT_SESSION_READY_ATTRIBUTE = 'liveavatar.agent.session_ready';
+// livekit-server-sdk maps protobuf attribute keys to camelCase object keys.
+const AGENT_SESSION_READY_ATTRIBUTE_CAMEL = 'liveavatarAgentSessionReady';
 
 const ROOM_AUDIO_INPUT_IDENTITY = 'room_audio_input';
 const ROOM_VIDEO_INPUT_IDENTITY = 'room_video_input';
@@ -127,7 +129,11 @@ function isExpectedAgentParticipant(participant: ParticipantInfo, agentName: str
 }
 
 function isAgentSessionReady(participant: ParticipantInfo) {
-  return participant.attributes?.[AGENT_SESSION_READY_ATTRIBUTE] === 'true';
+  const attributes = participant.attributes ?? {};
+  return (
+    attributes[AGENT_SESSION_READY_ATTRIBUTE] === 'true' ||
+    attributes[AGENT_SESSION_READY_ATTRIBUTE_CAMEL] === 'true'
+  );
 }
 
 function isAnonymousLiveKitAgentParticipant(participant: ParticipantInfo) {

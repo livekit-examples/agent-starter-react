@@ -6,7 +6,6 @@ import { useBrowserSourceClient } from '@/hooks/useBrowserSourceClient';
 import { getVoiceSessionId, resetVoiceSessionId } from '@/lib/browser-room-session';
 import { readConnectionDetailsResponse } from '@/lib/connection-details-response';
 import { isValidConnectionRoomId } from '@/lib/connection-room-id';
-import { usesServerRoomInputDevice } from '@/lib/input-device-config';
 import {
   FRONTEND_EVENTS,
   beginFrontendObservabilitySession,
@@ -26,12 +25,6 @@ import {
   requestAgentSessionStop,
   waitForAgentSessionStop,
 } from '@/lib/session-stop-client';
-
-function requiresRoomVideoInputReady(appConfig: AppConfig) {
-  return appConfig.visionInputDevice
-    ? usesServerRoomInputDevice(appConfig.visionInputDevice)
-    : false;
-}
 
 export function useRoom(appConfig: AppConfig) {
   const aborted = useRef(false);
@@ -212,7 +205,6 @@ export function useRoom(appConfig: AppConfig) {
       await recoverFromStartError(error);
     };
 
-    setIsSessionActive(true);
     beginFrontendObservabilitySession(room);
 
     const dispatchAgentSession = async () => {
@@ -220,7 +212,7 @@ export function useRoom(appConfig: AppConfig) {
       dispatchSessionId = sessionId;
       const signal = beginAgentSessionStart(room.name, sessionId);
       const dispatchPromise = requestAgentSessionDispatch(appConfig.agentName, sessionId, {
-        requireRoomVideoInputReady: requiresRoomVideoInputReady(appConfig),
+        requireAgentSessionReady: usesManagedRoomInput,
         signal,
       });
       registerAgentSessionDispatch(room.name, sessionId, dispatchPromise);
@@ -310,6 +302,7 @@ export function useRoom(appConfig: AppConfig) {
       if (!usesSandboxConcurrentStartup) {
         await dispatchAgentSession();
       }
+      setIsSessionActive(true);
     } catch (error) {
       await handleStartError(error);
     }

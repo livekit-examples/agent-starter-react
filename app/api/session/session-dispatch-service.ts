@@ -75,7 +75,7 @@ const globalForInFlightDispatches = globalThis as typeof globalThis & {
 const inFlightDispatches =
   globalForInFlightDispatches.__liveavatarInFlightDispatches ??
   (globalForInFlightDispatches.__liveavatarInFlightDispatches = new Map());
-const DEFAULT_AGENT_DISPATCH_TIMEOUT_MS = 8_000;
+const DEFAULT_AGENT_DISPATCH_TIMEOUT_MS = 30_000;
 const DEFAULT_PREWARM_TOTAL_TIMEOUT_MS = 45_000;
 
 export type PrewarmPhase = 'room' | 'worker_readiness' | 'dispatch_readiness';
@@ -302,7 +302,6 @@ export async function prewarmRoomSession(
             ...request,
             readiness: {
               requireAgentSessionReady: true,
-              requireRoomInputParticipantsReady: true,
             },
           },
           {

@@ -20,8 +20,8 @@ export async function POST(req: Request) {
     agent_name?: string;
     sessionId?: string;
     session_id?: string;
-    requireRoomVideoInputReady?: boolean;
-    require_room_video_input_ready?: boolean;
+    requireAgentSessionReady?: boolean;
+    require_agent_session_ready?: boolean;
   };
   try {
     body = await req.json();
@@ -57,8 +57,8 @@ export async function POST(req: Request) {
       sessionId,
       agentName,
       readiness: {
-        requireRoomVideoInputReady:
-          body.requireRoomVideoInputReady === true || body.require_room_video_input_ready === true,
+        requireAgentSessionReady:
+          body.requireAgentSessionReady === true || body.require_agent_session_ready === true,
       },
     });
     return NextResponse.json({ status: 'dispatched', roomName, agentName, sessionId, dispatch });

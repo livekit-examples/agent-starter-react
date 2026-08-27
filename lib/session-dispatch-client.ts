@@ -1,6 +1,6 @@
 type DispatchOptions = {
   signal?: AbortSignal;
-  requireRoomVideoInputReady?: boolean;
+  requireAgentSessionReady?: boolean;
 };
 
 export class AgentSessionDispatchCancelledError extends Error {
@@ -27,7 +27,7 @@ export async function requestAgentSessionDispatch(
     body: JSON.stringify({
       agentName: normalizedAgentName,
       sessionId: normalizedSessionId,
-      ...(options.requireRoomVideoInputReady ? { requireRoomVideoInputReady: true } : {}),
+      ...(options.requireAgentSessionReady ? { requireAgentSessionReady: true } : {}),
     }),
     signal: options.signal,
   });

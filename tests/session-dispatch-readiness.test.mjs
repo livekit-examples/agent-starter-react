@@ -62,6 +62,24 @@ test('dispatch can require room video input readiness before reusing an agent', 
   );
 });
 
+test('dispatch accepts the server SDK camel-cased agent ready attribute', () => {
+  const agent = participant({
+    identity: 'agent-AJ_ready',
+    kind: ParticipantInfo_Kind.AGENT,
+    attributes: {
+      lkAgentName: 'frontdesk-agent',
+      liveavatarAgentSessionReady: 'true',
+    },
+  });
+
+  assert.equal(
+    findReusableAgentParticipant([agent], 'frontdesk-agent', {
+      requireAgentSessionReady: true,
+    }),
+    agent
+  );
+});
+
 test('dispatch can reuse an active agent once room video input is publishing', () => {
   const agent = participant({
     identity: 'agent-AJ_running',
