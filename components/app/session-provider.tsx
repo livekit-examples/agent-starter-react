@@ -6,6 +6,7 @@ import { APP_CONFIG_DEFAULTS, type AppConfig } from '@/app-config';
 import type { BrowserSourceClient } from '@/hooks/useBrowserSourceClient';
 import { useRoom } from '@/hooks/useRoom';
 import { SelectedVideoTrackProvider } from '@/hooks/useSelectedVideoTrack';
+import { ensureBrowserRandomUuid } from '@/lib/browser-runtime-compat';
 
 const DEFAULT_BROWSER_SOURCE_CLIENT: BrowserSourceClient = {
   enabled: false,
@@ -43,6 +44,22 @@ interface SessionProviderProps {
 }
 
 export const SessionProvider = ({ appConfig, children }: SessionProviderProps) => {
+  const compatibility = ensureBrowserRandomUuid();
+  if (!compatibility.ok) {
+    return (
+      <main className="grid min-h-svh place-content-center p-6">
+        <div role="alert" className="max-w-lg space-y-2 text-center">
+          <h1 className="text-xl font-semibold">Browser compatibility error</h1>
+          <p>{compatibility.message}</p>
+        </div>
+      </main>
+    );
+  }
+
+  return <CompatibleSessionProvider appConfig={appConfig}>{children}</CompatibleSessionProvider>;
+};
+
+const CompatibleSessionProvider = ({ appConfig, children }: SessionProviderProps) => {
   const {
     room,
     isSessionActive,

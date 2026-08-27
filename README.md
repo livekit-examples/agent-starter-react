@@ -78,6 +78,102 @@ broker, template, warm pool, and `SANDBOX_ENV_*` values in the LexVoice reposito
 This frontend repository only runs the Next.js UI. It does not create, release,
 or warm sandbox sessions.
 
+### Generic control and Orin deployment boundary
+
+The current Generic session path is:
+
+```text
+Browser
+  -> agent-starter-react
+  -> LiveKit Room
+  -> Agent Dispatch
+  -> LexVoice Generic Agent
+  -> lex-reflex /start
+  -> LiveKit room_audio and room_video_raw
+  -> LexVoice Video Processor
+  -> LiveKit room_video
+  -> Browser
+```
+
+The Browser displays the UI, starts and stops the session through the existing
+Next.js session flow, connects to LiveKit, and uses the existing Agent Dispatch.
+Neither the Browser nor Next.js knows the Jetson IP, connects to Jetson port
+`8013`, receives a Jetson heartbeat, or maintains an Endpoint Lease. Do not add
+a public Jetson address variable such as `NEXT_PUBLIC_JETSON_IP`, and do not put
+the Jetson IP in Next.js runtime configuration or page responses.
+
+The Jetson address remains in the existing LexVoice Generic environment as
+`EDGE_MEDIA_URL`. The LexVoice Generic Agent owns calls to lex-reflex `/start`
+and `/stop`. lex-reflex publishes the raw `room_audio` and `room_video_raw`
+tracks; the LexVoice Video Processor consumes the raw video and publishes
+`room_video` for the Browser. Device registration, endpoint discovery, and
+Endpoint Lease design are deferred until the cloud platform is integrated. The
+archived `codex/endpoint-connectivity-probe` PR remains a reference for that
+future governance work, not part of the current runtime architecture.
+
+#### Open the cloud frontend from Orin
+
+An Orin Firefox or Chromium browser can open the frontend through a private
+cloud address such as `http://10.2.77.108:4003`. This only establishes Browser
+access to the cloud UI; it does not require lex-reflex to know the UI address,
+Jetson-to-Next.js heartbeat or IP reporting, or Browser access to lex-reflex.
+
+Bind Next.js to all cloud-side interfaces rather than only localhost:
+
+```bash
+# Development
+pnpm dev --hostname 0.0.0.0 --port 4003
+
+# Production
+pnpm build
+pnpm start --hostname 0.0.0.0 --port 4003
+```
+
+Allow the Orin private network to reach cloud TCP port `4003`. The Orin must
+also be able to reach the configured LiveKit address and its required WSS, TCP,
+and UDP ports.
+
+Verify the cloud listener locally:
+
+```bash
+curl --noproxy '*' --connect-timeout 5 -I http://127.0.0.1:4003/
+```
+
+Verify the route, port, and home page from Orin:
+
+```bash
+ip route get 10.2.77.108
+nc -vz 10.2.77.108 4003
+curl --noproxy '*' --connect-timeout 5 -I http://10.2.77.108:4003/
+```
+
+The local and Orin HTTP checks should return `200`. Also request a JavaScript
+or CSS asset that actually appears in the returned HTML; this confirms that the
+page is not the only reachable resource:
+
+```bash
+FRONTEND_ORIGIN=http://10.2.77.108:4003
+FRONTEND_HTML="$(curl --noproxy '*' --connect-timeout 5 --fail --silent --show-error "$FRONTEND_ORIGIN/")"
+FRONTEND_ASSET="$(printf '%s' "$FRONTEND_HTML" | grep -Eo '/_next/static/[^" ]+\.(js|css)' | head -n 1)"
+test -n "$FRONTEND_ASSET"
+curl --noproxy '*' --connect-timeout 5 --fail --silent --show-error \
+  --dump-header - --output /dev/null "$FRONTEND_ORIGIN$FRONTEND_ASSET"
+```
+
+The asset request should return `200` with a Content-Type matching the selected
+JavaScript or CSS resource.
+
+For manual acceptance, open `http://10.2.77.108:4003` in Orin Firefox or
+Chromium and confirm the complete page, JavaScript, CSS, Start and Stop controls
+load without a blank screen or indefinite loading state. Start must join the
+LiveKit Room and dispatch the LexVoice Generic Agent; LexVoice then starts
+lex-reflex, which publishes `room_audio` and `room_video_raw`, and the Video
+Processor publishes `room_video`. Stop must clean up the Agent session, cause
+LexVoice to stop lex-reflex, release the media devices, and leave the Browser
+ready to start again. In browser developer tools, confirm there is no Jetson IP
+input and no request to `10.2.2.199:8013`. Next.js must not store the Jetson IP,
+and Jetson must not send a heartbeat to Next.js.
+
 For standalone frontend development, install dependencies and run the dev
 server directly:
 
