@@ -253,7 +253,9 @@ export function useRoom(appConfig: AppConfig) {
       }
     };
     const usesManagedRoomInput = browserSourceClient.enabled || appConfig.usesServerRoomInput;
-    const usesSandboxConcurrentStartup = Boolean(appConfig.sandboxId) && usesManagedRoomInput;
+    const usesConcurrentManagedStartup =
+      browserSourceClient.enabled ||
+      (Boolean(appConfig.sandboxId) && appConfig.usesServerRoomInput);
 
     try {
       await waitForAgentSessionStop();
@@ -266,7 +268,7 @@ export function useRoom(appConfig: AppConfig) {
         recordFrontendObservability(FRONTEND_EVENTS.ROOM_CONNECT_FINISHED);
         recordFrontendObservability(FRONTEND_EVENTS.ROOM_CONNECTED);
         connectedRoomName = room.name;
-        if (usesSandboxConcurrentStartup) {
+        if (usesConcurrentManagedStartup) {
           const [localInputResult, dispatchResult] = await Promise.allSettled([
             startLocalInputOrCancelDispatch(),
             dispatchAgentSession(),
@@ -299,7 +301,7 @@ export function useRoom(appConfig: AppConfig) {
         ]);
       }
 
-      if (!usesSandboxConcurrentStartup) {
+      if (!usesConcurrentManagedStartup) {
         await dispatchAgentSession();
       }
       setIsSessionActive(true);
