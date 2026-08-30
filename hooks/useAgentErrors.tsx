@@ -32,33 +32,32 @@ export function useAgentErrors() {
     if (isConnected && agent.state === 'failed') {
       const reasons = agent.failureReasons;
 
-      toastAlert({
-        title: 'Session ended',
-        description: (
-          <>
-            {reasons.length > 1 && (
-              <ul className="list-inside list-disc">
-                {reasons.map((reason) => (
-                  <li key={reason}>{reason}</li>
-                ))}
-              </ul>
-            )}
-            {reasons.length === 1 && <p className="w-full">{reasons[0]}</p>}
-            <p className="w-full">
-              <a
-                target="_blank"
-                rel="noopener noreferrer"
-                href="https://www.portalos.ru"
-                className="whitespace-nowrap underline"
-              >
-                Узнать больше
-              </a>
-              .
-            </p>
-          </>
-        ),
-      });
-
+      //toastAlert({
+      //  title: 'Session ended',
+      //  description: (
+      //    <>
+      //      {reasons.length > 1 && (
+      //        <ul className="list-inside list-disc">
+      //          {reasons.map((reason) => (
+      //            <li key={reason}>{reason}</li>
+      //          ))}
+      //        </ul>
+      //      )}
+      //      {reasons.length === 1 && <p className="w-full">{reasons[0]}</p>}
+      //      <p className="w-full">
+      //        <a
+      //          target="_blank"
+      //          rel="noopener noreferrer"
+      //          href="https://www.portalos.ru"
+      //          className="whitespace-nowrap underline"
+      //        >
+      //          Узнать больше
+      //        </a>
+      //        .
+      //      </p>
+      //    </>
+      //  ),
+      //});
       //end();
     }
   }, [agent, isConnected, end]);
