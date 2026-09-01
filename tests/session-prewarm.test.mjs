@@ -658,6 +658,125 @@ test('dispatch deadline never starts participant IO, dispatch creation, or sleep
   }
 });
 
+test('dispatch accepts a readiness query started before the deadline when it returns ready after it', async () => {
+  const originalNow = Date.now;
+  let now = 1_000;
+  const deadline = 2_000;
+  const agentName = 'frontdesk-browser-agent-late-ready';
+  let participantReads = 0;
+  let deleteDispatchCalls = 0;
+  Date.now = () => now;
+
+  try {
+    const result = await dispatchRoomSession(
+      {
+        roomName: 'voice_assistant_room_late_ready',
+        sessionId: 'late-ready',
+        agentName,
+        readiness: { requireRoomVideoInputReady: true },
+      },
+      {
+        dispatchClient: {
+          async createDispatch() {
+            return { id: 'dispatch-late-ready' };
+          },
+          async deleteDispatch() {
+            deleteDispatchCalls += 1;
+          },
+        },
+        roomClient: {
+          async listParticipants() {
+            participantReads += 1;
+            if (participantReads === 1) {
+              return [];
+            }
+            if (participantReads === 2) {
+              now = deadline - 1;
+              return readyParticipants(agentName);
+            }
+
+            assert.equal(now, deadline - 1);
+            now = deadline + 1;
+            return readyParticipants(agentName, { videoReady: true });
+          },
+          async deleteRoom() {},
+        },
+        dispatchDeadlineMs: deadline,
+        dispatchPollMs: 100,
+        sleep: async () => {
+          assert.fail('ready participant queries should not sleep');
+        },
+      }
+    );
+
+    assert.equal(result.dispatchId, 'dispatch-late-ready');
+    assert.equal(result.agentParticipant.identity, 'agent-ready');
+    assert.equal(participantReads, 3);
+    assert.equal(deleteDispatchCalls, 0);
+  } finally {
+    Date.now = originalNow;
+  }
+});
+
+test('dispatch stops after a pre-deadline readiness query returns not-ready after the deadline', async () => {
+  const originalNow = Date.now;
+  let now = 1_000;
+  const deadline = 2_000;
+  const agentName = 'frontdesk-browser-agent-late-not-ready';
+  let participantReads = 0;
+  let sleepCalls = 0;
+  Date.now = () => now;
+
+  try {
+    await assert.rejects(
+      dispatchRoomSession(
+        {
+          roomName: 'voice_assistant_room_late_not_ready',
+          sessionId: 'late-not-ready',
+          agentName,
+          readiness: { requireRoomVideoInputReady: true },
+        },
+        {
+          dispatchClient: {
+            async createDispatch() {
+              return { id: 'dispatch-late-not-ready' };
+            },
+            async deleteDispatch() {},
+          },
+          roomClient: {
+            async listParticipants() {
+              participantReads += 1;
+              if (participantReads === 1) {
+                return [];
+              }
+              if (participantReads === 2) {
+                now = deadline - 1;
+                return readyParticipants(agentName);
+              }
+
+              assert.equal(now, deadline - 1);
+              now = deadline + 1;
+              return readyParticipants(agentName);
+            },
+            async deleteRoom() {},
+          },
+          dispatchDeadlineMs: deadline,
+          dispatchPollMs: 100,
+          sleep: async () => {
+            sleepCalls += 1;
+          },
+        }
+      ),
+      /agent session and required room inputs did not become ready/
+    );
+
+    assert.equal(participantReads, 3);
+    assert.equal(sleepCalls, 0);
+  } finally {
+    Date.now = originalNow;
+  }
+});
+
 test('room timeout cannot create a room after a delayed list operation finishes', async () => {
   const originalNow = Date.now;
   Date.now = () => 1_000;

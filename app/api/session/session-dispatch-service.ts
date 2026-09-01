@@ -657,12 +657,12 @@ async function waitForReusableAgentParticipant(
       allowAnonymousLiveKitAgentFallback: true,
       ...readiness,
     });
-    if (remainingDispatchTime(getDeadline()) <= 0) {
-      return null;
-    }
     if (participant) {
       throwIfSessionCancelled(session);
       return participant;
+    }
+    if (remainingDispatchTime(getDeadline()) <= 0) {
+      return null;
     }
     const waitMs = Math.min(pollMs, remainingDispatchTime(getDeadline()));
     if (waitMs <= 0) {
