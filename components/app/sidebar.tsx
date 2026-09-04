@@ -275,8 +275,10 @@ export function Sidebar({ open, onClose }: SidebarProps) {
           exit={{ x: '-100%' }}
           transition={{ type: 'spring', damping: 28, stiffness: 220 }}
           className={cn(
-            'fixed inset-0 z-50 flex h-svh w-full flex-col',
-            'bg-sidebar text-sidebar-foreground'
+            'fixed inset-0 z-50 flex h-svh w-1/2 flex-col',
+            'min-w-80',
+            'bg-sidebar text-sidebar-foreground',
+            'border-r border-sidebar-border/40'
           )}
         >
           <SidebarProvider defaultOpen={true}>
