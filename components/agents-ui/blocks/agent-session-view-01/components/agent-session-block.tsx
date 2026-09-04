@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useCallback, useRef, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { RpcError, type RpcInvocationData } from 'livekit-client';
 import { AnimatePresence, type MotionProps, motion } from 'motion/react';
 import { useAgent, useSessionContext, useSessionMessages } from '@livekit/components-react';
-import { type RpcInvocationData } from 'livekit-client';
 import { AgentChatTranscript } from '@/components/agents-ui/agent-chat-transcript';
 import {
   AgentControlBar,
@@ -204,22 +204,40 @@ export function AgentSessionView_01({
       return JSON.stringify({ success: true });
     });
 
+    room.registerRpcMethod('getUserLocation', async (data: RpcInvocationData) => {
+      try {
+        const params = JSON.parse(data.payload) as { highAccuracy?: boolean };
+        const position: GeolocationPosition = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: params.highAccuracy ?? false,
+            timeout: data.responseTimeout,
+          });
+        });
+
+        return JSON.stringify({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+      } catch {
+        throw new RpcError(1, 'Could not retrieve user location');
+      }
+    });
+
     return () => {
       room.unregisterRpcMethod('clear_chat');
       room.unregisterRpcMethod('update_commands');
+      room.unregisterRpcMethod('getUserLocation');
     };
   }, [session.room]);
 
-  const filteredMessages = clearedAt > 0
-    ? messages.filter((m) => m.timestamp > clearedAt)
-    : messages;
+  const filteredMessages =
+    clearedAt > 0 ? messages.filter((m) => m.timestamp > clearedAt) : messages;
 
   const handleClear = useCallback(() => {
     setClearedAt(Date.now());
   }, []);
 
   const controls: AgentControlBarControls = {
-
     leave: true,
     microphone: true,
     chat: supportsChatInput,
