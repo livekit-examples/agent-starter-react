@@ -174,25 +174,22 @@ export function Sidebar({ open, onClose }: SidebarProps) {
 
   const handleSendData = async () => {
     if (!textData) return;
+    const participant = room?.localParticipant;
+    if (!participant) return;
     try {
-      const response = await fetch('/api/send-data', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          message: textData, 
-          room_name: roomName 
-        }),
+      const payload = JSON.stringify({
+        message: textData,
+        room_name: roomName,
       });
-
-      if (response.ok) {
-        alert('Data sent successfully!');
-        setTextData('');
-      } else {
-        alert('Failed to send data.');
-      }
+      await participant.publishData(new TextEncoder().encode(payload), {
+        topic: 'prtluserdata',
+        reliable: true,
+      });
+      alert('Данные отправлены!');
+      setTextData('');
     } catch (error) {
-      console.error('Error sending data:', error);
-      alert('An error occurred while sending data.');
+      console.error('Error sending data over LiveKit:', error);
+      alert('Не удалось отправить данные.');
     }
   };
 
