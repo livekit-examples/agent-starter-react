@@ -63,6 +63,15 @@ async def entrypoint(ctx: JobContext) -> None:
     ctx.room.local_participant.register_rpc_method("get_sessions", get_sessions)
     print("agent ready — 'get_sessions' RPC method registered")
 
+    # --- Register RPC to receive the user's geolocation from the frontend ---
+    async def set_user_location(data: str) -> str:
+        body = json.loads(data)
+        print(f"received user location: {body}")
+        return json.dumps({"success": True})
+
+    ctx.room.local_participant.register_rpc_method("setUserLocation", set_user_location)
+    print("agent ready — 'setUserLocation' RPC method registered")
+
     # --- Example: watch for new participants and register callbacks ---
     @ctx.room.on("participant_connected")
     def on_participant_connected(participant: rtc.RemoteParticipant) -> None:

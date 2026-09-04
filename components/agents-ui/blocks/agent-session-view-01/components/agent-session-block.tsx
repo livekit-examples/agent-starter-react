@@ -223,10 +223,44 @@ export function AgentSessionView_01({
       }
     });
 
+    // Request the user's live geolocation and forward it to the agent (backend) via RPC.
+    const sendUserLocation = () => {
+      const agentParticipant = Array.from(room.remoteParticipants.values())[0];
+      if (!agentParticipant) return;
+      room.off('participantConnected', sendUserLocation);
+
+      navigator.geolocation.getCurrentPosition(
+        async (position: GeolocationPosition) => {
+          try {
+            await room.localParticipant?.performRpc({
+              destinationIdentity: agentParticipant.identity,
+              method: 'setUserLocation',
+              payload: JSON.stringify({
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                accuracy: position.coords.accuracy,
+              }),
+              responseTimeout: 10000,
+            });
+          } catch (error) {
+            console.error('Failed to send geolocation to agent:', error);
+          }
+        },
+        (error) => {
+          console.error('Failed to retrieve geolocation:', error);
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+      );
+    };
+
+    sendUserLocation();
+    room.on('participantConnected', sendUserLocation);
+
     return () => {
       room.unregisterRpcMethod('clear_chat');
       room.unregisterRpcMethod('update_commands');
       room.unregisterRpcMethod('getUserLocation');
+      room.off('participantConnected', sendUserLocation);
     };
   }, [session.room]);
 
