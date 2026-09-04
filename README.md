@@ -19,7 +19,7 @@ Also available for:
 - Multiple audio visualizer styles (`bar`, `grid`, `radial`, `wave`, `aura`)
 - Virtual avatar integration
 - Light/dark theme switching with system preference detection
-- Customizable branding, colors, and UI text via configuration
+- Customizable branding, colors, and UI text
 
 This template is built with Next.js and is free for you to use or modify as you see fit.
 
@@ -102,56 +102,11 @@ You'll also need an agent to speak with. Try our starter agent for [Python](http
 
 ## Configuration
 
-This starter is designed to be flexible so you can adapt it to your specific agent use case. You can easily configure it to work with different types of inputs and outputs:
-
-#### Example: App configuration (`app-config.ts`)
-
-```ts
-export const APP_CONFIG_DEFAULTS: AppConfig = {
-  companyName: 'LiveKit',
-  pageTitle: 'LiveKit Voice Agent',
-  pageDescription: 'A voice agent built with LiveKit',
-
-  supportsChatInput: true,
-  supportsVideoInput: true,
-  supportsScreenShare: true,
-  isPreConnectBufferEnabled: true,
-
-  logo: '/lk-logo.svg',
-  accent: '#002cf2',
-  logoDark: '/lk-logo-dark.svg',
-  accentDark: '#1fd5f9',
-  startButtonText: 'Start call',
-
-  // optional: audio visualization configuration
-  // audioVisualizerColor: '#002cf2',
-  // audioVisualizerColorDark: '#1fd5f9',
-  // audioVisualizerType: 'bar',
-  // audioVisualizerBarCount: 5,
-  // audioVisualizerType: 'radial',
-  // audioVisualizerRadialBarCount: 24,
-  // audioVisualizerRadialRadius: 100,
-  // audioVisualizerType: 'grid',
-  // audioVisualizerGridRowCount: 25,
-  // audioVisualizerGridColumnCount: 25,
-  // audioVisualizerType: 'wave',
-  // audioVisualizerWaveLineWidth: 3,
-  // audioVisualizerType: 'aura',
-  // audioVisualizerAuraColorShift: 0.3,
-
-  // agent dispatch configuration
-  agentName: undefined,
-
-  // LiveKit Cloud Sandbox configuration
-  sandboxId: undefined,
-};
-```
-
-You can update these values in [`app-config.ts`](./app-config.ts) to customize branding, features, and UI text for your deployment.
+This starter is designed to be flexible so you can adapt it to your specific agent use case. Branding, feature toggles, and UI text are set directly in the components that use them — see [`app/layout.tsx`](./app/layout.tsx) for branding (logo, colors, page title/description) and [`components/app/view-controller.tsx`](./components/app/view-controller.tsx) for feature toggles and the audio visualizer.
 
 #### Audio visualizer presets
 
-Set `audioVisualizerType` in [`app-config.ts`](./app-config.ts) to switch visualizer styles:
+Set `audioVisualizerType` in [`components/app/view-controller.tsx`](./components/app/view-controller.tsx) to switch visualizer styles:
 
 - `bar` (default): vertical bars with optional `audioVisualizerBarCount`
 - `grid`: dot grid with `audioVisualizerGridRowCount` and `audioVisualizerGridColumnCount`
@@ -160,10 +115,6 @@ Set `audioVisualizerType` in [`app-config.ts`](./app-config.ts) to switch visual
 - `aura`: shader-based aura with `audioVisualizerAuraColorShift`
 
 Use `audioVisualizerColor` to set a shared accent color across all visualizer modes.
-
-> [!NOTE]
-> The `sandboxId` is for the LiveKit Cloud Sandbox environment.
-> It is not used for local development.
 
 #### Environment Variables
 
