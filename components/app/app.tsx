@@ -44,6 +44,11 @@ export function App({ appConfig }: AppProps) {
     }
     return '';
   });
+  const agentName = (() => {
+    if (typeof window !== 'undefined') {
+      return new URLSearchParams(window.location.search).get('agent_name') ?? undefined;
+    }
+  })();
 
   const fallbackUser = typeof window !== 'undefined'
     ? new URLSearchParams(window.location.search).get('user') ?? `va_user_${Math.floor(Math.random() * 10_000)}`
@@ -57,8 +62,8 @@ export function App({ appConfig }: AppProps) {
     const sandboxEndpoint = process.env.NEXT_PUBLIC_CONN_DETAILS_ENDPOINT;
     const url = sandboxEndpoint ?? '/api/token';
     const sandboxId = appConfig.sandboxId;
-    const roomConfig = appConfig.agentName
-      ? { agents: [{ agent_name: appConfig.agentName }] }
+    const roomConfig = (agentName ?? appConfig.agentName)
+      ? { agents: [{ agent_name: agentName ?? appConfig.agentName }] }
       : undefined;
 
     return TokenSource.custom(async () => {
@@ -81,7 +86,7 @@ export function App({ appConfig }: AppProps) {
       });
       return await res.json();
     });
-  }, [appConfig, finalRoomName, participantIdentity, participantName]);
+  }, [agentName, appConfig, finalRoomName, participantIdentity, participantName]);
 
   const session = useSession(tokenSource);
   const isConnected = session.isConnected;
