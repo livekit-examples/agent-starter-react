@@ -26,6 +26,8 @@ interface WelcomeViewProps {
   onUsernameChange?: (name: string) => void;
   roomName?: string;
   onRoomNameChange?: (name: string) => void;
+  agentName?: string;
+  onAgentNameChange?: (name: string) => void;
 }
 
 export const WelcomeView = ({
@@ -35,6 +37,8 @@ export const WelcomeView = ({
   onUsernameChange,
   roomName = '',
   onRoomNameChange,
+  agentName = '',
+  onAgentNameChange,
   ref,
 }: React.ComponentProps<'div'> & WelcomeViewProps) => {
   return (
@@ -59,6 +63,14 @@ export const WelcomeView = ({
           value={roomName}
           onChange={(e) => onRoomNameChange?.(e.target.value)}
           placeholder="Название комнаты (необязательно)"
+          className="mt-2 w-64 rounded-full text-base text-center"
+        />
+
+        <Input
+          type="text"
+          value={agentName}
+          onChange={(e) => onAgentNameChange?.(e.target.value)}
+          placeholder="Имя агента (необязательно)"
           className="mt-2 w-64 rounded-full text-base text-center"
         />
 

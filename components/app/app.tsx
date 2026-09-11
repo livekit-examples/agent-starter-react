@@ -44,11 +44,11 @@ export function App({ appConfig }: AppProps) {
     }
     return '';
   });
-  const agentName = (() => {
+  const [agentName, setAgentName] = useState<string | undefined>(() => {
     if (typeof window !== 'undefined') {
       return new URLSearchParams(window.location.search).get('agent_name') ?? undefined;
     }
-  })();
+  });
 
   const fallbackUser = typeof window !== 'undefined'
     ? new URLSearchParams(window.location.search).get('user') ?? `va_user_${Math.floor(Math.random() * 10_000)}`
@@ -101,6 +101,8 @@ export function App({ appConfig }: AppProps) {
           onUsernameChange={setUsername}
           roomName={roomName}
           onRoomNameChange={setRoomName}
+          agentName={agentName}
+          onAgentNameChange={setAgentName}
         />
       </main>
       <StartAudioButton label="Начать аудио" />
