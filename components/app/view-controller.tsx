@@ -36,9 +36,19 @@ interface ViewControllerProps {
   onRoomNameChange?: (name: string) => void;
   agentName?: string;
   onAgentNameChange?: (name: string) => void;
+  isChatFullscreen?: boolean;
 }
 
-export function ViewController({ appConfig, username, onUsernameChange, roomName, onRoomNameChange, agentName, onAgentNameChange }: ViewControllerProps) {
+export function ViewController({
+  appConfig,
+  username,
+  onUsernameChange,
+  roomName,
+  onRoomNameChange,
+  agentName,
+  onAgentNameChange,
+  isChatFullscreen,
+}: ViewControllerProps) {
   const { isConnected, start } = useSessionContext();
   const { resolvedTheme } = useTheme();
 
@@ -81,6 +91,7 @@ export function ViewController({ appConfig, username, onUsernameChange, roomName
           audioVisualizerRadialBarCount={appConfig.audioVisualizerRadialBarCount}
           audioVisualizerRadialRadius={appConfig.audioVisualizerRadialRadius}
           audioVisualizerWaveLineWidth={appConfig.audioVisualizerWaveLineWidth}
+          isChatFullscreen={isChatFullscreen}
           className="fixed inset-0"
         />
       )}

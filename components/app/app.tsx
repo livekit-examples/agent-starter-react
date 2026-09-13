@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Menu, Table2 } from 'lucide-react';
 import { TokenSource } from 'livekit-client';
 import { useSession } from '@livekit/components-react';
@@ -44,6 +44,18 @@ export function App({ appConfig }: AppProps) {
     }
     return '';
   });
+  const [isChatFullscreen, setIsChatFullscreen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('chat-fullscreen') === 'true';
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('chat-fullscreen', String(isChatFullscreen));
+    }
+  }, [isChatFullscreen]);
   const [agentName, setAgentName] = useState<string | undefined>(() => {
     if (typeof window !== 'undefined') {
       return new URLSearchParams(window.location.search).get('agent_name') ?? undefined;
@@ -103,6 +115,7 @@ export function App({ appConfig }: AppProps) {
           onRoomNameChange={setRoomName}
           agentName={agentName}
           onAgentNameChange={setAgentName}
+          isChatFullscreen={isChatFullscreen}
         />
       </main>
       <StartAudioButton label="Начать аудио" />
@@ -130,7 +143,12 @@ export function App({ appConfig }: AppProps) {
         </>
       )}
 
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        isChatFullscreen={isChatFullscreen}
+        onChatFullscreenChange={setIsChatFullscreen}
+      />
       <RightSidebar open={rightSidebarOpen} onClose={() => setRightSidebarOpen(false)} />
 
       <Toaster

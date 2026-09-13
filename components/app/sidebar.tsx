@@ -5,7 +5,9 @@ import {
   Brain,
   Clock,
   History,
+  Maximize2,
   MessageSquareTextIcon,
+  Minimize2,
   Search,
   Send,
   Sparkles,
@@ -59,6 +61,8 @@ interface Model {
 interface SidebarProps {
   open: boolean;
   onClose: () => void;
+  isChatFullscreen?: boolean;
+  onChatFullscreenChange?: (fullscreen: boolean) => void;
 }
 
 function groupSessions(sessions: Session[]) {
@@ -150,7 +154,12 @@ function SampleTable() {
   );
 }
 
-export function Sidebar({ open, onClose }: SidebarProps) {
+export function Sidebar({
+  open,
+  onClose,
+  isChatFullscreen = false,
+  onChatFullscreenChange,
+}: SidebarProps) {
   const room = useRoomContext();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(false);
@@ -288,14 +297,37 @@ export function Sidebar({ open, onClose }: SidebarProps) {
                     </div>
                     <span className="text-sm font-semibold">AI Assistant</span>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={onClose}
-                    className="rounded-md p-1.5"
-                  >
-                    <XIcon className="size-4" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onChatFullscreenChange?.(!isChatFullscreen)}
+                      aria-pressed={isChatFullscreen}
+                      title={
+                        isChatFullscreen
+                          ? 'Выключить полноэкранный чат'
+                          : 'Развернуть чат на весь экран'
+                      }
+                      className={cn(
+                        'rounded-md p-1.5',
+                        isChatFullscreen && 'bg-sidebar-accent text-sidebar-accent-foreground'
+                      )}
+                    >
+                      {isChatFullscreen ? (
+                        <Minimize2 className="size-4" />
+                      ) : (
+                        <Maximize2 className="size-4" />
+                      )}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={onClose}
+                      className="rounded-md p-1.5"
+                    >
+                      <XIcon className="size-4" />
+                    </Button>
+                  </div>
                 </div>
               </SidebarHeader>
 

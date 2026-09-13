@@ -158,6 +158,13 @@ export interface AgentSessionView_01Props {
   audioVisualizerWaveLineWidth?: number;
   /** Optional class name merged onto the outer `<section>` container. */
   className?: string;
+  /**
+   * When true, the chat transcript expands to fill the full screen width
+   * instead of the centered default width.
+   *
+   * @default false
+   */
+  isChatFullscreen?: boolean;
 }
 
 export function AgentSessionView_01({
@@ -166,6 +173,7 @@ export function AgentSessionView_01({
   supportsVideoInput = true,
   supportsScreenShare = true,
   isPreConnectBufferEnabled = true,
+  isChatFullscreen = false,
   audioVisualizerType,
   audioVisualizerColor,
   audioVisualizerColorShift,
@@ -296,7 +304,12 @@ export function AgentSessionView_01({
             <AgentChatTranscript
               agentState={agentState}
               messages={filteredMessages}
-              className="mx-auto max-w-2xl **:data-[slot=message-scroller-content]:p-4 **:data-[slot=message-scroller-content]:pt-40! md:**:data-[slot=message-scroller-content]:p-6"
+              className={cn(
+                '**:data-[slot=message-scroller-content]:p-4 **:data-[slot=message-scroller-content]:pt-40!',
+                isChatFullscreen
+                  ? 'md:**:data-[slot=message-scroller-content]:px-6 md:**:data-[slot=message-scroller-content]:pt-44'
+                  : 'mx-auto max-w-2xl md:**:data-[slot=message-scroller-content]:p-6'
+              )}
             />
           </motion.div>
         )}
