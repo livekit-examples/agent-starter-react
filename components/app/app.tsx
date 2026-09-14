@@ -58,7 +58,7 @@ export function App({ appConfig }: AppProps) {
   }, [isChatFullscreen]);
   const [agentName, setAgentName] = useState<string | undefined>(() => {
     if (typeof window !== 'undefined') {
-      return new URLSearchParams(window.location.search).get('agent_name') ?? undefined;
+      return new URLSearchParams(window.location.search).get('agent') ?? undefined;
     }
   });
 
