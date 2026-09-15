@@ -56,18 +56,6 @@ export function App({ appConfig }: AppProps) {
       localStorage.setItem('chat-fullscreen', String(isChatFullscreen));
     }
   }, [isChatFullscreen]);
-  const [isVideoConference, setIsVideoConference] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('video-conference') === 'true';
-    }
-    return false;
-  });
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('video-conference', String(isVideoConference));
-    }
-  }, [isVideoConference]);
   const [agentName, setAgentName] = useState<string | undefined>(() => {
     if (typeof window !== 'undefined') {
       return new URLSearchParams(window.location.search).get('agent') ?? undefined;
@@ -128,7 +116,6 @@ export function App({ appConfig }: AppProps) {
           agentName={agentName}
           onAgentNameChange={setAgentName}
           isChatFullscreen={isChatFullscreen}
-          isVideoConference={isVideoConference}
         />
       </main>
       <StartAudioButton label="Начать аудио" />
@@ -162,12 +149,7 @@ export function App({ appConfig }: AppProps) {
         isChatFullscreen={isChatFullscreen}
         onChatFullscreenChange={setIsChatFullscreen}
       />
-      <RightSidebar
-        open={rightSidebarOpen}
-        onClose={() => setRightSidebarOpen(false)}
-        isVideoConference={isVideoConference}
-        onVideoConferenceChange={setIsVideoConference}
-      />
+      <RightSidebar open={rightSidebarOpen} onClose={() => setRightSidebarOpen(false)} />
 
       <Toaster
         icons={{
