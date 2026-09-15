@@ -5,6 +5,7 @@ import {
   CalendarDays,
   FileText,
   LayoutDashboard,
+  MonitorPlay,
   MessageSquareTextIcon,
   XIcon,
 } from 'lucide-react';
@@ -24,9 +25,11 @@ import { PlateEditor } from '@/components/app/plate-editor';
 interface RightSidebarProps {
   open: boolean;
   onClose: () => void;
+  isVideoConference?: boolean;
+  onVideoConferenceChange?: (enabled: boolean) => void;
 }
 
-export function RightSidebar({ open, onClose }: RightSidebarProps) {
+export function RightSidebar({ open, onClose, isVideoConference = false, onVideoConferenceChange }: RightSidebarProps) {
   const [activeTab, setActiveTab] = useState<'chat' | 'calendar' | 'dashboard' | 'editor'>('chat');
 
   return (
@@ -100,6 +103,25 @@ export function RightSidebar({ open, onClose }: RightSidebarProps) {
                   >
                     <FileText className="size-3.5" />
                     Редактор
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onVideoConferenceChange?.(!isVideoConference)}
+                    title={
+                      isVideoConference
+                        ? 'Выключить режим видеоконференции'
+                        : 'Включить режим видеоконференции'
+                    }
+                    className={cn(
+                      'gap-1.5 px-2.5 py-1.5 text-xs font-medium',
+                      isVideoConference
+                        ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                        : 'text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50'
+                    )}
+                  >
+                    <MonitorPlay className="size-3.5" />
+                    Видео
                   </Button>
                   <Button
                     variant="ghost"

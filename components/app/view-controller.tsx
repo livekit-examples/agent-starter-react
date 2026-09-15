@@ -2,7 +2,7 @@
 
 import { useTheme } from 'next-themes';
 import { AnimatePresence, motion } from 'motion/react';
-import { useSessionContext } from '@livekit/components-react';
+import { useSessionContext, VideoConference } from '@livekit/components-react';
 import type { AppConfig } from '@/app-config';
 import { AgentSessionView_01 } from '@/components/agents-ui/blocks/agent-session-view-01';
 import { WelcomeView } from '@/components/app/welcome-view';
@@ -37,6 +37,7 @@ interface ViewControllerProps {
   agentName?: string;
   onAgentNameChange?: (name: string) => void;
   isChatFullscreen?: boolean;
+  isVideoConference?: boolean;
 }
 
 export function ViewController({
@@ -48,6 +49,7 @@ export function ViewController({
   agentName,
   onAgentNameChange,
   isChatFullscreen,
+  isVideoConference,
 }: ViewControllerProps) {
   const { isConnected, start } = useSessionContext();
   const { resolvedTheme } = useTheme();
@@ -70,7 +72,7 @@ export function ViewController({
         />
       )}
       {/* Session view */}
-      {isConnected && (
+      {isConnected && !isVideoConference && (
         <MotionSessionView
           key="session-view"
           {...VIEW_MOTION_PROPS}
@@ -94,6 +96,10 @@ export function ViewController({
           isChatFullscreen={isChatFullscreen}
           className="fixed inset-0"
         />
+      )}
+      {/* Video conference view */}
+      {isConnected && isVideoConference && (
+        <VideoConference key="video-conference" className="fixed inset-0" />
       )}
     </AnimatePresence>
   );
