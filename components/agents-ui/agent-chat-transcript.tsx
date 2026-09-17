@@ -93,6 +93,11 @@ export interface AgentChatTranscriptProps
    * Additional CSS class names to apply to the conversation container.
    */
   className?: string;
+  /**
+   * When true, every message is aligned the same way (stacked vertically)
+   * instead of user messages aligning right and agent messages aligning left.
+   */
+  isFullscreen?: boolean;
 }
 
 /**
@@ -125,6 +130,7 @@ export function AgentChatTranscript({
   spacerClassName,
   agentState,
   messages = [],
+  isFullscreen = false,
   className,
   ...props
 }: AgentChatTranscriptProps) {
@@ -146,6 +152,7 @@ export function AgentChatTranscript({
               const { id, timestamp, from, message } = receivedMessage;
               const time = new Date(timestamp);
               const isUser = from?.isLocal;
+              const align = isFullscreen ? 'start' : isUser ? 'end' : 'start';
               const locale = typeof navigator !== 'undefined' ? navigator.language : 'en-US';
               const title = time.toLocaleTimeString(locale, { timeStyle: 'full' });
               let _scrollAnchor = false;
@@ -160,12 +167,9 @@ export function AgentChatTranscript({
 
               return (
                 <MessageScrollerItem key={id} messageId={id} scrollAnchor={_scrollAnchor}>
-                  <Message align={isUser ? 'end' : 'start'} title={title}>
+                  <Message align={align} title={title}>
                     <MessageContent>
-                      <Bubble
-                        align={isUser ? 'end' : 'start'}
-                        variant={isUser ? 'secondary' : 'ghost'}
-                      >
+                      <Bubble align={align} variant={isUser ? 'secondary' : 'ghost'}>
                         <BubbleContent>
                           <Streamdown rehypePlugins={chatRehypePlugins}>{message}</Streamdown>
                         </BubbleContent>

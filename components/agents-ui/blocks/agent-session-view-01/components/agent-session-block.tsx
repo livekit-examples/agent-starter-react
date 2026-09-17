@@ -304,6 +304,7 @@ export function AgentSessionView_01({
             <AgentChatTranscript
               agentState={agentState}
               messages={filteredMessages}
+              isFullscreen={isChatFullscreen}
               className={cn(
                 '**:data-[slot=message-scroller-content]:p-4 **:data-[slot=message-scroller-content]:pt-40!',
                 isChatFullscreen
