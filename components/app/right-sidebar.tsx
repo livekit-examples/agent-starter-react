@@ -13,7 +13,11 @@ import { PlateEditor } from '@/components/app/plate-editor';
 import { CalendarView } from '@/components/app/sidebar-calendar';
 import { Button } from '@/components/ui/button';
 import { Drawer } from '@/components/ui/drawer';
-import { SidebarContent, SidebarHeader } from '@/components/ui/sidebar';
+import {
+  SidebarContent,
+  SidebarHeader,
+  SidebarProvider,
+} from '@/components/ui/sidebar';
 import { cn } from '@/lib/shadcn/utils';
 
 interface RightSidebarProps {
@@ -26,7 +30,8 @@ export function RightSidebar({ open, onClose }: RightSidebarProps) {
 
   return (
     <Drawer open={open} onClose={onClose} side="right" className="w-full md:w-[420px]">
-      <SidebarHeader className="border-sidebar-border from-sidebar to-sidebar/95 border-b bg-gradient-to-r px-3 py-2">
+      <SidebarProvider defaultOpen={true} className="flex h-full flex-col">
+        <SidebarHeader className="border-sidebar-border from-sidebar to-sidebar/95 shrink-0 border-b bg-gradient-to-r px-3 py-2">
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
@@ -115,6 +120,7 @@ export function RightSidebar({ open, onClose }: RightSidebarProps) {
           <DataExplorer />
         </SidebarContent>
       )}
+      </SidebarProvider>
     </Drawer>
   );
 }
