@@ -1,15 +1,15 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Menu, Table2 } from 'lucide-react';
 import { TokenSource } from 'livekit-client';
+import { Menu, Table2 } from 'lucide-react';
 import { useSession } from '@livekit/components-react';
 import { WarningIcon } from '@phosphor-icons/react/dist/ssr';
 import type { AppConfig } from '@/app-config';
 import { AgentSessionProvider } from '@/components/agents-ui/agent-session-provider';
 import { StartAudioButton } from '@/components/agents-ui/start-audio-button';
-import { Sidebar } from '@/components/app/sidebar';
 import { RightSidebar } from '@/components/app/right-sidebar';
+import { Sidebar } from '@/components/app/sidebar';
 import { ViewController } from '@/components/app/view-controller';
 import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/sonner';
@@ -64,9 +64,11 @@ export function App({ appConfig, roomName: initialRoomName }: AppProps) {
     }
   });
 
-  const fallbackUser = typeof window !== 'undefined'
-    ? new URLSearchParams(window.location.search).get('user') ?? `va_user_${Math.floor(Math.random() * 10_000)}`
-    : `va_user_${Math.floor(Math.random() * 10_000)}`;
+  const fallbackUser =
+    typeof window !== 'undefined'
+      ? (new URLSearchParams(window.location.search).get('user') ??
+        `va_user_${Math.floor(Math.random() * 10_000)}`)
+      : `va_user_${Math.floor(Math.random() * 10_000)}`;
 
   const participantIdentity = username || fallbackUser;
   const participantName = username || fallbackUser;
@@ -76,9 +78,10 @@ export function App({ appConfig, roomName: initialRoomName }: AppProps) {
     const sandboxEndpoint = process.env.NEXT_PUBLIC_CONN_DETAILS_ENDPOINT;
     const url = sandboxEndpoint ?? '/api/token';
     const sandboxId = appConfig.sandboxId;
-    const roomConfig = (agentName ?? appConfig.agentName)
-      ? { agents: [{ agent_name: agentName ?? appConfig.agentName }] }
-      : undefined;
+    const roomConfig =
+      (agentName ?? appConfig.agentName)
+        ? { agents: [{ agent_name: agentName ?? appConfig.agentName }] }
+        : undefined;
 
     return TokenSource.custom(async () => {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -128,7 +131,7 @@ export function App({ appConfig, roomName: initialRoomName }: AppProps) {
             variant="ghost"
             size="icon"
             onClick={() => setSidebarOpen(true)}
-            className="fixed left-3 top-3 z-50 md:left-6 md:top-6"
+            className="fixed top-3 left-3 z-50 md:top-6 md:left-6"
             aria-label="Открыть боковую панель"
           >
             <Menu className="size-5" />
@@ -137,7 +140,7 @@ export function App({ appConfig, roomName: initialRoomName }: AppProps) {
             variant="ghost"
             size="icon"
             onClick={() => setRightSidebarOpen(true)}
-            className="fixed right-3 top-3 z-50 md:right-6 md:top-6"
+            className="fixed top-3 right-3 z-50 md:top-6 md:right-6"
             aria-label="Открыть правую панель"
           >
             <Table2 className="size-5" />

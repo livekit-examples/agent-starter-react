@@ -11,8 +11,7 @@ import { cn } from '@/lib/shadcn/utils';
  * Props for the AgentDisconnectButton component.
  */
 export interface AgentDisconnectButtonProps
-  extends ComponentProps<'button'>,
-    VariantProps<typeof buttonVariants> {
+  extends ComponentProps<'button'>, VariantProps<typeof buttonVariants> {
   /**
    * Custom icon to display. Defaults to PhoneOffIcon.
    */

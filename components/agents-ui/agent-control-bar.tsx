@@ -2,7 +2,14 @@
 
 import { type ComponentProps, useEffect, useMemo, useRef, useState } from 'react';
 import { Track } from 'livekit-client';
-import { CommandIcon, Loader, MessageSquareTextIcon, PaperclipIcon, SendHorizontal, XIcon } from 'lucide-react';
+import {
+  CommandIcon,
+  Loader,
+  MessageSquareTextIcon,
+  PaperclipIcon,
+  SendHorizontal,
+  XIcon,
+} from 'lucide-react';
 import { type MotionProps, motion } from 'motion/react';
 import { useChat, useSessionContext } from '@livekit/components-react';
 import { AgentDisconnectButton } from '@/components/agents-ui/agent-disconnect-button';
@@ -18,8 +25,8 @@ import {
   useInputControls,
   usePublishPermissions,
 } from '@/hooks/agents-ui/use-agent-control-bar';
-import { cn } from '@/lib/shadcn/utils';
 import { sendFile } from '@/lib/send-file';
+import { cn } from '@/lib/shadcn/utils';
 
 const LK_TOGGLE_VARIANT_1 = [
   'data-[state=off]:bg-accent data-[state=off]:hover:bg-foreground/10',
@@ -40,10 +47,18 @@ export interface Command {
 const DEFAULT_COMMANDS: Command[] = [
   { command: '/help', description: 'Показать доступные команды', example: '/help' },
   { command: '/clear', description: 'Очистить историю чата', example: '/clear' },
-  { command: '/feedback', description: 'Отправить отзыв об агенте', example: '/feedback Агент был полезен' },
+  {
+    command: '/feedback',
+    description: 'Отправить отзыв об агенте',
+    example: '/feedback Агент был полезен',
+  },
   { command: '/summarize', description: 'Суммировать разговор', example: '/summarize' },
   { command: '/voice', description: 'Переключиться в голосовой режим', example: '/voice' },
-  { command: '/realtime', description: 'Переключиться в режим реального времени', example: '/realtime' },
+  {
+    command: '/realtime',
+    description: 'Переключиться в режим реального времени',
+    example: '/realtime',
+  },
   { command: '/call', description: 'Начать звонок', example: '/call' },
   { command: '/imgstream', description: 'Запустить поток изображений', example: '/imgstream' },
 ];
@@ -119,7 +134,13 @@ interface AgentChatInputProps {
   commands?: Command[];
 }
 
-function AgentChatInput({ chatOpen, onSend = async () => {}, onClear, className, commands: externalCommands }: AgentChatInputProps) {
+function AgentChatInput({
+  chatOpen,
+  onSend = async () => {},
+  onClear,
+  className,
+  commands: externalCommands,
+}: AgentChatInputProps) {
   const defaultCommands = useCommands();
   const commands = externalCommands ?? defaultCommands;
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -241,7 +262,9 @@ function AgentChatInput({ chatOpen, onSend = async () => {}, onClear, className,
   }, [chatOpen]);
 
   return (
-    <div className={cn('relative mb-3 flex grow items-end gap-2 rounded-md pl-1 text-sm', className)}>
+    <div
+      className={cn('relative mb-3 flex grow items-end gap-2 rounded-md pl-1 text-sm', className)}
+    >
       <textarea
         autoFocus
         ref={inputRef}
@@ -250,7 +273,8 @@ function AgentChatInput({ chatOpen, onSend = async () => {}, onClear, className,
         placeholder="Ваше сообщение..."
         onKeyDown={handleKeyDown}
         onChange={(e) => setMessage(e.target.value)}
-        className="field-sizing-content max-h-16 min-h-8 flex-1 resize-none py-2 text-base [scrollbar-width:thin] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"      />
+        className="field-sizing-content max-h-16 min-h-8 flex-1 resize-none [scrollbar-width:thin] py-2 text-base focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+      />
       <Button
         size="icon"
         type="button"
@@ -267,7 +291,7 @@ function AgentChatInput({ chatOpen, onSend = async () => {}, onClear, className,
       {isCommandActive && (
         <div
           ref={listRef}
-          className="absolute bottom-full left-0 right-0 z-50 mb-1 max-h-48 overflow-y-auto rounded-md border bg-popover p-1 shadow-md"
+          className="bg-popover absolute right-0 bottom-full left-0 z-50 mb-1 max-h-48 overflow-y-auto rounded-md border p-1 shadow-md"
         >
           {filteredCommands.map((cmd, i) => (
             <button

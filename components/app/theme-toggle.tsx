@@ -20,7 +20,13 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
       )}
     >
       <span className="sr-only">Переключение темы</span>
-      <Button type="button" variant="ghost" size="icon" onClick={() => setTheme('dark')} className="rounded-none p-1 pl-1.5">
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        onClick={() => setTheme('dark')}
+        className="rounded-none p-1 pl-1.5"
+      >
         <span className="sr-only">Тёмная тема</span>
         <MoonIcon
           suppressHydrationWarning

@@ -13,8 +13,11 @@ import {
   Sparkles,
   XIcon,
 } from 'lucide-react';
-import { useRoomContext } from '@livekit/components-react';
 import { AnimatePresence, motion } from 'motion/react';
+import { useRoomContext } from '@livekit/components-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -22,9 +25,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import {
+  Sidebar as ShadcnSidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarProvider,
+} from '@/components/ui/sidebar';
 import {
   Table,
   TableBody,
@@ -34,17 +45,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { cn } from '@/lib/shadcn/utils';
-import {
-  SidebarProvider,
-  Sidebar as ShadcnSidebar,
-  SidebarContent,
-  SidebarHeader,
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuItem,
-} from '@/components/ui/sidebar';
 
 interface Session {
   id: string;
@@ -92,28 +92,61 @@ function groupSessions(sessions: Session[]) {
 }
 
 const sampleTableData = [
-  { task: 'Реализовать middleware аутентификации', status: '✅ Готово', priority: 'Высокий', assignee: 'Алиса' },
-  { task: 'Написать документацию API', status: '🔄 В процессе', priority: 'Средний', assignee: 'Боб' },
-  { task: 'Исправить баг редиректа входа', status: '✅ Готово', priority: 'Высокий', assignee: 'Алиса' },
-  { task: 'Дизайн панели управления', status: '⏳ Ожидает', priority: 'Низкий', assignee: 'Каролина' },
-  { task: 'Скрипт миграции базы данных', status: '🔄 В процессе', priority: 'Высокий', assignee: 'Боб' },
+  {
+    task: 'Реализовать middleware аутентификации',
+    status: '✅ Готово',
+    priority: 'Высокий',
+    assignee: 'Алиса',
+  },
+  {
+    task: 'Написать документацию API',
+    status: '🔄 В процессе',
+    priority: 'Средний',
+    assignee: 'Боб',
+  },
+  {
+    task: 'Исправить баг редиректа входа',
+    status: '✅ Готово',
+    priority: 'Высокий',
+    assignee: 'Алиса',
+  },
+  {
+    task: 'Дизайн панели управления',
+    status: '⏳ Ожидает',
+    priority: 'Низкий',
+    assignee: 'Каролина',
+  },
+  {
+    task: 'Скрипт миграции базы данных',
+    status: '🔄 В процессе',
+    priority: 'Высокий',
+    assignee: 'Боб',
+  },
   { task: 'Сквозные тесты', status: '⏳ Ожидает', priority: 'Средний', assignee: 'Каролина' },
 ];
 
 function SampleTable() {
   return (
-    <div className="mb-4 overflow-hidden rounded-lg border border-sidebar-border/40">
-      <div className="bg-sidebar-accent/30 px-3 py-2 text-[11px] font-semibold tracking-wider text-sidebar-foreground/60 uppercase">
+    <div className="border-sidebar-border/40 mb-4 overflow-hidden rounded-lg border">
+      <div className="bg-sidebar-accent/30 text-sidebar-foreground/60 px-3 py-2 text-[11px] font-semibold tracking-wider uppercase">
         Задачи проекта
       </div>
       <div className="overflow-x-auto">
         <Table className="w-full text-xs">
           <TableHeader>
-            <TableRow className="border-b border-sidebar-border/20 bg-sidebar-accent/20 hover:bg-sidebar-accent/20">
-              <TableHead className="px-3 py-2 font-semibold text-sidebar-foreground/70">Задача</TableHead>
-              <TableHead className="px-3 py-2 font-semibold text-sidebar-foreground/70">Статус</TableHead>
-              <TableHead className="px-3 py-2 font-semibold text-sidebar-foreground/70">Приоритет</TableHead>
-              <TableHead className="px-3 py-2 font-semibold text-sidebar-foreground/70">Исполнитель</TableHead>
+            <TableRow className="border-sidebar-border/20 bg-sidebar-accent/20 hover:bg-sidebar-accent/20 border-b">
+              <TableHead className="text-sidebar-foreground/70 px-3 py-2 font-semibold">
+                Задача
+              </TableHead>
+              <TableHead className="text-sidebar-foreground/70 px-3 py-2 font-semibold">
+                Статус
+              </TableHead>
+              <TableHead className="text-sidebar-foreground/70 px-3 py-2 font-semibold">
+                Приоритет
+              </TableHead>
+              <TableHead className="text-sidebar-foreground/70 px-3 py-2 font-semibold">
+                Исполнитель
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -121,15 +154,15 @@ function SampleTable() {
               <TableRow
                 key={i}
                 className={cn(
-                  'border-b border-sidebar-border/10',
+                  'border-sidebar-border/10 border-b',
                   i % 2 === 0 ? 'bg-sidebar-accent/10' : 'bg-transparent',
                   'hover:bg-sidebar-accent/20'
                 )}
               >
-                <TableCell className="max-w-[140px] truncate px-3 py-2 font-medium text-sidebar-foreground">
+                <TableCell className="text-sidebar-foreground max-w-[140px] truncate px-3 py-2 font-medium">
                   {row.task}
                 </TableCell>
-                <TableCell className="px-3 py-2 whitespace-nowrap text-sidebar-foreground/80">
+                <TableCell className="text-sidebar-foreground/80 px-3 py-2 whitespace-nowrap">
                   {row.status}
                 </TableCell>
                 <TableCell className="px-3 py-2 whitespace-nowrap">
@@ -137,14 +170,18 @@ function SampleTable() {
                     className={cn(
                       'rounded-full px-1.5 py-0.5 text-[10px] font-semibold',
                       row.priority === 'Высокий' && 'bg-destructive/15 text-destructive',
-                      row.priority === 'Средний' && 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
-                      row.priority === 'Низкий' && 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                      row.priority === 'Средний' &&
+                        'bg-amber-500/15 text-amber-600 dark:text-amber-400',
+                      row.priority === 'Низкий' &&
+                        'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
                     )}
                   >
                     {row.priority}
                   </span>
                 </TableCell>
-                <TableCell className="px-3 py-2 text-sidebar-foreground/60">{row.assignee}</TableCell>
+                <TableCell className="text-sidebar-foreground/60 px-3 py-2">
+                  {row.assignee}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -234,7 +271,9 @@ export function Sidebar({
           }));
           setModels(list);
           if (list.length > 0)
-            setSelectedModel((prev) => (prev && list.some((m) => m.id === prev) ? prev : list[0].id));
+            setSelectedModel((prev) =>
+              prev && list.some((m) => m.id === prev) ? prev : list[0].id
+            );
           return;
         }
       } catch {
@@ -249,8 +288,7 @@ export function Sidebar({
       const data = await res.json();
       const list: Model[] = data.models ?? [];
       setModels(list);
-      if (list.length > 0)
-        setSelectedModel(list[0].id);
+      if (list.length > 0) setSelectedModel(list[0].id);
     } catch (e) {
       console.error('Error fetching models:', e);
     }
@@ -264,9 +302,10 @@ export function Sidebar({
 
   const filteredSessions = useMemo(() => {
     if (!search) return sessions;
-    return sessions.filter((s) =>
-      s.title.toLowerCase().includes(search.toLowerCase()) ||
-      s.preview.toLowerCase().includes(search.toLowerCase())
+    return sessions.filter(
+      (s) =>
+        s.title.toLowerCase().includes(search.toLowerCase()) ||
+        s.preview.toLowerCase().includes(search.toLowerCase())
     );
   }, [sessions, search]);
 
@@ -284,15 +323,20 @@ export function Sidebar({
             'fixed inset-0 z-50 flex h-svh w-1/2 flex-col',
             'min-w-80',
             'bg-sidebar text-sidebar-foreground',
-            'border-r border-sidebar-border/40'
+            'border-sidebar-border/40 border-r'
           )}
         >
           <SidebarProvider defaultOpen={true}>
-            <ShadcnSidebar side="left" variant="sidebar" collapsible="none" className="w-full border-0">
-              <SidebarHeader className="border-b border-sidebar-border px-4 py-3">
+            <ShadcnSidebar
+              side="left"
+              variant="sidebar"
+              collapsible="none"
+              className="w-full border-0"
+            >
+              <SidebarHeader className="border-sidebar-border border-b px-4 py-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="flex size-8 items-center justify-center rounded-lg bg-sidebar-accent">
+                    <div className="bg-sidebar-accent flex size-8 items-center justify-center rounded-lg">
                       <Brain className="size-5" />
                     </div>
                     <span className="text-sm font-semibold">AI Assistant</span>
@@ -331,7 +375,7 @@ export function Sidebar({
                 </div>
               </SidebarHeader>
 
-              <div className="flex items-center gap-1 p-2 border-b border-sidebar-border/50">
+              <div className="border-sidebar-border/50 flex items-center gap-1 border-b p-2">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -368,9 +412,9 @@ export function Sidebar({
                     <SidebarGroupContent className="space-y-4">
                       <div className="space-y-2">
                         <Label htmlFor="sidebar-room-name">Название комнаты</Label>
-                        <Input 
-                          id="sidebar-room-name" 
-                          placeholder="Введите название комнаты..." 
+                        <Input
+                          id="sidebar-room-name"
+                          placeholder="Введите название комнаты..."
                           value={roomName}
                           onChange={(e) => setRoomName(e.target.value)}
                         />
@@ -378,18 +422,14 @@ export function Sidebar({
                       <div className="space-y-2">
                         <Label htmlFor="sidebar-text-data">Данные</Label>
                         <div className="flex flex-col gap-2">
-                          <textarea 
+                          <textarea
                             id="sidebar-text-data"
-                            className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[120px] w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                             placeholder="Введите текст для отправки..."
                             value={textData}
                             onChange={(e) => setTextData(e.target.value)}
                           />
-                          <Button 
-                            onClick={handleSendData} 
-                            className="w-full"
-                            disabled={!textData}
-                          >
+                          <Button onClick={handleSendData} className="w-full" disabled={!textData}>
                             Отправить данные
                           </Button>
                         </div>
@@ -399,35 +439,32 @@ export function Sidebar({
                 </SidebarContent>
               ) : (
                 <>
-                  <div className="px-4 py-3 border-b border-sidebar-border/50">
+                  <div className="border-sidebar-border/50 border-b px-4 py-3">
                     <SidebarGroup>
                       <SidebarGroupContent className="space-y-3">
                         <div className="space-y-2">
                           <div className="flex items-center justify-between px-1">
-                            <Label className="text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/60">
+                            <Label className="text-sidebar-foreground/60 text-[11px] font-semibold tracking-wider uppercase">
                               Модель
                             </Label>
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-6 px-2 text-[10px] text-sidebar-foreground/60"
+                              className="text-sidebar-foreground/60 h-6 px-2 text-[10px]"
                               onClick={() => setShowSampleTable(!showSampleTable)}
                             >
                               {showSampleTable ? 'Скрыть' : 'Добавить таблицу'}
                             </Button>
                           </div>
-                          <Select
-                            value={selectedModel}
-                            onValueChange={setSelectedModel}
-                          >
-                            <SelectTrigger className="h-8 border-sidebar-border/30 bg-sidebar-accent/20 text-xs">
+                          <Select value={selectedModel} onValueChange={setSelectedModel}>
+                            <SelectTrigger className="border-sidebar-border/30 bg-sidebar-accent/20 h-8 text-xs">
                               <SelectValue placeholder="Выберите модель..." />
                             </SelectTrigger>
                             <SelectContent>
                               {models.map((model) => (
                                 <SelectItem key={model.id} value={model.id}>
                                   <div className="flex items-center gap-2">
-                                    <Sparkles className="size-3 text-sidebar-foreground/40" />
+                                    <Sparkles className="text-sidebar-foreground/40 size-3" />
                                     {model.name}
                                   </div>
                                 </SelectItem>
@@ -439,15 +476,15 @@ export function Sidebar({
                     </SidebarGroup>
                   </div>
 
-                  <div className="px-4 py-2.5 border-b border-sidebar-border/50">
+                  <div className="border-sidebar-border/50 border-b px-4 py-2.5">
                     <div className="relative">
-                      <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-sidebar-foreground/30" />
+                      <Search className="text-sidebar-foreground/30 pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2" />
                       <Input
                         type="text"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Поиск диалогов..."
-                        className="border-sidebar-border/30 bg-sidebar-accent/20 py-1.5 pr-2.5 pl-8 text-xs placeholder:text-sidebar-foreground/30"
+                        className="border-sidebar-border/30 bg-sidebar-accent/20 placeholder:text-sidebar-foreground/30 py-1.5 pr-2.5 pl-8 text-xs"
                       />
                     </div>
                   </div>
@@ -456,17 +493,17 @@ export function Sidebar({
                     {showSampleTable && <SampleTable />}
                     {loading ? (
                       <div className="flex flex-col items-center justify-center gap-3 py-20">
-                        <div className="size-6 animate-spin rounded-full border-2 border-sidebar-border/40 border-t-sidebar-foreground/70" />
-                        <span className="text-[11px] text-sidebar-foreground/40 animate-pulse">
+                        <div className="border-sidebar-border/40 border-t-sidebar-foreground/70 size-6 animate-spin rounded-full border-2" />
+                        <span className="text-sidebar-foreground/40 animate-pulse text-[11px]">
                           Загрузка диалогов...
                         </span>
                       </div>
                     ) : filteredSessions.length === 0 ? (
                       <div className="flex flex-col items-center justify-center gap-3 py-20">
-                        <div className="flex size-12 items-center justify-center rounded-full bg-sidebar-accent/50">
-                          <History className="size-5 text-sidebar-foreground/30" />
+                        <div className="bg-sidebar-accent/50 flex size-12 items-center justify-center rounded-full">
+                          <History className="text-sidebar-foreground/30 size-5" />
                         </div>
-                        <p className="px-4 text-center text-xs text-sidebar-foreground/40 leading-relaxed">
+                        <p className="text-sidebar-foreground/40 px-4 text-center text-xs leading-relaxed">
                           {search ? 'Нет диалогов по вашему запросу.' : 'Пока нет диалогов.'}
                         </p>
                       </div>
@@ -474,7 +511,7 @@ export function Sidebar({
                       <div className="space-y-4">
                         {grouped.map((group) => (
                           <SidebarGroup key={group.label}>
-                            <SidebarGroupLabel className="text-sidebar-foreground/40 uppercase tracking-wider text-[11px]">
+                            <SidebarGroupLabel className="text-sidebar-foreground/40 text-[11px] tracking-wider uppercase">
                               {group.label}
                             </SidebarGroupLabel>
                             <SidebarGroupContent>
@@ -489,21 +526,21 @@ export function Sidebar({
                                       className={cn(
                                         'group w-full rounded-lg p-3 text-left transition-all',
                                         'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                                        'border border-transparent hover:border-sidebar-border/30'
+                                        'hover:border-sidebar-border/30 border border-transparent'
                                       )}
                                     >
                                       <div className="mb-1 flex items-center gap-2">
                                         <span className="flex-1 truncate text-sm font-medium">
                                           {session.title}
                                         </span>
-                                        <span className="shrink-0 text-[10px] text-sidebar-foreground/25 opacity-0 transition-opacity group-hover:opacity-100">
+                                        <span className="text-sidebar-foreground/25 shrink-0 text-[10px] opacity-0 transition-opacity group-hover:opacity-100">
                                           <Clock className="size-3" />
                                         </span>
                                       </div>
                                       <div className="text-sidebar-foreground/45 mb-1.5 line-clamp-2 text-xs leading-relaxed">
                                         {session.preview}
                                       </div>
-                                      <div className="flex items-center gap-1.5 text-[10px] text-sidebar-foreground/25">
+                                      <div className="text-sidebar-foreground/25 flex items-center gap-1.5 text-[10px]">
                                         <Clock className="size-2.5" />
                                         {new Date(session.updatedAt).toLocaleDateString(undefined, {
                                           month: 'short',

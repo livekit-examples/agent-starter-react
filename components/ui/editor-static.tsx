@@ -1,14 +1,11 @@
 import * as React from 'react';
-
 import type { VariantProps } from 'class-variance-authority';
-import type { JSONContent } from '@tiptap/react';
-
 import { cva } from 'class-variance-authority';
-import { generateHTML } from '@tiptap/react';
 import Highlight from '@tiptap/extension-highlight';
-import StarterKit from '@tiptap/starter-kit';
 import UnderlineExtension from '@tiptap/extension-underline';
-
+import type { JSONContent } from '@tiptap/react';
+import { generateHTML } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
 import { cn } from '@/lib/shadcn/utils';
 
 export const editorVariants = cva(
@@ -32,10 +29,8 @@ export const editorVariants = cva(
       },
       variant: {
         ai: 'w-full px-0 text-base md:text-sm',
-        aiChat:
-          'max-h-[min(70vh,320px)] w-full overflow-y-auto px-5 py-3 text-base md:text-sm',
-        default:
-          'size-full px-16 pt-4 pb-72 text-base sm:px-[max(64px,calc(50%-350px))]',
+        aiChat: 'max-h-[min(70vh,320px)] w-full overflow-y-auto px-5 py-3 text-base md:text-sm',
+        default: 'size-full px-16 pt-4 pb-72 text-base sm:px-[max(64px,calc(50%-350px))]',
         demo: 'size-full px-16 pt-4 pb-72 text-base sm:px-[max(64px,calc(50%-350px))]',
         fullWidth: 'size-full px-16 pt-4 pb-72 text-base sm:px-24',
         none: '',
@@ -66,7 +61,7 @@ export function EditorStatic({
         UnderlineExtension,
         Highlight,
       ]),
-    [content],
+    [content]
   );
 
   return (

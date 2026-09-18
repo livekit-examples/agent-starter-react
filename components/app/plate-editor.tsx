@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback } from 'react';
+import { useTheme } from 'next-themes';
 import {
   Bold,
   Code,
@@ -12,11 +13,10 @@ import {
   Strikethrough,
   Underline,
 } from 'lucide-react';
-import { useTheme } from 'next-themes';
 import Highlight from '@tiptap/extension-highlight';
-import StarterKit from '@tiptap/starter-kit';
+import Placeholder from '@tiptap/extension-placeholder';
 import UnderlineExtension from '@tiptap/extension-underline';
-
+import StarterKit from '@tiptap/starter-kit';
 import { Button } from '@/components/ui/button';
 import { Editor, EditorContainer, useEditor } from '@/components/ui/editor';
 import { cn } from '@/lib/shadcn/utils';
@@ -42,7 +42,7 @@ function ToolbarButton({
         'size-7 rounded-md text-xs',
         active
           ? 'bg-sidebar-accent text-sidebar-accent-foreground hover:bg-sidebar-accent'
-          : 'text-sidebar-foreground/50 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground',
+          : 'text-sidebar-foreground/50 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
       )}
     >
       {children}
@@ -63,6 +63,9 @@ export function PlateEditor() {
       }),
       UnderlineExtension,
       Highlight,
+      Placeholder.configure({
+        placeholder: 'Начните печатать...',
+      }),
     ],
     editorProps: {
       attributes: {
@@ -83,7 +86,7 @@ export function PlateEditor() {
     <div
       className={cn(
         'flex h-full flex-col overflow-hidden rounded-lg border',
-        isDark ? 'border-sidebar-border/30' : 'border-sidebar-border/40',
+        isDark ? 'border-sidebar-border/30' : 'border-sidebar-border/40'
       )}
       data-color-scheme={isDark ? 'dark' : 'light'}
     >
@@ -91,7 +94,9 @@ export function PlateEditor() {
       <div
         className={cn(
           'flex flex-wrap items-center gap-0.5 border-b px-2 py-1.5',
-          isDark ? 'border-sidebar-border/20 bg-sidebar-accent/15' : 'border-sidebar-border/20 bg-sidebar-accent/10',
+          isDark
+            ? 'border-sidebar-border/20 bg-sidebar-accent/15'
+            : 'border-sidebar-border/20 bg-sidebar-accent/10'
         )}
       >
         <ToolbarButton
@@ -130,7 +135,7 @@ export function PlateEditor() {
           <Code className="size-3.5" />
         </ToolbarButton>
 
-        <span className="mx-1 h-4 w-px bg-sidebar-border/30" />
+        <span className="bg-sidebar-border/30 mx-1 h-4 w-px" />
 
         <ToolbarButton
           active={editor.isActive('heading', { level: 1 })}
@@ -154,7 +159,7 @@ export function PlateEditor() {
           <Heading3 className="size-3.5" />
         </ToolbarButton>
 
-        <span className="mx-1 h-4 w-px bg-sidebar-border/30" />
+        <span className="bg-sidebar-border/30 mx-1 h-4 w-px" />
 
         <ToolbarButton
           active={editor.isActive('blockquote')}
@@ -173,17 +178,13 @@ export function PlateEditor() {
 
       {/* Editor */}
       <EditorContainer
-        className={cn(
-          'flex-1 overflow-y-auto',
-          isDark ? 'bg-sidebar/80' : 'bg-white/50',
-        )}
+        className={cn('flex-1 overflow-y-auto', isDark ? 'bg-sidebar/80' : 'bg-white/50')}
       >
         <Editor
           editor={editor}
-          placeholder="Начните печатать..."
           className={cn(
             'size-full px-3 py-3 text-sm',
-            isDark ? 'text-sidebar-foreground' : 'text-gray-800',
+            isDark ? 'text-sidebar-foreground' : 'text-gray-800'
           )}
         />
       </EditorContainer>

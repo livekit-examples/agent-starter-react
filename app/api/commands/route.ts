@@ -33,7 +33,9 @@ export async function GET() {
       }
 
       const data = await res.json();
-      const commands = Array.isArray(data.commands ?? data.data ?? data) ? (data.commands ?? data.data ?? data) : DEFAULT_COMMANDS;
+      const commands = Array.isArray(data.commands ?? data.data ?? data)
+        ? (data.commands ?? data.data ?? data)
+        : DEFAULT_COMMANDS;
 
       return NextResponse.json({ commands });
     } catch (error) {

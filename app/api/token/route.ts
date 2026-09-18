@@ -49,7 +49,12 @@ export async function POST(req: Request) {
     const participantAttributes: Record<string, string> | undefined = body?.participant_attributes;
 
     const participantToken = await createParticipantToken(
-      { identity: participantIdentity, name: participantName, metadata: participantMetadata, attributes: participantAttributes },
+      {
+        identity: participantIdentity,
+        name: participantName,
+        metadata: participantMetadata,
+        attributes: participantAttributes,
+      },
       roomName,
       roomConfig
     );
@@ -67,8 +72,7 @@ export async function POST(req: Request) {
     });
     return NextResponse.json(data, { headers });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'An unexpected error occurred';
+    const message = error instanceof Error ? error.message : 'An unexpected error occurred';
     console.error('POST /api/token failed:', message);
     return NextResponse.json({ error: message }, { status: 500 });
   }
@@ -77,7 +81,7 @@ export async function POST(req: Request) {
 function createParticipantToken(
   userInfo: AccessTokenOptions,
   roomName: string,
-  roomConfig: RoomConfiguration
+  roomConfig?: RoomConfiguration
 ): Promise<string> {
   const at = new AccessToken(API_KEY, API_SECRET, {
     ...userInfo,

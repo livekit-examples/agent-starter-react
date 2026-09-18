@@ -108,9 +108,9 @@ export function getSandboxTokenSource(appConfig: AppConfig) {
           'X-Sandbox-Id': sandboxId,
         },
         body: JSON.stringify({
-          room_name: options.roomName ?? "none",
-          participant_identity: options.participantIdentity ?? "none",
-          participant_name: options.participantName ?? "none",
+          room_name: options.roomName ?? 'none',
+          participant_identity: options.participantIdentity ?? 'none',
+          participant_name: options.participantName ?? 'none',
           participant_metadata: JSON.stringify({ role: 'user', department: 'engineering' }),
           participant_attributes: { region: 'us-east', language: 'ru', timezone: 'UTC' },
         }),

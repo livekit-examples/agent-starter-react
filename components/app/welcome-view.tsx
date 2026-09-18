@@ -55,7 +55,7 @@ export const WelcomeView = ({
           value={username}
           onChange={(e) => onUsernameChange?.(e.target.value)}
           placeholder="Ваше имя (необязательно)"
-          className="mt-6 w-64 rounded-full text-base text-center"
+          className="mt-6 w-64 rounded-full text-center text-base"
         />
 
         <Input
@@ -63,7 +63,7 @@ export const WelcomeView = ({
           value={roomName}
           onChange={(e) => onRoomNameChange?.(e.target.value)}
           placeholder="Название комнаты (необязательно)"
-          className="mt-2 w-64 rounded-full text-base text-center"
+          className="mt-2 w-64 rounded-full text-center text-base"
         />
 
         <Input
@@ -71,7 +71,7 @@ export const WelcomeView = ({
           value={agentName}
           onChange={(e) => onAgentNameChange?.(e.target.value)}
           placeholder="Имя агента (необязательно)"
-          className="mt-2 w-64 rounded-full text-base text-center"
+          className="mt-2 w-64 rounded-full text-center text-base"
         />
 
         <Button
