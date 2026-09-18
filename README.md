@@ -185,3 +185,11 @@ These are required for the voice agent functionality to work with your LiveKit p
 ## Contributing
 
 This template is open source and we welcome contributions! Please open a PR or issue through GitHub, and don't forget to join us in the [LiveKit Community Slack](https://livekit.io/join-slack)!
+
+## Additional Notes
+
+This starter template is continuously being improved with new features and bug fixes. For the latest updates, check the commit history or star the repository on GitHub.
+
+When deploying, ensure you have proper environment variables set up and that your LiveKit server is accessible. For production use, consider implementing authentication and rate limiting.
+
+We also recommend reviewing the [LiveKit documentation](https://docs.livekit.io/) for best practices on building voice agents at scale.
