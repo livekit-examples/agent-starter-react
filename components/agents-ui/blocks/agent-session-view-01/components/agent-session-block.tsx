@@ -192,6 +192,7 @@ export function AgentSessionView_01({
   const { messages } = useSessionMessages(session);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [clearedAt, setClearedAt] = useState<number>(0);
+  const [rpcCommands, setRpcCommands] = useState<Command[] | undefined>(undefined);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { state: agentState } = useAgent();
 
@@ -354,6 +355,7 @@ export function AgentSessionView_01({
           <AgentControlBar
             variant="livekit"
             controls={controls}
+            commands={rpcCommands}
             isChatOpen={isChatOpen}
             isConnected={session.isConnected}
             onDisconnect={session.end}

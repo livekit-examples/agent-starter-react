@@ -27,9 +27,10 @@ function AppSetup() {
 
 interface AppProps {
   appConfig: AppConfig;
+  roomName?: string;
 }
 
-export function App({ appConfig }: AppProps) {
+export function App({ appConfig, roomName: initialRoomName }: AppProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
   const [username, setUsername] = useState(() => {
@@ -40,9 +41,10 @@ export function App({ appConfig }: AppProps) {
   });
   const [roomName, setRoomName] = useState(() => {
     if (typeof window !== 'undefined') {
-      return new URLSearchParams(window.location.search).get('room') || '';
+      const queryRoom = new URLSearchParams(window.location.search).get('room') || '';
+      return initialRoomName || queryRoom;
     }
-    return '';
+    return initialRoomName || '';
   });
   const [isChatFullscreen, setIsChatFullscreen] = useState(() => {
     if (typeof window !== 'undefined') {
