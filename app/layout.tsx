@@ -2,6 +2,7 @@ import { Public_Sans } from 'next/font/google';
 import localFont from 'next/font/local';
 import { headers } from 'next/headers';
 import { ThemeProvider } from '@/components/app/theme-provider';
+import { ThemeToggle } from '@/components/app/theme-toggle';
 import { cn } from '@/lib/shadcn/utils';
 import { getAppConfig, getStyles } from '@/lib/utils';
 import '@/styles/globals.css';
@@ -93,8 +94,14 @@ export default async function RootLayout({ children }: RootLayoutProps) {
                   АО Портал
                 </a>
               </span>
+              <ThemeToggle />
             </div>
           </header>
+
+          {/* Mobile theme toggle (header is hidden below md) */}
+          <div className="fixed top-14 right-3 z-40 md:hidden">
+            <ThemeToggle />
+          </div>
 
           {children}
         </ThemeProvider>

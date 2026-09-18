@@ -111,7 +111,7 @@ export function App({ appConfig, roomName: initialRoomName }: AppProps) {
   return (
     <AgentSessionProvider session={session}>
       <AppSetup />
-      <main className="grid h-svh grid-cols-1 place-content-center">
+      <main className="grid min-h-svh grid-cols-1 place-content-center">
         <ViewController
           appConfig={appConfig}
           username={username}
