@@ -1,5 +1,12 @@
+import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { CONNECTING_TEXT } from '@/lib/agent-states';
+import { cn } from '@/lib/shadcn/utils';
+
+const QUICK_NAMES = ['Анна', 'Иван', 'Марк', 'Гость'];
+
+const FEATURES = ['Голос', 'Чат', 'Видео', 'Экран', 'Календарь', 'Данные'];
 
 function WelcomeImage() {
   return (
@@ -22,6 +29,7 @@ function WelcomeImage() {
 interface WelcomeViewProps {
   startButtonText: string;
   onStartCall: () => void;
+  isConnecting?: boolean;
   username?: string;
   onUsernameChange?: (name: string) => void;
   roomName?: string;
@@ -33,6 +41,7 @@ interface WelcomeViewProps {
 export const WelcomeView = ({
   startButtonText,
   onStartCall,
+  isConnecting = false,
   username = '',
   onUsernameChange,
   roomName = '',
@@ -44,11 +53,25 @@ export const WelcomeView = ({
   return (
     <div ref={ref}>
       <section className="bg-background flex flex-col items-center justify-center text-center">
-        <WelcomeImage />
+        <div className="flex flex-col items-center gap-2">
+          <WelcomeImage />
 
-        <p className="text-foreground max-w-prose pt-1 leading-6 font-medium">
-          Говорите с Вашим агентом голосом, в чате, показывайте изображения с камеры
-        </p>
+          <h1 className="text-foreground text-3xl font-bold md:text-4xl">ИИ-агенты АО Портал</h1>
+          <p className="text-muted-foreground max-w-prose pt-1 text-sm leading-6 text-pretty md:text-base">
+            Говорите с Вашим агентом голосом, в чате, показывайте изображения с камеры
+          </p>
+        </div>
+
+        <div className="mt-5 flex max-w-xl flex-wrap items-center justify-center gap-1.5">
+          {FEATURES.map((feature) => (
+            <span
+              key={feature}
+              className="border-foreground/10 text-muted-foreground bg-background rounded-full border px-2.5 py-1 text-[11px] font-medium"
+            >
+              {feature}
+            </span>
+          ))}
+        </div>
 
         <Input
           type="text"
@@ -57,6 +80,26 @@ export const WelcomeView = ({
           placeholder="Ваше имя (необязательно)"
           className="mt-6 w-64 rounded-full text-center text-base"
         />
+
+        <div className="mt-1.5 flex items-center gap-1">
+          <span className="text-muted-foreground pr-1 text-xs">Быстро:</span>
+          {QUICK_NAMES.map((name) => (
+            <Button
+              key={name}
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => onUsernameChange?.(name)}
+              className={cn(
+                'h-7 rounded-full px-2.5 text-xs',
+                username === name &&
+                  'text-primary bg-primary/10 hover:text-primary hover:bg-primary/10'
+              )}
+            >
+              {name}
+            </Button>
+          ))}
+        </div>
 
         <Input
           type="text"
@@ -77,9 +120,17 @@ export const WelcomeView = ({
         <Button
           size="lg"
           onClick={onStartCall}
+          disabled={isConnecting}
           className="mt-3 w-64 rounded-full font-mono text-xs font-bold tracking-wider uppercase"
         >
-          {startButtonText}
+          {isConnecting ? (
+            <>
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+              {CONNECTING_TEXT}
+            </>
+          ) : (
+            startButtonText
+          )}
         </Button>
       </section>
 

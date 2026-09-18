@@ -1,14 +1,16 @@
 'use client';
 
-import { type ComponentProps } from 'react';
+import { type ComponentProps, useState } from 'react';
 import { defaultSchema } from 'hast-util-sanitize';
+import { Check, Copy } from 'lucide-react';
 import rehypeSanitize from 'rehype-sanitize';
 import { Streamdown, type StreamdownProps, defaultRehypePlugins } from 'streamdown';
 import { type AgentState, type ReceivedMessage } from '@livekit/components-react';
 import { AgentChatIndicator } from '@/components/agents-ui/agent-chat-indicator';
 import { Bubble, BubbleContent } from '@/components/ui/bubble';
+import { Button } from '@/components/ui/button';
 import { Marker, MarkerContent, MarkerIcon } from '@/components/ui/marker';
-import { Message, MessageContent } from '@/components/ui/message';
+import { Message, MessageAvatar, MessageContent, MessageFooter } from '@/components/ui/message';
 import {
   MessageScroller,
   MessageScrollerButton,
@@ -17,6 +19,7 @@ import {
   MessageScrollerProvider,
   MessageScrollerViewport,
 } from '@/components/ui/message-scroller';
+import { AGENT_AVATAR_LABEL, THINKING_TEXT } from '@/lib/agent-states';
 
 const chatRehypeSchema = {
   ...defaultSchema,
@@ -48,6 +51,34 @@ const chatRehypePlugins: NonNullable<StreamdownProps['rehypePlugins']> = [
   [rehypeSanitize, chatRehypeSchema],
   defaultRehypePlugins.harden,
 ];
+
+function CopyMessageButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // clipboard unavailable, ignore
+    }
+  };
+
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      onClick={handleCopy}
+      aria-label={copied ? 'Скопировано' : 'Скопировать сообщение'}
+      className="h-5 gap-1 rounded-full px-2 text-[11px] opacity-0 transition-opacity group-hover/message:opacity-100 focus-visible:opacity-100"
+    >
+      {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
+      {copied ? 'Скопировано' : 'Копировать'}
+    </Button>
+  );
+}
 
 /**
  * Props for the AgentChatTranscript component.
@@ -153,8 +184,12 @@ export function AgentChatTranscript({
               const time = new Date(timestamp);
               const isUser = from?.isLocal;
               const align = isFullscreen ? 'start' : isUser ? 'end' : 'start';
-              const locale = typeof navigator !== 'undefined' ? navigator.language : 'en-US';
+              const locale = typeof navigator !== 'undefined' ? navigator.language : 'ru-RU';
               const title = time.toLocaleTimeString(locale, { timeStyle: 'full' });
+              const timeLabel = time.toLocaleTimeString(locale, {
+                hour: '2-digit',
+                minute: '2-digit',
+              });
               let _scrollAnchor = false;
 
               if (
@@ -168,12 +203,24 @@ export function AgentChatTranscript({
               return (
                 <MessageScrollerItem key={id} messageId={id} scrollAnchor={_scrollAnchor}>
                   <Message align={align} title={title}>
+                    {!isUser && (
+                      <MessageAvatar
+                        aria-label={AGENT_AVATAR_LABEL}
+                        className="size-6 min-w-0 text-[10px] font-semibold"
+                      >
+                        {AGENT_AVATAR_LABEL.slice(0, 1)}
+                      </MessageAvatar>
+                    )}
                     <MessageContent>
                       <Bubble align={align} variant={isUser ? 'secondary' : 'ghost'}>
                         <BubbleContent>
                           <Streamdown rehypePlugins={chatRehypePlugins}>{message}</Streamdown>
                         </BubbleContent>
                       </Bubble>
+                      <MessageFooter className="gap-1.5">
+                        <span className="tabular-nums">{timeLabel}</span>
+                        <CopyMessageButton text={message} />
+                      </MessageFooter>
                     </MessageContent>
                   </Message>
                 </MessageScrollerItem>
@@ -187,7 +234,7 @@ export function AgentChatTranscript({
                   <MarkerIcon>
                     <AgentChatIndicator size="sm" />
                   </MarkerIcon>
-                  <MarkerContent className="shimmer">Thinking...</MarkerContent>
+                  <MarkerContent className="shimmer">{THINKING_TEXT}</MarkerContent>
                 </Marker>
               </MessageScrollerItem>
             )}

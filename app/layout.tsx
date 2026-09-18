@@ -82,23 +82,28 @@ export default async function RootLayout({ children }: RootLayoutProps) {
                 className="hidden size-6 dark:block"
               />
             </a>
-            <span className="text-foreground font-mono text-xs font-bold tracking-wider uppercase">
-              Сделано людьми{' '}
-              <a
-                target="_blank"
-                rel="noopener noreferrer"
-                href="https://www.portalos.ru"
-                className="underline underline-offset-4"
-              >
-                АО Портал
-              </a>
-            </span>
+            <div className="flex items-center gap-6">
+              <span className="text-foreground font-mono text-xs font-bold tracking-wider uppercase">
+                Сделано людьми{' '}
+                <a
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  href="https://www.portalos.ru"
+                  className="underline underline-offset-4"
+                >
+                  АО Портал
+                </a>
+              </span>
+              <ThemeToggle />
+            </div>
           </header>
 
-          {children}
-          <div className="group fixed bottom-0 left-1/2 z-50 mb-2 -translate-x-1/2">
-            <ThemeToggle className="translate-y-20 transition-transform delay-150 duration-300 group-hover:translate-y-0" />
+          {/* Mobile theme toggle (header is hidden below md) */}
+          <div className="fixed top-14 right-3 z-40 md:hidden">
+            <ThemeToggle />
           </div>
+
+          {children}
         </ThemeProvider>
       </body>
     </html>

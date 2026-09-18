@@ -344,7 +344,7 @@ export function TileLayout({
               size="icon"
               onClick={handleCloseZoom}
               className="absolute -top-10 right-0 text-white hover:text-white/70"
-              aria-label="Close zoom"
+              aria-label="Закрыть просмотр"
             >
               <X className="size-6" />
             </Button>

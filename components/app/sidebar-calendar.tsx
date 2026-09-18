@@ -80,7 +80,7 @@ export function CalendarView() {
               size="icon"
               onClick={prevMonth}
               className="rounded-md p-1"
-              aria-label="Previous month"
+              aria-label="Предыдущий месяц"
             >
               <ChevronLeft className="size-3.5" />
             </Button>
@@ -98,7 +98,7 @@ export function CalendarView() {
               size="icon"
               onClick={nextMonth}
               className="rounded-md p-1"
-              aria-label="Next month"
+              aria-label="Следующий месяц"
             >
               <ChevronRight className="size-3.5" />
             </Button>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Brain,
   Clock,
@@ -13,9 +13,11 @@ import {
   Sparkles,
   XIcon,
 } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
+import { motion } from 'motion/react';
+import { toast } from 'sonner';
 import { useRoomContext } from '@livekit/components-react';
 import { Button } from '@/components/ui/button';
+import { Drawer } from '@/components/ui/drawer';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -26,7 +28,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  Sidebar as ShadcnSidebar,
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
@@ -34,7 +35,6 @@ import {
   SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
-  SidebarProvider,
 } from '@/components/ui/sidebar';
 import {
   Table,
@@ -203,9 +203,6 @@ export function Sidebar({
   const [models, setModels] = useState<Model[]>([]);
   const [selectedModel, setSelectedModel] = useState<string>('');
   const [search, setSearch] = useState('');
-  const [apiKey, setApiKey] = useState('');
-  const [apiEndpoint, setApiEndpoint] = useState('');
-  const configSentRef = useRef('');
   const [showSampleTable, setShowSampleTable] = useState(false);
   const [activeTab, setActiveTab] = useState<'chat' | 'send_data'>('chat');
 
@@ -217,6 +214,47 @@ export function Sidebar({
       setRoomName(room.name);
     }
   }, [room]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetch('/api/sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled) setSessions(data.sessions ?? []);
+      })
+      .catch((error) => console.error('Error fetching sessions:', error))
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/models', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        const list: Model[] = Array.isArray(data.models) ? data.models : [];
+        if (cancelled) return;
+        setModels(list);
+        if (list.length > 0) setSelectedModel(list[0].id);
+      })
+      .catch((error) => console.error('Error fetching models:', error));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleSendData = async () => {
     if (!textData) return;
@@ -231,74 +269,13 @@ export function Sidebar({
         topic: 'prtluserdata',
         reliable: true,
       });
-      alert('Данные отправлены!');
+      toast.success('Данные отправлены!');
       setTextData('');
     } catch (error) {
       console.error('Error sending data over LiveKit:', error);
-      alert('Не удалось отправить данные.');
+      toast.error('Не удалось отправить данные.');
     }
   };
-
-  const sendConfigToRoom = useCallback(
-    (key: string, endpoint: string) => {
-      const participant = room?.localParticipant;
-      if (!participant) return;
-      const payload = JSON.stringify({
-        key: key.trim() || undefined,
-        endpoint: endpoint.trim() || undefined,
-      });
-      if (payload === configSentRef.current) return;
-      configSentRef.current = payload;
-      participant.publishData(new TextEncoder().encode(payload), {
-        topic: 'prtlinternal',
-      });
-    },
-    [room]
-  );
-
-  const fetchModels = useCallback(async (key: string, endpoint: string) => {
-    const baseUrl = endpoint.trim() || 'https://lm.portalos.ru/v1/models';
-    if (key.trim()) {
-      try {
-        const res = await fetch(baseUrl, {
-          headers: { Authorization: `Bearer ${key.trim()}` },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          const list: Model[] = (data.data ?? []).map((m: { id: string }) => ({
-            id: m.id,
-            name: m.id,
-          }));
-          setModels(list);
-          if (list.length > 0)
-            setSelectedModel((prev) =>
-              prev && list.some((m) => m.id === prev) ? prev : list[0].id
-            );
-          return;
-        }
-      } catch {
-        // fall through to server fallback
-      }
-    }
-    try {
-      const res = await fetch('/api/models', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      const data = await res.json();
-      const list: Model[] = data.models ?? [];
-      setModels(list);
-      if (list.length > 0) setSelectedModel(list[0].id);
-    } catch (e) {
-      console.error('Error fetching models:', e);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (apiKey && apiEndpoint) {
-      fetchModels(apiKey, apiEndpoint);
-    }
-  }, [apiKey, apiEndpoint, fetchModels]);
 
   const filteredSessions = useMemo(() => {
     if (!search) return sessions;
@@ -312,262 +289,231 @@ export function Sidebar({
   const grouped = useMemo(() => groupSessions(filteredSessions), [filteredSessions]);
 
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.aside
-          initial={{ x: '-100%' }}
-          animate={{ x: 0 }}
-          exit={{ x: '-100%' }}
-          transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+    <Drawer open={open} onClose={onClose} side="left" className="w-1/2 min-w-80">
+      <SidebarHeader className="border-sidebar-border border-b px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="bg-sidebar-accent flex size-8 items-center justify-center rounded-lg">
+              <Brain className="size-5" />
+            </div>
+            <span className="text-sm font-semibold">AI Assistant</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onChatFullscreenChange?.(!isChatFullscreen)}
+              aria-pressed={isChatFullscreen}
+              title={
+                isChatFullscreen ? 'Выключить полноэкранный чат' : 'Развернуть чат на весь экран'
+              }
+              className={cn(
+                'rounded-md p-1.5',
+                isChatFullscreen && 'bg-sidebar-accent text-sidebar-accent-foreground'
+              )}
+            >
+              {isChatFullscreen ? (
+                <Minimize2 className="size-4" />
+              ) : (
+                <Maximize2 className="size-4" />
+              )}
+            </Button>
+            <Button variant="ghost" size="icon" onClick={onClose} className="rounded-md p-1.5">
+              <XIcon className="size-4" />
+            </Button>
+          </div>
+        </div>
+      </SidebarHeader>
+
+      <div className="border-sidebar-border/50 flex items-center gap-1 border-b p-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setActiveTab('chat')}
           className={cn(
-            'fixed inset-0 z-50 flex h-svh w-1/2 flex-col',
-            'min-w-80',
-            'bg-sidebar text-sidebar-foreground',
-            'border-sidebar-border/40 border-r'
+            'flex-1 gap-1.5 px-2 py-1.5 text-xs font-medium',
+            activeTab === 'chat'
+              ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+              : 'text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50'
           )}
         >
-          <SidebarProvider defaultOpen={true}>
-            <ShadcnSidebar
-              side="left"
-              variant="sidebar"
-              collapsible="none"
-              className="w-full border-0"
-            >
-              <SidebarHeader className="border-sidebar-border border-b px-4 py-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="bg-sidebar-accent flex size-8 items-center justify-center rounded-lg">
-                      <Brain className="size-5" />
-                    </div>
-                    <span className="text-sm font-semibold">AI Assistant</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onChatFullscreenChange?.(!isChatFullscreen)}
-                      aria-pressed={isChatFullscreen}
-                      title={
-                        isChatFullscreen
-                          ? 'Выключить полноэкранный чат'
-                          : 'Развернуть чат на весь экран'
-                      }
-                      className={cn(
-                        'rounded-md p-1.5',
-                        isChatFullscreen && 'bg-sidebar-accent text-sidebar-accent-foreground'
-                      )}
-                    >
-                      {isChatFullscreen ? (
-                        <Minimize2 className="size-4" />
-                      ) : (
-                        <Maximize2 className="size-4" />
-                      )}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={onClose}
-                      className="rounded-md p-1.5"
-                    >
-                      <XIcon className="size-4" />
-                    </Button>
-                  </div>
-                </div>
-              </SidebarHeader>
+          <MessageSquareTextIcon className="size-3.5" />
+          Диалоги
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setActiveTab('send_data')}
+          className={cn(
+            'flex-1 gap-1.5 px-2 py-1.5 text-xs font-medium',
+            activeTab === 'send_data'
+              ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+              : 'text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50'
+          )}
+        >
+          <Send className="size-3.5" />
+          Отправить
+        </Button>
+      </div>
 
-              <div className="border-sidebar-border/50 flex items-center gap-1 border-b p-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setActiveTab('chat')}
-                  className={cn(
-                    'flex-1 gap-1.5 px-2 py-1.5 text-xs font-medium',
-                    activeTab === 'chat'
-                      ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                      : 'text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50'
-                  )}
-                >
-                  <MessageSquareTextIcon className="size-3.5" />
-                  Диалоги
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setActiveTab('send_data')}
-                  className={cn(
-                    'flex-1 gap-1.5 px-2 py-1.5 text-xs font-medium',
-                    activeTab === 'send_data'
-                      ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                      : 'text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50'
-                  )}
-                >
-                  <Send className="size-3.5" />
-                  Отправить
-                </Button>
+      {activeTab === 'send_data' ? (
+        <SidebarContent className="p-4">
+          <SidebarGroup>
+            <SidebarGroupContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="sidebar-room-name">Название комнаты</Label>
+                <Input
+                  id="sidebar-room-name"
+                  placeholder="Введите название комнаты..."
+                  value={roomName}
+                  onChange={(e) => setRoomName(e.target.value)}
+                />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="sidebar-text-data">Данные</Label>
+                <div className="flex flex-col gap-2">
+                  <textarea
+                    id="sidebar-text-data"
+                    className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[120px] w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                    placeholder="Введите текст для отправки..."
+                    value={textData}
+                    onChange={(e) => setTextData(e.target.value)}
+                  />
+                  <Button onClick={handleSendData} className="w-full" disabled={!textData}>
+                    Отправить данные
+                  </Button>
+                </div>
+              </div>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+      ) : (
+        <>
+          <div className="border-sidebar-border/50 border-b px-4 py-3">
+            <SidebarGroup>
+              <SidebarGroupContent className="space-y-3">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between px-1">
+                    <Label className="text-sidebar-foreground/60 text-[11px] font-semibold tracking-wider uppercase">
+                      Модель
+                    </Label>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-sidebar-foreground/60 h-6 px-2 text-[10px]"
+                      onClick={() => setShowSampleTable(!showSampleTable)}
+                    >
+                      {showSampleTable ? 'Скрыть' : 'Добавить таблицу'}
+                    </Button>
+                  </div>
+                  <Select value={selectedModel} onValueChange={setSelectedModel}>
+                    <SelectTrigger className="border-sidebar-border/30 bg-sidebar-accent/20 h-8 text-xs">
+                      <SelectValue placeholder="Выберите модель..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {models.map((model) => (
+                        <SelectItem key={model.id} value={model.id}>
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="text-sidebar-foreground/40 size-3" />
+                            {model.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </div>
 
-              {activeTab === 'send_data' ? (
-                <SidebarContent className="p-4">
-                  <SidebarGroup>
-                    <SidebarGroupContent className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="sidebar-room-name">Название комнаты</Label>
-                        <Input
-                          id="sidebar-room-name"
-                          placeholder="Введите название комнаты..."
-                          value={roomName}
-                          onChange={(e) => setRoomName(e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="sidebar-text-data">Данные</Label>
-                        <div className="flex flex-col gap-2">
-                          <textarea
-                            id="sidebar-text-data"
-                            className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[120px] w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                            placeholder="Введите текст для отправки..."
-                            value={textData}
-                            onChange={(e) => setTextData(e.target.value)}
-                          />
-                          <Button onClick={handleSendData} className="w-full" disabled={!textData}>
-                            Отправить данные
-                          </Button>
-                        </div>
-                      </div>
+          <div className="border-sidebar-border/50 border-b px-4 py-2.5">
+            <div className="relative">
+              <Search className="text-sidebar-foreground/30 pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2" />
+              <Input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Поиск диалогов..."
+                className="border-sidebar-border/30 bg-sidebar-accent/20 placeholder:text-sidebar-foreground/30 py-1.5 pr-2.5 pl-8 text-xs"
+              />
+            </div>
+          </div>
+
+          <SidebarContent className="p-3">
+            {showSampleTable && <SampleTable />}
+            {loading ? (
+              <div className="flex flex-col items-center justify-center gap-3 py-20">
+                <div className="border-sidebar-border/40 border-t-sidebar-foreground/70 size-6 animate-spin rounded-full border-2" />
+                <span className="text-sidebar-foreground/40 animate-pulse text-[11px]">
+                  Загрузка диалогов...
+                </span>
+              </div>
+            ) : filteredSessions.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-3 py-20">
+                <div className="bg-sidebar-accent/50 flex size-12 items-center justify-center rounded-full">
+                  <History className="text-sidebar-foreground/30 size-5" />
+                </div>
+                <p className="text-sidebar-foreground/40 px-4 text-center text-xs leading-relaxed">
+                  {search ? 'Нет диалогов по вашему запросу.' : 'Пока нет диалогов.'}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {grouped.map((group) => (
+                  <SidebarGroup key={group.label}>
+                    <SidebarGroupLabel className="text-sidebar-foreground/40 text-[11px] tracking-wider uppercase">
+                      {group.label}
+                    </SidebarGroupLabel>
+                    <SidebarGroupContent>
+                      <SidebarMenu>
+                        {group.sessions.map((session) => (
+                          <SidebarMenuItem key={session.id}>
+                            <motion.button
+                              initial={{ opacity: 0, y: 8 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.2 }}
+                              whileTap={{ scale: 0.98 }}
+                              className={cn(
+                                'group w-full rounded-lg p-3 text-left transition-all',
+                                'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                                'hover:border-sidebar-border/30 border border-transparent'
+                              )}
+                            >
+                              <div className="mb-1 flex items-center gap-2">
+                                <span className="flex-1 truncate text-sm font-medium">
+                                  {session.title}
+                                </span>
+                                <span className="text-sidebar-foreground/25 shrink-0 text-[10px] opacity-0 transition-opacity group-hover:opacity-100">
+                                  <Clock className="size-3" />
+                                </span>
+                              </div>
+                              <div className="text-sidebar-foreground/45 mb-1.5 line-clamp-2 text-xs leading-relaxed">
+                                {session.preview}
+                              </div>
+                              <div className="text-sidebar-foreground/25 flex items-center gap-1.5 text-[10px]">
+                                <Clock className="size-2.5" />
+                                {new Date(session.updatedAt).toLocaleDateString(undefined, {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year:
+                                    new Date(session.updatedAt).getFullYear() ===
+                                    new Date().getFullYear()
+                                      ? undefined
+                                      : 'numeric',
+                                })}
+                              </div>
+                            </motion.button>
+                          </SidebarMenuItem>
+                        ))}
+                      </SidebarMenu>
                     </SidebarGroupContent>
                   </SidebarGroup>
-                </SidebarContent>
-              ) : (
-                <>
-                  <div className="border-sidebar-border/50 border-b px-4 py-3">
-                    <SidebarGroup>
-                      <SidebarGroupContent className="space-y-3">
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between px-1">
-                            <Label className="text-sidebar-foreground/60 text-[11px] font-semibold tracking-wider uppercase">
-                              Модель
-                            </Label>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-sidebar-foreground/60 h-6 px-2 text-[10px]"
-                              onClick={() => setShowSampleTable(!showSampleTable)}
-                            >
-                              {showSampleTable ? 'Скрыть' : 'Добавить таблицу'}
-                            </Button>
-                          </div>
-                          <Select value={selectedModel} onValueChange={setSelectedModel}>
-                            <SelectTrigger className="border-sidebar-border/30 bg-sidebar-accent/20 h-8 text-xs">
-                              <SelectValue placeholder="Выберите модель..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {models.map((model) => (
-                                <SelectItem key={model.id} value={model.id}>
-                                  <div className="flex items-center gap-2">
-                                    <Sparkles className="text-sidebar-foreground/40 size-3" />
-                                    {model.name}
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </SidebarGroupContent>
-                    </SidebarGroup>
-                  </div>
-
-                  <div className="border-sidebar-border/50 border-b px-4 py-2.5">
-                    <div className="relative">
-                      <Search className="text-sidebar-foreground/30 pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2" />
-                      <Input
-                        type="text"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Поиск диалогов..."
-                        className="border-sidebar-border/30 bg-sidebar-accent/20 placeholder:text-sidebar-foreground/30 py-1.5 pr-2.5 pl-8 text-xs"
-                      />
-                    </div>
-                  </div>
-
-                  <SidebarContent className="p-3">
-                    {showSampleTable && <SampleTable />}
-                    {loading ? (
-                      <div className="flex flex-col items-center justify-center gap-3 py-20">
-                        <div className="border-sidebar-border/40 border-t-sidebar-foreground/70 size-6 animate-spin rounded-full border-2" />
-                        <span className="text-sidebar-foreground/40 animate-pulse text-[11px]">
-                          Загрузка диалогов...
-                        </span>
-                      </div>
-                    ) : filteredSessions.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center gap-3 py-20">
-                        <div className="bg-sidebar-accent/50 flex size-12 items-center justify-center rounded-full">
-                          <History className="text-sidebar-foreground/30 size-5" />
-                        </div>
-                        <p className="text-sidebar-foreground/40 px-4 text-center text-xs leading-relaxed">
-                          {search ? 'Нет диалогов по вашему запросу.' : 'Пока нет диалогов.'}
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {grouped.map((group) => (
-                          <SidebarGroup key={group.label}>
-                            <SidebarGroupLabel className="text-sidebar-foreground/40 text-[11px] tracking-wider uppercase">
-                              {group.label}
-                            </SidebarGroupLabel>
-                            <SidebarGroupContent>
-                              <SidebarMenu>
-                                {group.sessions.map((session) => (
-                                  <SidebarMenuItem key={session.id}>
-                                    <motion.button
-                                      initial={{ opacity: 0, y: 8 }}
-                                      animate={{ opacity: 1, y: 0 }}
-                                      transition={{ duration: 0.2 }}
-                                      whileTap={{ scale: 0.98 }}
-                                      className={cn(
-                                        'group w-full rounded-lg p-3 text-left transition-all',
-                                        'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                                        'hover:border-sidebar-border/30 border border-transparent'
-                                      )}
-                                    >
-                                      <div className="mb-1 flex items-center gap-2">
-                                        <span className="flex-1 truncate text-sm font-medium">
-                                          {session.title}
-                                        </span>
-                                        <span className="text-sidebar-foreground/25 shrink-0 text-[10px] opacity-0 transition-opacity group-hover:opacity-100">
-                                          <Clock className="size-3" />
-                                        </span>
-                                      </div>
-                                      <div className="text-sidebar-foreground/45 mb-1.5 line-clamp-2 text-xs leading-relaxed">
-                                        {session.preview}
-                                      </div>
-                                      <div className="text-sidebar-foreground/25 flex items-center gap-1.5 text-[10px]">
-                                        <Clock className="size-2.5" />
-                                        {new Date(session.updatedAt).toLocaleDateString(undefined, {
-                                          month: 'short',
-                                          day: 'numeric',
-                                          year:
-                                            new Date(session.updatedAt).getFullYear() ===
-                                            new Date().getFullYear()
-                                              ? undefined
-                                              : 'numeric',
-                                        })}
-                                      </div>
-                                    </motion.button>
-                                  </SidebarMenuItem>
-                                ))}
-                              </SidebarMenu>
-                            </SidebarGroupContent>
-                          </SidebarGroup>
-                        ))}
-                      </div>
-                    )}
-                  </SidebarContent>
-                </>
-              )}
-            </ShadcnSidebar>
-          </SidebarProvider>
-        </motion.aside>
+                ))}
+              </div>
+            )}
+          </SidebarContent>
+        </>
       )}
-    </AnimatePresence>
+    </Drawer>
   );
 }
