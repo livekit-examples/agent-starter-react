@@ -2,9 +2,6 @@ import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CONNECTING_TEXT } from '@/lib/agent-states';
-import { cn } from '@/lib/shadcn/utils';
-
-const QUICK_NAMES = ['Анна', 'Иван', 'Марк', 'Гость'];
 
 const FEATURES = ['Голос', 'Чат', 'Видео', 'Экран', 'Календарь', 'Данные'];
 
@@ -80,26 +77,6 @@ export const WelcomeView = ({
           placeholder="Ваше имя (необязательно)"
           className="mt-6 w-64 rounded-full text-center text-base"
         />
-
-        <div className="mt-1.5 flex items-center gap-1">
-          <span className="text-muted-foreground pr-1 text-xs">Быстро:</span>
-          {QUICK_NAMES.map((name) => (
-            <Button
-              key={name}
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => onUsernameChange?.(name)}
-              className={cn(
-                'h-7 rounded-full px-2.5 text-xs',
-                username === name &&
-                  'text-primary bg-primary/10 hover:text-primary hover:bg-primary/10'
-              )}
-            >
-              {name}
-            </Button>
-          ))}
-        </div>
 
         <Input
           type="text"
