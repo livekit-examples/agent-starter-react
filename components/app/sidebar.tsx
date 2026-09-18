@@ -16,6 +16,7 @@ import {
 import { motion } from 'motion/react';
 import { toast } from 'sonner';
 import { useRoomContext } from '@livekit/components-react';
+import { ThemeToggle } from '@/components/app/theme-toggle';
 import { Button } from '@/components/ui/button';
 import { Drawer } from '@/components/ui/drawer';
 import { Input } from '@/components/ui/input';
@@ -514,6 +515,10 @@ export function Sidebar({
           </SidebarContent>
         </>
       )}
+
+      <div className="border-sidebar-border/50 flex flex-col gap-2 border-t p-3">
+        <ThemeToggle />
+      </div>
     </Drawer>
   );
 }

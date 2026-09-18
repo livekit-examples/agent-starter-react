@@ -20,6 +20,7 @@ import {
   MessageScrollerViewport,
 } from '@/components/ui/message-scroller';
 import { AGENT_AVATAR_LABEL, THINKING_TEXT } from '@/lib/agent-states';
+import { cn } from '@/lib/shadcn/utils';
 
 const chatRehypeSchema = {
   ...defaultSchema,
@@ -217,7 +218,9 @@ export function AgentChatTranscript({
                           <Streamdown rehypePlugins={chatRehypePlugins}>{message}</Streamdown>
                         </BubbleContent>
                       </Bubble>
-                      <MessageFooter className="gap-1.5">
+                      <MessageFooter
+                        className={cn('gap-1.5', align === 'end' && 'flex-row-reverse')}
+                      >
                         <span className="tabular-nums">{timeLabel}</span>
                         <CopyMessageButton text={message} />
                       </MessageFooter>
