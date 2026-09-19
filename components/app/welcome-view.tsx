@@ -49,12 +49,12 @@ export const WelcomeView = ({
 }: React.ComponentProps<'div'> & WelcomeViewProps) => {
   return (
     <div ref={ref}>
-      <section className="bg-background flex flex-col items-center justify-center text-center">
+      <section className="flex min-h-screen flex-col items-center justify-center bg-black text-center">
         <div className="flex flex-col items-center gap-2">
           <WelcomeImage />
 
-          <h1 className="text-foreground text-3xl font-bold md:text-4xl">ИИ-агенты АО Портал</h1>
-          <p className="text-muted-foreground max-w-prose pt-1 text-sm leading-6 text-pretty md:text-base">
+          <h1 className="text-3xl font-bold text-white md:text-4xl">ИИ-агенты АО Портал</h1>
+          <p className="max-w-prose pt-1 text-sm leading-6 text-pretty text-zinc-400 md:text-base">
             Говорите с Вашим агентом голосом, в чате, показывайте изображения с камеры
           </p>
         </div>
@@ -63,7 +63,7 @@ export const WelcomeView = ({
           {FEATURES.map((feature) => (
             <span
               key={feature}
-              className="border-foreground/10 text-muted-foreground bg-background rounded-full border px-2.5 py-1 text-[11px] font-medium"
+              className="rounded-full border border-zinc-700 bg-zinc-900/50 px-2.5 py-1 text-[11px] font-medium text-zinc-400"
             >
               {feature}
             </span>
@@ -98,7 +98,7 @@ export const WelcomeView = ({
           size="lg"
           onClick={onStartCall}
           disabled={isConnecting}
-          className="mt-3 w-64 rounded-full font-mono text-xs font-bold tracking-wider uppercase"
+          className="mt-3 w-64 rounded-full bg-white font-mono text-xs font-bold tracking-wider text-black uppercase hover:bg-white/90"
         >
           {isConnecting ? (
             <>
@@ -112,13 +112,13 @@ export const WelcomeView = ({
       </section>
 
       <div className="fixed bottom-5 left-0 flex w-full items-center justify-center">
-        <p className="text-muted-foreground max-w-prose pt-1 text-xs leading-5 font-normal text-pretty md:text-sm">
+        <p className="max-w-prose pt-1 text-xs leading-5 font-normal text-pretty text-zinc-500 md:text-sm">
           Нужен персональный агент?{' '}
           <a
             target="_blank"
             rel="noopener noreferrer"
             href="https://www.portalos.ru"
-            className="underline"
+            className="underline transition-colors hover:text-zinc-300"
           >
             АО Портал
           </a>

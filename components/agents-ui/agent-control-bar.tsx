@@ -496,6 +496,7 @@ export function AgentControlBar({
       aria-label="Управление голосовым ассистентом"
       className={cn(
         'bg-background border-input/50 dark:border-muted flex flex-col border p-3 drop-shadow-md/3',
+        'flex flex-col border border-zinc-200 bg-white p-3 text-black shadow-xl dark:border-zinc-800 dark:bg-zinc-900 dark:text-white',
         variant === 'livekit' ? 'rounded-[31px]' : 'rounded-lg',
         className
       )}

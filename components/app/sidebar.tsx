@@ -128,14 +128,14 @@ const sampleTableData = [
 
 function SampleTable() {
   return (
-    <div className="border-sidebar-border/40 mb-4 overflow-hidden rounded-lg border">
-      <div className="bg-sidebar-accent/30 text-sidebar-foreground/60 px-3 py-2 text-[11px] font-semibold tracking-wider uppercase">
+    <div className="mb-4 overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900/50">
+      <div className="bg-zinc-800 px-3 py-2 text-[11px] font-semibold tracking-wider text-zinc-400 uppercase">
         Задачи проекта
       </div>
       <div className="overflow-x-auto">
         <Table className="w-full text-xs">
           <TableHeader>
-            <TableRow className="border-sidebar-border/20 bg-sidebar-accent/20 hover:bg-sidebar-accent/20 border-b">
+            <TableRow className="border-b border-zinc-800 bg-zinc-900/30 hover:bg-zinc-800/30">
               <TableHead className="text-sidebar-foreground/70 px-3 py-2 font-semibold">
                 Задача
               </TableHead>
@@ -291,11 +291,11 @@ export function Sidebar({
 
   return (
     <Drawer open={open} onClose={onClose} side="left" className="w-1/2 min-w-80">
-      <SidebarHeader className="border-sidebar-border border-b px-4 py-3">
+      <SidebarHeader className="border-b border-zinc-800 bg-black px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="bg-sidebar-accent flex size-8 items-center justify-center rounded-lg">
-              <Brain className="size-5" />
+            <div className="flex size-8 items-center justify-center rounded-lg bg-zinc-800">
+              <Brain className="size-5 text-white" />
             </div>
             <span className="text-sm font-semibold">AI Assistant</span>
           </div>
@@ -326,16 +326,16 @@ export function Sidebar({
         </div>
       </SidebarHeader>
 
-      <div className="border-sidebar-border/50 flex items-center gap-1 border-b p-2">
+      <div className="flex items-center gap-1 border-b border-zinc-800 bg-black p-2">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setActiveTab('chat')}
           className={cn(
-            'flex-1 gap-1.5 px-2 py-1.5 text-xs font-medium',
+            'flex-1 gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium',
             activeTab === 'chat'
-              ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-              : 'text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50'
+              ? 'bg-white text-black'
+              : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
           )}
         >
           <MessageSquareTextIcon className="size-3.5" />
@@ -346,10 +346,10 @@ export function Sidebar({
           size="sm"
           onClick={() => setActiveTab('send_data')}
           className={cn(
-            'flex-1 gap-1.5 px-2 py-1.5 text-xs font-medium',
+            'flex-1 gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium',
             activeTab === 'send_data'
-              ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-              : 'text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50'
+              ? 'bg-white text-black'
+              : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
           )}
         >
           <Send className="size-3.5" />
@@ -358,29 +358,44 @@ export function Sidebar({
       </div>
 
       {activeTab === 'send_data' ? (
-        <SidebarContent className="p-4">
+        <SidebarContent className="bg-zinc-900/30 p-4">
           <SidebarGroup>
             <SidebarGroupContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="sidebar-room-name">Название комнаты</Label>
+                <Label
+                  htmlFor="sidebar-room-name"
+                  className="text-xs font-semibold tracking-wider text-zinc-400 uppercase"
+                >
+                  Название комнаты
+                </Label>
                 <Input
                   id="sidebar-room-name"
                   placeholder="Введите название комнаты..."
                   value={roomName}
                   onChange={(e) => setRoomName(e.target.value)}
+                  className="border-zinc-800 bg-zinc-500/10"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="sidebar-text-data">Данные</Label>
+                <Label
+                  htmlFor="sidebar-text-data"
+                  className="text-xs font-semibold tracking-wider text-zinc-400 uppercase"
+                >
+                  Данные
+                </Label>
                 <div className="flex flex-col gap-2">
                   <textarea
                     id="sidebar-text-data"
-                    className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[120px] w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex min-h-[120px] w-full rounded-md border border-zinc-800 bg-zinc-500/10 px-3 py-2 text-sm placeholder:text-zinc-500 focus-visible:border-zinc-600 focus-visible:ring-1 focus-visible:ring-zinc-600 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                     placeholder="Введите текст для отправки..."
                     value={textData}
                     onChange={(e) => setTextData(e.target.value)}
                   />
-                  <Button onClick={handleSendData} className="w-full" disabled={!textData}>
+                  <Button
+                    onClick={handleSendData}
+                    className="w-full bg-white text-black hover:bg-white/90"
+                    disabled={!textData}
+                  >
                     Отправить данные
                   </Button>
                 </div>
@@ -427,15 +442,15 @@ export function Sidebar({
             </SidebarGroup>
           </div>
 
-          <div className="border-sidebar-border/50 border-b px-4 py-2.5">
+          <div className="border-b border-zinc-800 bg-black px-4 py-2.5">
             <div className="relative">
-              <Search className="text-sidebar-foreground/30 pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2" />
+              <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-zinc-500" />
               <Input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Поиск диалогов..."
-                className="border-sidebar-border/30 bg-sidebar-accent/20 placeholder:text-sidebar-foreground/30 py-1.5 pr-2.5 pl-8 text-xs"
+                className="border-zinc-800 bg-zinc-900/50 py-1.5 pr-2.5 pl-8 text-xs placeholder:text-zinc-500"
               />
             </div>
           </div>
@@ -444,17 +459,17 @@ export function Sidebar({
             {showSampleTable && <SampleTable />}
             {loading ? (
               <div className="flex flex-col items-center justify-center gap-3 py-20">
-                <div className="border-sidebar-border/40 border-t-sidebar-foreground/70 size-6 animate-spin rounded-full border-2" />
-                <span className="text-sidebar-foreground/40 animate-pulse text-[11px]">
+                <div className="size-6 animate-spin rounded-full border-2 border-zinc-800 border-t-white/70" />
+                <span className="animate-pulse text-[11px] text-zinc-500">
                   Загрузка диалогов...
                 </span>
               </div>
             ) : filteredSessions.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-3 py-20">
-                <div className="bg-sidebar-accent/50 flex size-12 items-center justify-center rounded-full">
-                  <History className="text-sidebar-foreground/30 size-5" />
+                <div className="flex size-12 items-center justify-center rounded-full bg-zinc-800/50">
+                  <History className="size-5 text-zinc-500" />
                 </div>
-                <p className="text-sidebar-foreground/40 px-4 text-center text-xs leading-relaxed">
+                <p className="px-4 text-center text-xs leading-relaxed text-zinc-500">
                   {search ? 'Нет диалогов по вашему запросу.' : 'Пока нет диалогов.'}
                 </p>
               </div>
@@ -475,9 +490,9 @@ export function Sidebar({
                               transition={{ duration: 0.2 }}
                               whileTap={{ scale: 0.98 }}
                               className={cn(
-                                'group w-full rounded-lg p-3 text-left transition-all',
-                                'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                                'hover:border-sidebar-border/30 border border-transparent'
+                                'group w-full rounded-lg p-3 text-left transition-all duration-200',
+                                'hover:bg-zinc-800 hover:text-white',
+                                'border border-transparent hover:border-zinc-700/50'
                               )}
                             >
                               <div className="mb-1 flex items-center gap-2">
@@ -516,7 +531,7 @@ export function Sidebar({
         </>
       )}
 
-      <div className="border-sidebar-border/50 flex flex-col gap-2 border-t p-3">
+      <div className="flex flex-col gap-2 border-t border-zinc-800 bg-black p-3">
         <ThemeToggle />
       </div>
     </Drawer>
