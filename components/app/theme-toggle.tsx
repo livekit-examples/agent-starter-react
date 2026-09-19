@@ -15,7 +15,7 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
   return (
     <div
       className={cn(
-        'text-white bg-zinc-900 flex w-full flex-row justify-end divide-x overflow-hidden rounded-full border border-zinc-700',
+        'flex w-full flex-row justify-end divide-x overflow-hidden rounded-full border border-zinc-700 bg-zinc-900 text-white',
         className
       )}
     >

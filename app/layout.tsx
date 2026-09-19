@@ -65,7 +65,7 @@ export default async function RootLayout({ children }: RootLayoutProps) {
       </head>
       <body className="overflow-x-hidden bg-black text-white">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-          <header className="fixed top-0 left-0 z-50 hidden w-full flex-row justify-between p-4 md:flex border-b border-zinc-800 bg-black/80 backdrop-blur-sm">
+          <header className="fixed top-0 left-0 z-50 hidden w-full flex-row justify-between border-b border-zinc-800 bg-black/80 p-4 backdrop-blur-sm md:flex">
             <a
               target="_blank"
               rel="noopener noreferrer"
@@ -76,13 +76,13 @@ export default async function RootLayout({ children }: RootLayoutProps) {
               <img src={logoDark ?? logo} alt={`${companyName} Logo`} className="block size-6" />
             </a>
             <div className="flex items-center gap-6">
-              <span className="text-zinc-400 font-mono text-xs font-bold tracking-wider uppercase">
+              <span className="font-mono text-xs font-bold tracking-wider text-zinc-400 uppercase">
                 Сделано людьми{' '}
                 <a
                   target="_blank"
                   rel="noopener noreferrer"
                   href="https://www.portalos.ru"
-                  className="underline underline-offset-4 hover:text-white transition-colors"
+                  className="underline underline-offset-4 transition-colors hover:text-white"
                 >
                   АО Портал
                 </a>
