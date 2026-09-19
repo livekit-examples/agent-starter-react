@@ -10,6 +10,7 @@ import {
   type AgentControlBarControls,
   type Command,
 } from '@/components/agents-ui/agent-control-bar';
+import { CallStatus } from '@/components/app/call-status';
 import { cn } from '@/lib/shadcn/utils';
 import { TileLayout } from './tile-view';
 
@@ -165,6 +166,8 @@ export interface AgentSessionView_01Props {
    * @default false
    */
   isChatFullscreen?: boolean;
+  /** Name of the agent shown in the in-call status pill. */
+  agentName?: string;
 }
 
 export function AgentSessionView_01({
@@ -174,6 +177,7 @@ export function AgentSessionView_01({
   supportsScreenShare = true,
   isPreConnectBufferEnabled = true,
   isChatFullscreen = false,
+  agentName,
   audioVisualizerType,
   audioVisualizerColor,
   audioVisualizerColorShift,
@@ -192,6 +196,7 @@ export function AgentSessionView_01({
   const { messages } = useSessionMessages(session);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [clearedAt, setClearedAt] = useState<number>(0);
+  const [rpcCommands, setRpcCommands] = useState<Command[] | undefined>(undefined);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { state: agentState } = useAgent();
 
@@ -293,6 +298,10 @@ export function AgentSessionView_01({
       className={cn('bg-background relative z-10 h-full w-full overflow-hidden', className)}
       {...props}
     >
+      {/* In-call status */}
+      <div className="absolute inset-x-0 top-4 z-30 flex justify-center md:top-6">
+        <CallStatus agentName={agentName} />
+      </div>
       <Fade top className="absolute inset-x-4 top-0 z-10 h-40" />
       {/* transcript */}
       <AnimatePresence>
@@ -354,6 +363,7 @@ export function AgentSessionView_01({
           <AgentControlBar
             variant="livekit"
             controls={controls}
+            commands={rpcCommands}
             isChatOpen={isChatOpen}
             isConnected={session.isConnected}
             onDisconnect={session.end}

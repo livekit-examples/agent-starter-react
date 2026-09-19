@@ -2,7 +2,6 @@ import { Public_Sans } from 'next/font/google';
 import localFont from 'next/font/local';
 import { headers } from 'next/headers';
 import { ThemeProvider } from '@/components/app/theme-provider';
-import { ThemeToggle } from '@/components/app/theme-toggle';
 import { cn } from '@/lib/shadcn/utils';
 import { getAppConfig, getStyles } from '@/lib/utils';
 import '@/styles/globals.css';
@@ -64,14 +63,9 @@ export default async function RootLayout({ children }: RootLayoutProps) {
         <title>{pageTitle}</title>
         <meta name="description" content={pageDescription} />
       </head>
-      <body className="overflow-x-hidden">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <header className="fixed top-0 left-0 z-50 hidden w-full flex-row justify-between p-6 md:flex">
+      <body className="overflow-x-hidden bg-black text-white">
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+          <header className="fixed top-0 left-0 z-50 hidden w-full flex-row justify-between border-b border-zinc-800 bg-black/80 p-4 backdrop-blur-sm md:flex">
             <a
               target="_blank"
               rel="noopener noreferrer"
@@ -79,31 +73,24 @@ export default async function RootLayout({ children }: RootLayoutProps) {
               className="scale-100 transition-transform duration-300 hover:scale-110"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={logo} alt={`${companyName} Logo`} className="block size-6 dark:hidden" />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={logoDark ?? logo}
-                alt={`${companyName} Logo`}
-                className="hidden size-6 dark:block"
-              />
+              <img src={logoDark ?? logo} alt={`${companyName} Logo`} className="block size-6" />
             </a>
-            <span className="text-foreground font-mono text-xs font-bold tracking-wider uppercase">
-              Сделано людьми{' '}
-              <a
-                target="_blank"
-                rel="noopener noreferrer"
-                href="https://www.portalos.ru"
-                className="underline underline-offset-4"
-              >
-                АО Портал
-              </a>
-            </span>
+            <div className="flex items-center gap-6">
+              <span className="font-mono text-xs font-bold tracking-wider text-zinc-400 uppercase">
+                Сделано людьми{' '}
+                <a
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  href="https://www.portalos.ru"
+                  className="underline underline-offset-4 transition-colors hover:text-white"
+                >
+                  АО Портал
+                </a>
+              </span>
+            </div>
           </header>
 
           {children}
-          <div className="group fixed bottom-0 left-1/2 z-50 mb-2 -translate-x-1/2">
-            <ThemeToggle className="translate-y-20 transition-transform delay-150 duration-300 group-hover:translate-y-0" />
-          </div>
         </ThemeProvider>
       </body>
     </html>

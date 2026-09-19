@@ -48,7 +48,6 @@ export const APP_CONFIG_DEFAULTS: AppConfig = {
   accentDark: 'rgb(154, 6, 183)',
   startButtonText: process.env.BUTTON ?? 'Открыть Портал',
 
-
   // optional: audio visualization configuration
   audioVisualizerColor: '#9f0676',
   audioVisualizerColorDark: '#f91fdf',

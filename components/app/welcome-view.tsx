@@ -1,5 +1,9 @@
+import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { CONNECTING_TEXT } from '@/lib/agent-states';
+
+const FEATURES = ['Голос', 'Чат', 'Видео', 'Экран', 'Календарь', 'Данные'];
 
 function WelcomeImage() {
   return (
@@ -22,6 +26,7 @@ function WelcomeImage() {
 interface WelcomeViewProps {
   startButtonText: string;
   onStartCall: () => void;
+  isConnecting?: boolean;
   username?: string;
   onUsernameChange?: (name: string) => void;
   roomName?: string;
@@ -33,6 +38,7 @@ interface WelcomeViewProps {
 export const WelcomeView = ({
   startButtonText,
   onStartCall,
+  isConnecting = false,
   username = '',
   onUsernameChange,
   roomName = '',
@@ -43,19 +49,33 @@ export const WelcomeView = ({
 }: React.ComponentProps<'div'> & WelcomeViewProps) => {
   return (
     <div ref={ref}>
-      <section className="bg-background flex flex-col items-center justify-center text-center">
-        <WelcomeImage />
+      <section className="flex min-h-screen flex-col items-center justify-center bg-black text-center">
+        <div className="flex flex-col items-center gap-2">
+          <WelcomeImage />
 
-        <p className="text-foreground max-w-prose pt-1 leading-6 font-medium">
-          Говорите с Вашим агентом голосом, в чате, показывайте изображения с камеры
-        </p>
+          <h1 className="text-3xl font-bold text-white md:text-4xl">ИИ-агенты АО Портал</h1>
+          <p className="max-w-prose pt-1 text-sm leading-6 text-pretty text-zinc-400 md:text-base">
+            Говорите с Вашим агентом голосом, в чате, показывайте изображения с камеры
+          </p>
+        </div>
+
+        <div className="mt-5 flex max-w-xl flex-wrap items-center justify-center gap-1.5">
+          {FEATURES.map((feature) => (
+            <span
+              key={feature}
+              className="rounded-full border border-zinc-700 bg-zinc-900/50 px-2.5 py-1 text-[11px] font-medium text-zinc-400"
+            >
+              {feature}
+            </span>
+          ))}
+        </div>
 
         <Input
           type="text"
           value={username}
           onChange={(e) => onUsernameChange?.(e.target.value)}
           placeholder="Ваше имя (необязательно)"
-          className="mt-6 w-64 rounded-full text-base text-center"
+          className="mt-6 w-64 rounded-full text-center text-base"
         />
 
         <Input
@@ -63,7 +83,7 @@ export const WelcomeView = ({
           value={roomName}
           onChange={(e) => onRoomNameChange?.(e.target.value)}
           placeholder="Название комнаты (необязательно)"
-          className="mt-2 w-64 rounded-full text-base text-center"
+          className="mt-2 w-64 rounded-full text-center text-base"
         />
 
         <Input
@@ -71,26 +91,34 @@ export const WelcomeView = ({
           value={agentName}
           onChange={(e) => onAgentNameChange?.(e.target.value)}
           placeholder="Имя агента (необязательно)"
-          className="mt-2 w-64 rounded-full text-base text-center"
+          className="mt-2 w-64 rounded-full text-center text-base"
         />
 
         <Button
           size="lg"
           onClick={onStartCall}
-          className="mt-3 w-64 rounded-full font-mono text-xs font-bold tracking-wider uppercase"
+          disabled={isConnecting}
+          className="mt-3 w-64 rounded-full bg-white font-mono text-xs font-bold tracking-wider text-black uppercase hover:bg-white/90"
         >
-          {startButtonText}
+          {isConnecting ? (
+            <>
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+              {CONNECTING_TEXT}
+            </>
+          ) : (
+            startButtonText
+          )}
         </Button>
       </section>
 
       <div className="fixed bottom-5 left-0 flex w-full items-center justify-center">
-        <p className="text-muted-foreground max-w-prose pt-1 text-xs leading-5 font-normal text-pretty md:text-sm">
+        <p className="max-w-prose pt-1 text-xs leading-5 font-normal text-pretty text-zinc-500 md:text-sm">
           Нужен персональный агент?{' '}
           <a
             target="_blank"
             rel="noopener noreferrer"
             href="https://www.portalos.ru"
-            className="underline"
+            className="underline transition-colors hover:text-zinc-300"
           >
             АО Портал
           </a>

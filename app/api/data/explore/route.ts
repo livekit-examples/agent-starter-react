@@ -17,43 +17,218 @@ const sampleData: Record<string, SampleTable> = {
     columns: ['id', 'task', 'status', 'priority', 'assignee', 'created_at'],
     types: { id: 'integer', created_at: 'datetime' },
     rows: [
-      { id: 1, task: 'Implement auth middleware', status: 'Done', priority: 'High', assignee: 'Alice', created_at: '2026-06-01T09:15:00Z' },
-      { id: 2, task: 'Write API documentation', status: 'In Progress', priority: 'Medium', assignee: 'Bob', created_at: '2026-06-02T14:30:00Z' },
-      { id: 3, task: 'Fix login redirect bug', status: 'Done', priority: 'High', assignee: 'Alice', created_at: '2026-06-03T11:00:00Z' },
-      { id: 4, task: 'Design dashboard layout', status: 'Pending', priority: 'Low', assignee: 'Carol', created_at: '2026-06-04T08:45:00Z' },
-      { id: 5, task: 'Database migration script', status: 'In Progress', priority: 'High', assignee: 'Bob', created_at: '2026-06-05T16:20:00Z' },
-      { id: 6, task: 'End-to-end tests', status: 'Pending', priority: 'Medium', assignee: 'Carol', created_at: '2026-06-06T10:00:00Z' },
-      { id: 7, task: 'Set up CI/CD pipeline', status: 'Done', priority: 'High', assignee: 'Alice', created_at: '2026-06-07T13:15:00Z' },
-      { id: 8, task: 'User research interviews', status: 'In Progress', priority: 'Low', assignee: 'Carol', created_at: '2026-06-08T09:30:00Z' },
-      { id: 9, task: 'Performance optimization', status: 'Pending', priority: 'Medium', assignee: 'Bob', created_at: '2026-06-09T15:45:00Z' },
-      { id: 10, task: 'Security audit', status: 'Pending', priority: 'High', assignee: 'Alice', created_at: '2026-06-10T07:00:00Z' },
-      { id: 11, task: 'Mobile responsive fixes', status: 'In Progress', priority: 'Medium', assignee: 'Carol', created_at: '2026-06-11T12:30:00Z' },
-      { id: 12, task: 'API rate limiting', status: 'Done', priority: 'High', assignee: 'Bob', created_at: '2026-06-12T18:00:00Z' },
+      {
+        id: 1,
+        task: 'Implement auth middleware',
+        status: 'Done',
+        priority: 'High',
+        assignee: 'Alice',
+        created_at: '2026-06-01T09:15:00Z',
+      },
+      {
+        id: 2,
+        task: 'Write API documentation',
+        status: 'In Progress',
+        priority: 'Medium',
+        assignee: 'Bob',
+        created_at: '2026-06-02T14:30:00Z',
+      },
+      {
+        id: 3,
+        task: 'Fix login redirect bug',
+        status: 'Done',
+        priority: 'High',
+        assignee: 'Alice',
+        created_at: '2026-06-03T11:00:00Z',
+      },
+      {
+        id: 4,
+        task: 'Design dashboard layout',
+        status: 'Pending',
+        priority: 'Low',
+        assignee: 'Carol',
+        created_at: '2026-06-04T08:45:00Z',
+      },
+      {
+        id: 5,
+        task: 'Database migration script',
+        status: 'In Progress',
+        priority: 'High',
+        assignee: 'Bob',
+        created_at: '2026-06-05T16:20:00Z',
+      },
+      {
+        id: 6,
+        task: 'End-to-end tests',
+        status: 'Pending',
+        priority: 'Medium',
+        assignee: 'Carol',
+        created_at: '2026-06-06T10:00:00Z',
+      },
+      {
+        id: 7,
+        task: 'Set up CI/CD pipeline',
+        status: 'Done',
+        priority: 'High',
+        assignee: 'Alice',
+        created_at: '2026-06-07T13:15:00Z',
+      },
+      {
+        id: 8,
+        task: 'User research interviews',
+        status: 'In Progress',
+        priority: 'Low',
+        assignee: 'Carol',
+        created_at: '2026-06-08T09:30:00Z',
+      },
+      {
+        id: 9,
+        task: 'Performance optimization',
+        status: 'Pending',
+        priority: 'Medium',
+        assignee: 'Bob',
+        created_at: '2026-06-09T15:45:00Z',
+      },
+      {
+        id: 10,
+        task: 'Security audit',
+        status: 'Pending',
+        priority: 'High',
+        assignee: 'Alice',
+        created_at: '2026-06-10T07:00:00Z',
+      },
+      {
+        id: 11,
+        task: 'Mobile responsive fixes',
+        status: 'In Progress',
+        priority: 'Medium',
+        assignee: 'Carol',
+        created_at: '2026-06-11T12:30:00Z',
+      },
+      {
+        id: 12,
+        task: 'API rate limiting',
+        status: 'Done',
+        priority: 'High',
+        assignee: 'Bob',
+        created_at: '2026-06-12T18:00:00Z',
+      },
     ],
   },
   users: {
     columns: ['id', 'name', 'email', 'role', 'active', 'created_at'],
     types: { id: 'integer', active: 'boolean', created_at: 'datetime' },
     rows: [
-      { id: 1, name: 'Alice Johnson', email: 'alice@example.com', role: 'Admin', active: true, created_at: '2026-01-15T08:00:00Z' },
-      { id: 2, name: 'Bob Smith', email: 'bob@example.com', role: 'Developer', active: true, created_at: '2026-02-20T10:30:00Z' },
-      { id: 3, name: 'Carol Williams', email: 'carol@example.com', role: 'Designer', active: true, created_at: '2026-03-10T14:15:00Z' },
-      { id: 4, name: 'Dave Brown', email: 'dave@example.com', role: 'Developer', active: false, created_at: '2026-04-05T09:00:00Z' },
-      { id: 5, name: 'Eve Davis', email: 'eve@example.com', role: 'Manager', active: true, created_at: '2026-05-01T11:45:00Z' },
+      {
+        id: 1,
+        name: 'Alice Johnson',
+        email: 'alice@example.com',
+        role: 'Admin',
+        active: true,
+        created_at: '2026-01-15T08:00:00Z',
+      },
+      {
+        id: 2,
+        name: 'Bob Smith',
+        email: 'bob@example.com',
+        role: 'Developer',
+        active: true,
+        created_at: '2026-02-20T10:30:00Z',
+      },
+      {
+        id: 3,
+        name: 'Carol Williams',
+        email: 'carol@example.com',
+        role: 'Designer',
+        active: true,
+        created_at: '2026-03-10T14:15:00Z',
+      },
+      {
+        id: 4,
+        name: 'Dave Brown',
+        email: 'dave@example.com',
+        role: 'Developer',
+        active: false,
+        created_at: '2026-04-05T09:00:00Z',
+      },
+      {
+        id: 5,
+        name: 'Eve Davis',
+        email: 'eve@example.com',
+        role: 'Manager',
+        active: true,
+        created_at: '2026-05-01T11:45:00Z',
+      },
     ],
   },
   orders: {
     columns: ['id', 'product', 'amount', 'status', 'customer', 'date'],
     types: { id: 'integer', amount: 'number', date: 'datetime' },
     rows: [
-      { id: 101, product: 'Wireless Headphones', amount: 79.99, status: 'Shipped', customer: 'Acme Corp', date: '2026-06-01T10:00:00Z' },
-      { id: 102, product: 'USB-C Hub', amount: 34.50, status: 'Processing', customer: 'Globex Inc', date: '2026-06-02T15:30:00Z' },
-      { id: 103, product: 'Mechanical Keyboard', amount: 149.00, status: 'Delivered', customer: 'Initech', date: '2026-05-28T12:00:00Z' },
-      { id: 104, product: '27" Monitor', amount: 399.99, status: 'Shipped', customer: 'Acme Corp', date: '2026-06-03T09:15:00Z' },
-      { id: 105, product: 'Webcam HD', amount: 89.99, status: 'Pending', customer: 'Umbrella Co', date: '2026-06-04T14:45:00Z' },
-      { id: 106, product: 'Desk Lamp', amount: 45.00, status: 'Processing', customer: 'Globex Inc', date: '2026-06-05T11:30:00Z' },
-      { id: 107, product: 'Ergonomic Chair', amount: 599.00, status: 'Delivered', customer: 'Initech', date: '2026-05-20T08:00:00Z' },
-      { id: 108, product: 'Noise Cancelling Earbuds', amount: 199.99, status: 'Shipped', customer: 'Acme Corp', date: '2026-06-06T16:00:00Z' },
+      {
+        id: 101,
+        product: 'Wireless Headphones',
+        amount: 79.99,
+        status: 'Shipped',
+        customer: 'Acme Corp',
+        date: '2026-06-01T10:00:00Z',
+      },
+      {
+        id: 102,
+        product: 'USB-C Hub',
+        amount: 34.5,
+        status: 'Processing',
+        customer: 'Globex Inc',
+        date: '2026-06-02T15:30:00Z',
+      },
+      {
+        id: 103,
+        product: 'Mechanical Keyboard',
+        amount: 149.0,
+        status: 'Delivered',
+        customer: 'Initech',
+        date: '2026-05-28T12:00:00Z',
+      },
+      {
+        id: 104,
+        product: '27" Monitor',
+        amount: 399.99,
+        status: 'Shipped',
+        customer: 'Acme Corp',
+        date: '2026-06-03T09:15:00Z',
+      },
+      {
+        id: 105,
+        product: 'Webcam HD',
+        amount: 89.99,
+        status: 'Pending',
+        customer: 'Umbrella Co',
+        date: '2026-06-04T14:45:00Z',
+      },
+      {
+        id: 106,
+        product: 'Desk Lamp',
+        amount: 45.0,
+        status: 'Processing',
+        customer: 'Globex Inc',
+        date: '2026-06-05T11:30:00Z',
+      },
+      {
+        id: 107,
+        product: 'Ergonomic Chair',
+        amount: 599.0,
+        status: 'Delivered',
+        customer: 'Initech',
+        date: '2026-05-20T08:00:00Z',
+      },
+      {
+        id: 108,
+        product: 'Noise Cancelling Earbuds',
+        amount: 199.99,
+        status: 'Shipped',
+        customer: 'Acme Corp',
+        date: '2026-06-06T16:00:00Z',
+      },
     ],
   },
 };
@@ -95,7 +270,7 @@ async function fetchLiveTableData(
     dateColumn?: string;
     dateFrom?: string;
     dateTo?: string;
-  },
+  }
 ): Promise<{ columns: string[]; types: Record<string, string>; rows: SampleRow[]; total: number }> {
   const params = new URLSearchParams({ table });
   if (opts.search) params.set('search', opts.search);
@@ -138,7 +313,12 @@ async function fetchLiveTableData(
   return { columns: [], types: {}, rows: [], total: 0 };
 }
 
-function applyDateFilter(rows: SampleRow[], column: string, dateFrom?: string, dateTo?: string): SampleRow[] {
+function applyDateFilter(
+  rows: SampleRow[],
+  column: string,
+  dateFrom?: string,
+  dateTo?: string
+): SampleRow[] {
   let filtered = rows;
   if (dateFrom) {
     const from = new Date(dateFrom);
@@ -191,7 +371,9 @@ export async function GET(request: NextRequest) {
     const table = searchParams.get('table');
     const search = searchParams.get('search') || undefined;
     const page = searchParams.get('page') ? Number(searchParams.get('page')) : undefined;
-    const pageSize = searchParams.get('pageSize') ? Number(searchParams.get('pageSize')) : undefined;
+    const pageSize = searchParams.get('pageSize')
+      ? Number(searchParams.get('pageSize'))
+      : undefined;
     const sort = searchParams.get('sort') || undefined;
     const sortDir = (searchParams.get('sortDir') as 'asc' | 'desc') || undefined;
     const dateColumn = searchParams.get('dateColumn') || undefined;
@@ -204,14 +386,28 @@ export async function GET(request: NextRequest) {
           const tables = await fetchLiveTables();
           return NextResponse.json({ source: 'live', tables });
         }
-        const data = await fetchLiveTableData(table, { search, page, pageSize, sort, sortDir, dateColumn, dateFrom, dateTo });
+        const data = await fetchLiveTableData(table, {
+          search,
+          page,
+          pageSize,
+          sort,
+          sortDir,
+          dateColumn,
+          dateFrom,
+          dateTo,
+        });
         return NextResponse.json({
-          source: 'live', columns: data.columns, types: data.types, rows: data.rows, total: data.total, table,
+          source: 'live',
+          columns: data.columns,
+          types: data.types,
+          rows: data.rows,
+          total: data.total,
+          table,
         });
       } catch {
         return NextResponse.json(
           { error: 'Failed to connect to the external database. Check DATABASE_URL.' },
-          { status: 502 },
+          { status: 502 }
         );
       }
     }
@@ -237,7 +433,11 @@ export async function GET(request: NextRequest) {
     if (search) {
       const q = search.toLowerCase();
       filtered = filtered.filter((row) =>
-        Object.values(row).some((v) => String(v ?? '').toLowerCase().includes(q)),
+        Object.values(row).some((v) =>
+          String(v ?? '')
+            .toLowerCase()
+            .includes(q)
+        )
       );
     }
 

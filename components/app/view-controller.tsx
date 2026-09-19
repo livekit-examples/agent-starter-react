@@ -1,16 +1,18 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useTheme } from 'next-themes';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, type MotionProps, motion } from 'motion/react';
 import { useSessionContext } from '@livekit/components-react';
 import type { AppConfig } from '@/app-config';
 import { AgentSessionView_01 } from '@/components/agents-ui/blocks/agent-session-view-01';
 import { WelcomeView } from '@/components/app/welcome-view';
+import { usePrefersReducedMotion } from '@/hooks/use-reduced-motion';
 
 const MotionWelcomeView = motion.create(WelcomeView);
 const MotionSessionView = motion.create(AgentSessionView_01);
 
-const VIEW_MOTION_PROPS = {
+const VIEW_MOTION_PROPS: MotionProps = {
   variants: {
     visible: {
       opacity: 1,
@@ -49,8 +51,15 @@ export function ViewController({
   onAgentNameChange,
   isChatFullscreen,
 }: ViewControllerProps) {
-  const { isConnected, start } = useSessionContext();
+  const { isConnected, connectionState, start } = useSessionContext();
   const { resolvedTheme } = useTheme();
+  const reducedMotion = usePrefersReducedMotion();
+  const isConnecting = connectionState === 'connecting';
+
+  const viewMotionProps = useMemo<MotionProps>(() => {
+    if (!reducedMotion) return VIEW_MOTION_PROPS;
+    return { ...VIEW_MOTION_PROPS, transition: { duration: 0 } };
+  }, [reducedMotion]);
 
   return (
     <AnimatePresence mode="wait">
@@ -58,9 +67,10 @@ export function ViewController({
       {!isConnected && (
         <MotionWelcomeView
           key="welcome"
-          {...VIEW_MOTION_PROPS}
+          {...viewMotionProps}
           startButtonText={appConfig.startButtonText}
           onStartCall={start}
+          isConnecting={isConnecting}
           username={username}
           onUsernameChange={onUsernameChange}
           roomName={roomName}
@@ -73,7 +83,7 @@ export function ViewController({
       {isConnected && (
         <MotionSessionView
           key="session-view"
-          {...VIEW_MOTION_PROPS}
+          {...viewMotionProps}
           supportsChatInput={appConfig.supportsChatInput}
           supportsVideoInput={appConfig.supportsVideoInput}
           supportsScreenShare={appConfig.supportsScreenShare}
@@ -92,6 +102,7 @@ export function ViewController({
           audioVisualizerRadialRadius={appConfig.audioVisualizerRadialRadius}
           audioVisualizerWaveLineWidth={appConfig.audioVisualizerWaveLineWidth}
           isChatFullscreen={isChatFullscreen}
+          agentName={agentName}
           className="fixed inset-0"
         />
       )}

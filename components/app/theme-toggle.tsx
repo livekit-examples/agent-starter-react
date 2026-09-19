@@ -15,12 +15,18 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
   return (
     <div
       className={cn(
-        'text-foreground bg-background flex w-full flex-row justify-end divide-x overflow-hidden rounded-full border',
+        'flex w-full flex-row justify-end divide-x overflow-hidden rounded-full border border-zinc-700 bg-zinc-900 text-white',
         className
       )}
     >
       <span className="sr-only">Переключение темы</span>
-      <Button type="button" variant="ghost" size="icon" onClick={() => setTheme('dark')} className="rounded-none p-1 pl-1.5">
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        onClick={() => setTheme('dark')}
+        className="rounded-none p-1 pl-1.5 hover:bg-zinc-800 hover:text-white"
+      >
         <span className="sr-only">Тёмная тема</span>
         <MoonIcon
           suppressHydrationWarning
@@ -34,7 +40,7 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
         variant="ghost"
         size="icon"
         onClick={() => setTheme('light')}
-        className="rounded-none px-1.5 py-1"
+        className="rounded-none px-1.5 py-1 hover:bg-zinc-800 hover:text-white"
       >
         <span className="sr-only">Светлая тема</span>
         <SunIcon
@@ -49,7 +55,7 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
         variant="ghost"
         size="icon"
         onClick={() => setTheme('system')}
-        className="rounded-none p-1 pr-1.5"
+        className="rounded-none p-1 pr-1.5 hover:bg-zinc-800 hover:text-white"
       >
         <span className="sr-only">Системная тема</span>
         <MonitorIcon
