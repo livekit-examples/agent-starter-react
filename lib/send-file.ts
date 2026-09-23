@@ -12,7 +12,11 @@ export interface SendFileResult {
   type: string;
 }
 
-const CHUNK_SIZE = 64 * 1024;
+// livekit-client caps each reliable data packet at 64,000 bytes
+// (DEFAULT_MAX_MESSAGE_SIZE in src/room/RTCEngine.ts). Every chunk packet also
+// carries a JSON header, a 1-byte terminator, and the protobuf envelope on top
+// of the raw bytes, so keep chunks comfortably below the hard limit.
+const CHUNK_SIZE = 60 * 1024; // 61,440 bytes per chunk
 
 export async function sendFile(
   participant: LocalParticipant,

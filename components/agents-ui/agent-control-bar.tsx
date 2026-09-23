@@ -4,6 +4,7 @@ import { type ComponentProps, useEffect, useMemo, useRef, useState } from 'react
 import { Track } from 'livekit-client';
 import {
   CommandIcon,
+  FileIcon,
   Loader,
   MessageSquareTextIcon,
   PaperclipIcon,
@@ -126,12 +127,23 @@ function getCommandText(text: string): string {
   return match ? match[0].trimStart() : '';
 }
 
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 Б';
+  const units = ['Б', 'КБ', 'МБ', 'ГБ'];
+  const i = Math.min(units.length - 1, Math.floor(Math.log(bytes) / Math.log(1024)));
+  const value = bytes / 1024 ** i;
+  return `${value >= 100 || i === 0 ? Math.round(value) : value.toFixed(1)} ${units[i]}`;
+}
+
 interface AgentChatInputProps {
   chatOpen: boolean;
   onSend?: (message: string, files?: File[]) => void;
   onClear?: () => void;
   className?: string;
   commands?: Command[];
+  attachments: { file: File; preview: string }[];
+  onRemoveAttachment: (index: number) => void;
+  onClearAttachments: () => void;
 }
 
 function AgentChatInput({
@@ -140,17 +152,18 @@ function AgentChatInput({
   onClear,
   className,
   commands: externalCommands,
+  attachments,
+  onRemoveAttachment,
+  onClearAttachments,
 }: AgentChatInputProps) {
   const defaultCommands = useCommands();
   const commands = externalCommands ?? defaultCommands;
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSending, setIsSending] = useState(false);
   const [message, setMessage] = useState<string>('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [showCommands, setShowCommands] = useState(false);
-  const [attachments, setAttachments] = useState<{ file: File; preview: string }[]>([]);
   const isDisabled = isSending || (message.trim().length === 0 && attachments.length === 0);
 
   const activeCommandPrefix = useMemo(() => getCommandFromText(message), [message]);
@@ -186,7 +199,7 @@ function AgentChatInput({
     if (trimmed === '/clear') {
       onClear?.();
       setMessage('');
-      setAttachments([]);
+      onClearAttachments();
       return;
     }
 
@@ -195,30 +208,12 @@ function AgentChatInput({
       const files = attachments.length > 0 ? attachments.map((a) => a.file) : undefined;
       await onSend(trimmed, files);
       setMessage('');
-      setAttachments([]);
+      onClearAttachments();
     } catch (error) {
       console.error(error);
     } finally {
       setIsSending(false);
     }
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = Array.from(e.target.files || []);
-    const newAttachments = selected.map((file) => ({
-      file,
-      preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : '',
-    }));
-    setAttachments((prev) => [...prev, ...newAttachments]);
-    e.target.value = '';
-  };
-
-  const handleRemoveAttachment = (index: number) => {
-    setAttachments((prev) => {
-      const removed = prev[index];
-      if (removed?.preview) URL.revokeObjectURL(removed.preview);
-      return prev.filter((_, i) => i !== index);
-    });
   };
 
   const handleKeyDown = async (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -263,29 +258,68 @@ function AgentChatInput({
 
   return (
     <div
-      className={cn('relative mb-3 flex grow items-end gap-2 rounded-md pl-1 text-sm', className)}
+      className={cn('relative mb-3 flex grow flex-col gap-2 rounded-md pl-1 text-sm', className)}
     >
-      <textarea
-        autoFocus
-        ref={inputRef}
-        value={message}
-        disabled={!chatOpen || isSending}
-        placeholder="Ваше сообщение..."
-        onKeyDown={handleKeyDown}
-        onChange={(e) => setMessage(e.target.value)}
-        className="field-sizing-content max-h-16 min-h-8 flex-1 resize-none [scrollbar-width:thin] py-2 text-base focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-      />
-      <Button
-        size="icon"
-        type="button"
-        disabled={isDisabled}
-        variant={isDisabled ? 'secondary' : 'default'}
-        title={isSending ? 'отправка...' : 'отправить'}
-        onClick={handleButtonClick}
-        className="self-end disabled:cursor-not-allowed"
-      >
-        {isSending ? <Loader className="animate-spin" /> : <SendHorizontal />}
-      </Button>
+      {/* Pending attachment chips */}
+      {attachments.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {attachments.map((attachment, index) => (
+            <span
+              key={attachment.preview || `${attachment.file.name}-${index}`}
+              className="bg-accent text-accent-foreground border-input inline-flex max-w-56 items-center gap-1.5 rounded-md border py-1 pr-1 pl-1 text-xs"
+            >
+              {attachment.preview ? (
+                <img
+                  src={attachment.preview}
+                  alt=""
+                  className="border-input size-5 shrink-0 rounded-sm border object-cover"
+                />
+              ) : (
+                <FileIcon className="text-muted-foreground size-4 shrink-0" />
+              )}
+              <span className="min-w-0 flex-1 truncate" title={attachment.file.name}>
+                {attachment.file.name}
+              </span>
+              <span className="text-muted-foreground shrink-0 tabular-nums">
+                {formatFileSize(attachment.file.size)}
+              </span>
+              <button
+                type="button"
+                title="Удалить"
+                aria-label={`Удалить ${attachment.file.name}`}
+                onClick={() => onRemoveAttachment(index)}
+                className="text-muted-foreground hover:text-foreground hover:bg-foreground/10 focus-visible:ring-ring inline-flex size-4 cursor-pointer items-center justify-center rounded-full focus-visible:ring-2 focus-visible:outline-none"
+              >
+                <XIcon className="size-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      <div className="flex grow items-end gap-2">
+        <textarea
+          autoFocus
+          ref={inputRef}
+          value={message}
+          disabled={!chatOpen || isSending}
+          placeholder="Ваше сообщение..."
+          onKeyDown={handleKeyDown}
+          onChange={(e) => setMessage(e.target.value)}
+          className="field-sizing-content max-h-16 min-h-8 flex-1 resize-none [scrollbar-width:thin] py-2 text-base focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+        />
+        <Button
+          size="icon"
+          type="button"
+          disabled={isDisabled}
+          variant={isDisabled ? 'secondary' : 'default'}
+          title={isSending ? 'отправка...' : 'отправить'}
+          onClick={handleButtonClick}
+          className="self-end disabled:cursor-not-allowed"
+        >
+          {isSending ? <Loader className="animate-spin" /> : <SendHorizontal />}
+        </Button>
+      </div>
 
       {/* Slash command suggestion popover */}
       {isCommandActive && (
@@ -476,6 +510,50 @@ export function AgentControlBar({
     await send(text);
   };
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [attachments, setAttachments] = useState<{ file: File; preview: string }[]>([]);
+  const attachmentsRef = useRef(attachments);
+  attachmentsRef.current = attachments;
+
+  useEffect(() => {
+    return () => {
+      // Revoke any preview URLs still mounted when the bar unmounts.
+      for (const attachment of attachmentsRef.current) {
+        if (attachment.preview) URL.revokeObjectURL(attachment.preview);
+      }
+    };
+  }, []);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = Array.from(e.target.files || []);
+    const newAttachments = selected.map((file) => ({
+      file,
+      preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : '',
+    }));
+    setAttachments((prev) => [...prev, ...newAttachments]);
+    // Auto-open the chat input so the attachment chips and send button are visible.
+    if (onIsChatOpenChange) onIsChatOpenChange(true);
+    else setIsChatOpenUncontrolled(true);
+    e.target.value = '';
+  };
+
+  const handleRemoveAttachment = (index: number) => {
+    setAttachments((prev) => {
+      const removed = prev[index];
+      if (removed?.preview) URL.revokeObjectURL(removed.preview);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const clearAttachments = () => {
+    setAttachments((prev) => {
+      for (const attachment of prev) {
+        if (attachment.preview) URL.revokeObjectURL(attachment.preview);
+      }
+      return [];
+    });
+  };
+
   const visibleControls = {
     leave: controls?.leave ?? true,
     microphone: controls?.microphone ?? publishPermissions.microphone,
@@ -513,6 +591,9 @@ export function AgentControlBar({
           onSend={handleSendMessage}
           onClear={onClear}
           commands={commands}
+          attachments={attachments}
+          onRemoveAttachment={handleRemoveAttachment}
+          onClearAttachments={clearAttachments}
           className={cn(variant === 'livekit' && '[&_button]:rounded-full')}
         />
       </motion.div>
@@ -593,6 +674,41 @@ export function AgentControlBar({
             >
               <MessageSquareTextIcon />
             </Toggle>
+          )}
+
+          {/* Attach files */}
+          {visibleControls.chat && (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={handleFileSelect}
+              />
+              <Button
+                size="icon"
+                type="button"
+                variant="ghost"
+                aria-label="Прикрепить файл"
+                title="Прикрепить файл"
+                onClick={() => fileInputRef.current?.click()}
+                className={cn(
+                  'relative rounded-full',
+                  attachments.length === 0 &&
+                    'bg-accent text-accent-foreground border-border hover:bg-foreground/10 hover:border-foreground/12 focus-visible:border-ring focus-visible:ring-foreground/12 border',
+                  attachments.length > 0 &&
+                    'bg-blue-500/20 text-blue-700 hover:bg-blue-500/30 dark:bg-blue-500/20 dark:text-blue-300'
+                )}
+              >
+                <PaperclipIcon />
+                {attachments.length > 0 && (
+                  <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-blue-500 text-[10px] font-bold text-white">
+                    {attachments.length}
+                  </span>
+                )}
+              </Button>
+            </>
           )}
         </div>
 
