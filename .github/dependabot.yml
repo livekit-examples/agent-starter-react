@@ -3,23 +3,23 @@
 # when an advisory lands; the schedule only applies if version updates are turned on.
 version: 2
 updates:
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: github-actions
+    directory: /
     schedule:
-      interval: "quarterly"
+      interval: quarterly
     open-pull-requests-limit: 0
     groups:
       security:
-        applies-to: "security-updates"
+        applies-to: security-updates
         patterns:
-          - "*"
-  - package-ecosystem: "npm"
-    directory: "/"
+          - '*'
+  - package-ecosystem: npm
+    directory: /
     schedule:
-      interval: "quarterly"
+      interval: quarterly
     open-pull-requests-limit: 0
     groups:
       security:
-        applies-to: "security-updates"
+        applies-to: security-updates
         patterns:
-          - "*"
+          - '*'
