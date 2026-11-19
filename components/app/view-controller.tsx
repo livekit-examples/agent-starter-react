@@ -55,9 +55,13 @@ export function ViewController({ isVideoInputSupported }: ViewControllerProps) {
           preConnectMessage={
             agent.isConnected ? 'Agent is listening, ask it a question' : 'Waiting for agent'
           }
-          supportsChatInput={true}
-          supportsVideoInput={isVideoInputSupported}
-          supportsScreenShare={isVideoInputSupported}
+          controls={{
+            leave: true,
+            microphone: true,
+            chat: true,
+            camera: isVideoInputSupported,
+            screenShare: isVideoInputSupported,
+          }}
           isPreConnectBufferEnabled={true}
           themeMode={resolvedTheme === 'dark' ? 'dark' : 'light'}
           className="fixed inset-0"
