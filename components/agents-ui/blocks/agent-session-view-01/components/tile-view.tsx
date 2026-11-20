@@ -9,6 +9,7 @@ import {
   useVoiceAssistant,
 } from '@livekit/components-react';
 import { cn } from '@/lib/shadcn/utils';
+import { type AudioVisualizerConfig } from './agent-session-block';
 import { AudioVisualizer } from './audio-visualizer';
 
 const ANIMATION_TRANSITION: MotionProps['transition'] = {
@@ -70,30 +71,10 @@ export function useLocalTrackRef(source: Track.Source) {
 interface TileLayoutProps {
   themeMode?: 'dark' | 'light';
   isChatOpen: boolean;
-  audioVisualizerType?: 'bar' | 'wave' | 'grid' | 'radial' | 'aura';
-  audioVisualizerColor?: `#${string}`;
-  audioVisualizerColorShift?: number;
-  audioVisualizerWaveLineWidth?: number;
-  audioVisualizerGridRowCount?: number;
-  audioVisualizerGridColumnCount?: number;
-  audioVisualizerRadialBarCount?: number;
-  audioVisualizerRadialRadius?: number;
-  audioVisualizerBarCount?: number;
+  audioVisualizer?: AudioVisualizerConfig;
 }
 
-export function TileLayout({
-  themeMode,
-  isChatOpen,
-  audioVisualizerType,
-  audioVisualizerColor,
-  audioVisualizerColorShift,
-  audioVisualizerBarCount,
-  audioVisualizerRadialBarCount,
-  audioVisualizerRadialRadius,
-  audioVisualizerGridRowCount,
-  audioVisualizerGridColumnCount,
-  audioVisualizerWaveLineWidth,
-}: TileLayoutProps) {
+export function TileLayout({ themeMode, isChatOpen, audioVisualizer }: TileLayoutProps) {
   const { videoTrack: agentVideoTrack } = useVoiceAssistant();
   const [screenShareTrack] = useTracks([Track.Source.ScreenShare]);
   const cameraTrack: TrackReference | undefined = useLocalTrackRef(Track.Source.Camera);
@@ -107,9 +88,11 @@ export function TileLayout({
   const videoWidth = agentVideoTrack?.publication.dimensions?.width ?? 0;
   const videoHeight = agentVideoTrack?.publication.dimensions?.height ?? 0;
 
+  const { type: audioVisualizerType = 'bar', ...audioVisualizerConfig } = audioVisualizer ?? {};
+
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-8 bottom-32 z-50 md:top-12 md:bottom-40">
-      <div className="relative mx-auto h-full max-w-2xl px-4 md:px-0">
+    <div className="pointer-events-none absolute inset-x-0 top-8 bottom-24 z-50 @md/agent-session-block:top-12 @md/agent-session-block:bottom-40">
+      <div className="relative mx-auto h-full max-w-2xl px-4 @md/agent-session-block:px-0">
         <div className={cn(tileViewClassNames.grid)}>
           {/* Agent */}
           <div
@@ -142,15 +125,8 @@ export function TileLayout({
                       ...ANIMATION_TRANSITION,
                       delay: animationDelay,
                     }}
-                    audioVisualizerType={audioVisualizerType}
-                    audioVisualizerColor={audioVisualizerColor}
-                    audioVisualizerColorShift={audioVisualizerColorShift}
-                    audioVisualizerBarCount={audioVisualizerBarCount}
-                    audioVisualizerRadialBarCount={audioVisualizerRadialBarCount}
-                    audioVisualizerRadialRadius={audioVisualizerRadialRadius}
-                    audioVisualizerGridRowCount={audioVisualizerGridRowCount}
-                    audioVisualizerGridColumnCount={audioVisualizerGridColumnCount}
-                    audioVisualizerWaveLineWidth={audioVisualizerWaveLineWidth}
+                    type={audioVisualizerType}
+                    config={audioVisualizerConfig}
                     themeMode={themeMode}
                     isChatOpen={isChatOpen}
                     className={cn(
@@ -158,7 +134,7 @@ export function TileLayout({
                       'bg-background rounded-[50px] border border-transparent transition-[border,drop-shadow]',
                       isChatOpen && 'border-input shadow-2xl/10 delay-200'
                     )}
-                    style={{ color: audioVisualizerColor }}
+                    style={{ color: audioVisualizer?.color }}
                   />
                 </motion.div>
               )}

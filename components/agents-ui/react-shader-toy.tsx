@@ -465,6 +465,9 @@ export function ReactShaderToy({
   const animFrameIdRef = useRef<number | undefined>(undefined);
   const initFrameIdRef = useRef<number | undefined>(undefined);
   const isVisibleRef = useRef(true);
+  // Only one drawScene loop may run. Both init() and the IntersectionObserver start the loop, so
+  // without this flag the observer's first callback starts a second loop and every frame draws twice.
+  const isDrawLoopRunningRef = useRef(false);
   const animateWhenNotVisibleRef = useRef(animateWhenNotVisible);
   const mousedownRef = useRef(false);
   const canvasPositionRef = useRef<DOMRect | undefined>(undefined);
@@ -813,7 +816,10 @@ export function ReactShaderToy({
 
   const drawScene = (timestamp: number) => {
     const gl = glRef.current;
-    if (!gl) return;
+    if (!gl) {
+      isDrawLoopRunningRef.current = false;
+      return;
+    }
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.bindBuffer(gl.ARRAY_BUFFER, squareVerticesBufferRef.current);
@@ -829,6 +835,8 @@ export function ReactShaderToy({
     }
     if (animateWhenNotVisibleRef.current || isVisibleRef.current) {
       animFrameIdRef.current = requestAnimationFrame(drawScene);
+    } else {
+      isDrawLoopRunningRef.current = false;
     }
   };
 
@@ -892,8 +900,9 @@ export function ReactShaderToy({
       (entries) => {
         for (const entry of entries) {
           isVisibleRef.current = entry.isIntersecting;
-          if (entry.isIntersecting) {
-            requestAnimationFrame(drawScene);
+          if (entry.isIntersecting && !isDrawLoopRunningRef.current) {
+            isDrawLoopRunningRef.current = true;
+            animFrameIdRef.current = requestAnimationFrame(drawScene);
           }
         }
       },
@@ -923,7 +932,10 @@ export function ReactShaderToy({
         processTextures();
         initShaders(preProcessFragment(fs || BASIC_FS), vs || BASIC_VS);
         initBuffers();
-        requestAnimationFrame(drawScene);
+        if (!isDrawLoopRunningRef.current) {
+          isDrawLoopRunningRef.current = true;
+          animFrameIdRef.current = requestAnimationFrame(drawScene);
+        }
         addEventListeners();
         onResize();
       }
@@ -948,6 +960,7 @@ export function ReactShaderToy({
       removeEventListeners();
       cancelAnimationFrame(initFrameIdRef.current ?? 0);
       cancelAnimationFrame(animFrameIdRef.current ?? 0);
+      isDrawLoopRunningRef.current = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array to run only once on mount

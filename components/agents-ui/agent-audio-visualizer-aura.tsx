@@ -1,17 +1,6 @@
 'use client';
 
-/**
- * @license
- *
- * Originally developed for Unicorn Studio
- * https://unicorn.studio
- *
- * Licensed under the Polyform Non-Resale License 1.0.0
- * https://polyformproject.org/licenses/non-resale/1.0.0/
- *
- * © 2026 UNCRN LLC
- */
-import React, { type ComponentProps, useMemo } from 'react';
+import React, { type ComponentProps, useMemo, useSyncExternalStore } from 'react';
 import { type VariantProps, cva } from 'class-variance-authority';
 import { type LocalAudioTrack, type RemoteAudioTrack } from 'livekit-client';
 import { type AgentState, type TrackReferenceOrPlaceholder } from '@livekit/components-react';
@@ -20,6 +9,17 @@ import { useAgentAudioVisualizerAura } from '@/hooks/agents-ui/use-agent-audio-v
 import { cn } from '@/lib/shadcn/utils';
 
 const DEFAULT_COLOR = '#1FD5F9';
+
+/**
+ * Upper bound for the pixel ratio the Aura shader renders at.
+ *
+ * The backing canvas scales in both dimensions, so fragment shader cost grows
+ * quadratically with the device pixel ratio (DPR 2 is 4x the pixels of DPR 1,
+ * DPR 3 is 9x). Aura's fragment shader runs multiple turbulence calculations
+ * per pixel across a 36-iteration loop, so the extra work above DPR 2 buys
+ * little visual gain on a continuously animated effect.
+ */
+const MAX_SHADER_PIXEL_RATIO = 2;
 
 function hexToRgb(hexColor: string) {
   try {
@@ -130,6 +130,11 @@ vec2 turb(vec2 pos, float t, float it) {
 
 const float ITERATIONS = 36.0;
 
+// Light mode: opacity multiplier for the resting look, and how much of the aura remains at the
+// dimmest point of a pulse (0-1)
+const float LIGHT_MODE_OPACITY = 1.5;
+const float LIGHT_MODE_MIN_FADE = 0.5;
+
 void mainImage(out vec4 fragColor, in vec2 fragCoord) {
   vec2 uv = fragCoord / iResolution.xy;
 
@@ -204,8 +209,15 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     // Clamp between 0-1
     color = clamp(color, 0.0, 1.0);
 
-    float alpha = mappedBrightness * clamp(uMix, 1.0, 2.0);
-    fragColor = vec4(color, alpha);
+    // Fixed opacity: higher brightness would darken the aura past its resting look, and lower
+    // brightness alone would let the light background through and wash the color out
+    float alpha = mappedBrightness * LIGHT_MODE_OPACITY;
+
+    // Dimmer moments in a pulse (uMix < 1.0) fade toward the background instead. Scaling color and
+    // alpha together blends the resting look with the background (the canvas composites as
+    // premultiplied alpha), so it gets lighter without shifting hue. Resting states keep fade = 1.0.
+    float fade = mix(LIGHT_MODE_MIN_FADE, 1.0, smoothstep(0.5, 1.0, uMix));
+    fragColor = vec4(color * fade, alpha * fade);
   }
 }`;
 
@@ -272,9 +284,32 @@ interface AuraShaderProps {
    * Display mode for different backgrounds
    * - 'dark': Optimized for dark backgrounds (default)
    * - 'light': Optimized for light/white backgrounds (inverts colors)
-   * @default 'dark'
+   *
+   * When omitted, follows the `dark` class on `<html>`.
    */
   themeMode?: 'dark' | 'light';
+}
+
+function subscribeToDocumentTheme(onChange: () => void) {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+  return () => observer.disconnect();
+}
+
+function getDocumentThemeMode() {
+  return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+}
+
+function getServerThemeMode() {
+  return 'light' as const;
+}
+
+/**
+ * Follows the `dark` class on `<html>` (the shadcn/ui convention), so Aura updates when the page
+ * theme changes. The server snapshot is `'light'`.
+ */
+function useDocumentThemeMode() {
+  return useSyncExternalStore(subscribeToDocumentTheme, getDocumentThemeMode, getServerThemeMode);
 }
 
 function AuraShader({
@@ -287,20 +322,21 @@ function AuraShader({
   color = DEFAULT_COLOR,
   colorShift = 1.0,
   brightness = 1.0,
-  themeMode = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
-    ? 'dark'
-    : 'light',
+  themeMode: themeModeProp,
   ref,
   className,
   ...props
 }: AuraShaderProps & ComponentProps<'div'>) {
+  const documentThemeMode = useDocumentThemeMode();
+  const themeMode = themeModeProp ?? documentThemeMode;
   const rgbColor = useMemo(() => hexToRgb(color), [color]);
+  const devicePixelRatio = Math.min(globalThis.devicePixelRatio ?? 1, MAX_SHADER_PIXEL_RATIO);
 
   return (
     <div ref={ref} className={className} {...props}>
       <ReactShaderToy
         fs={shaderSource}
-        devicePixelRatio={globalThis.devicePixelRatio ?? 1}
+        devicePixelRatio={devicePixelRatio}
         uniforms={{
           // Aurora wave speed
           uSpeed: { type: '1f', value: speed },
@@ -382,8 +418,8 @@ export interface AgentAudioVisualizerAuraProps {
    */
   colorShift?: number;
   /**
-   * The theme mode of the aura.
-   * @defaultValue 'dark'
+   * The theme mode of the aura. When omitted, follows the `dark` class on `<html>` and updates
+   * when it changes. Pass it explicitly if your app marks dark mode another way.
    */
   themeMode?: 'dark' | 'light';
   /**

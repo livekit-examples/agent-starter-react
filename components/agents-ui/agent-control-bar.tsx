@@ -102,15 +102,14 @@ function AgentChatInput({ chatOpen, onSend = async () => {}, className }: AgentC
   };
 
   useEffect(() => {
-    if (chatOpen) return;
-    // when not disabled refocus on input
+    if (!chatOpen) return;
+    // the input is only enabled while chat is open, so focus it once it opens
     inputRef.current?.focus();
   }, [chatOpen]);
 
   return (
     <div className={cn('mb-3 flex grow items-end gap-2 rounded-md pl-1 text-sm', className)}>
       <textarea
-        autoFocus
         ref={inputRef}
         value={message}
         disabled={!chatOpen || isSending}
@@ -288,7 +287,7 @@ export function AgentControlBar({
     <div
       aria-label="Voice assistant controls"
       className={cn(
-        'bg-background border-input/50 dark:border-muted flex flex-col border p-3 drop-shadow-md/3',
+        'bg-background border-input/50 dark:border-muted @container/agent-control-bar flex flex-col border p-3 drop-shadow-md/3',
         variant === 'livekit' ? 'rounded-[31px]' : 'rounded-lg',
         className
       )}
@@ -396,8 +395,9 @@ export function AgentControlBar({
                 'bg-destructive/10 dark:bg-destructive/10 text-destructive hover:bg-destructive/20 dark:hover:bg-destructive/20 focus:bg-destructive/20 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/4 rounded-full font-mono text-xs font-bold tracking-wider'
             )}
           >
-            <span className="hidden uppercase md:inline">End call</span>
-            <span className="inline uppercase md:hidden">End</span>
+            <span className="sr-only uppercase @sm/agent-control-bar:not-sr-only">
+              End <span className="sr-only @md/agent-control-bar:not-sr-only">call</span>
+            </span>
           </AgentDisconnectButton>
         )}
       </div>
